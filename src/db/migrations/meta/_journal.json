@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1766205360977,
+      "tag": "0000_warm_earthquake",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766288435908,
+      "tag": "0001_long_shiva",
+      "breakpoints": true
+    }
+  ]
+}
