@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+.astro/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Bun
+bun.lockb
+
+# Uploaded media (keep structure, ignore files)
+uploads/
+media/
+
+# Claude settings (optional - remove if you want to track)
+.claude/

@@ -1,0 +1,693 @@
+================================================================================
+                    DOCUMENTO DI ARCHITETTURA E PIANIFICAZIONE
+                              marcomarchione.it
+================================================================================
+
+Progetto:       Portfolio & Personal Brand Platform
+Proprietario:   Marco Marchione
+Ruolo:          Agent Software Developer
+Data:           Dicembre 2024
+Versione:       2.1
+
+================================================================================
+## 1. EXECUTIVE SUMMARY
+================================================================================
+
+marcomarchione.it e' una piattaforma web personale che funge da portfolio
+professionale e hub di contenuti per Marco Marchione, Agent Software Developer.
+
+La piattaforma include:
+- Landing page portfolio con forte impatto visivo
+- Sezione Progetti (showcase tecnico dei lavori)
+- Sezione Materiale (risorse, guide, download)
+- Sezione Notizie (blog e aggiornamenti)
+- Pannello amministrativo per gestione contenuti (CMS custom)
+
+Requisito chiave: supporto multilingua (Italiano, Inglese, Spagnolo, Tedesco)
+
+================================================================================
+## 2. OBIETTIVI STRATEGICI
+================================================================================
+
+2.1 BRAND IDENTITY
+- Costruire una presenza digitale professionale e riconoscibile
+- Posizionamento come "Agent Software Developer" (autonomia, automazione, AI)
+- Brand essence: "Intelligent Automation, Human Craftsmanship"
+
+2.2 OBIETTIVI TECNICI
+- Performance eccellente (Core Web Vitals ottimali)
+- Design all'avanguardia, professionale e appariscente
+- Esperienza utente semplice e intuitiva
+- Responsive design (mobile-first)
+- Conformita' GDPR
+- Infrastruttura completamente self-hosted e controllata
+
+2.3 OBIETTIVI FUNZIONALI
+- Gestione autonoma dei contenuti tramite CMS proprietario
+- Pubblicazione rapida di nuovi progetti e articoli
+- Supporto completo per 4 lingue con traduzioni indipendenti
+
+================================================================================
+## 3. ARCHITETTURA DI SISTEMA
+================================================================================
+
+3.1 OVERVIEW
+
+L'architettura e' completamente self-hosted su un singolo VPS Hetzner:
+
++-----------------------------------------------------------------------------+
+|                              HETZNER VPS                                    |
+|                         (Server Unificato)                                  |
+|                                                                             |
+|    +-----------------------------+    +-----------------------------+      |
+|    |      SITO PUBBLICO          |    |      ADMIN PANEL            |      |
+|    |   (Astro SSG/SSR)           |    |   (React SPA)               |      |
+|    |                             |    |                             |      |
+|    |  - Landing page             |    |  - Dashboard                |      |
+|    |  - Pagine progetti          |    |  - Editor progetti          |      |
+|    |  - Pagine materiale         |    |  - Editor materiale         |      |
+|    |  - Pagine notizie           |    |  - Editor notizie           |      |
+|    |  - Pagine legali (GDPR)     |    |  - Media manager            |      |
+|    |                             |    |  - Gestione traduzioni      |      |
+|    +-----------------------------+    +-----------------------------+      |
+|                                  |                                          |
+|                         +--------+--------+                                 |
+|                         |                 |                                 |
+|                         v                 v                                 |
+|    +-----------------------------+    +-----------------------------+      |
+|    |      API SERVER             |    |      DATABASE               |      |
+|    |      (Bun + Elysia)         |    |      (SQLite file)          |      |
+|    |                             |    |                             |      |
+|    |  - Autenticazione JWT       |    |  - Contenuti                |      |
+|    |  - CRUD contenuti           |    |  - Traduzioni               |      |
+|    |  - Gestione media           |    |  - Metadati                 |      |
+|    |  - API pubblica/protetta    |    |                             |      |
+|    +-----------------------------+    +-----------------------------+      |
+|                         |                                                   |
+|                         v                                                   |
+|    +------------------------------------------------------------+          |
+|    |                      STORAGE LOCALE                         |          |
+|    |                  (Filesystem VPS o MinIO)                   |          |
+|    |                                                             |          |
+|    |  - Immagini progetti                                        |          |
+|    |  - Cover articoli                                           |          |
+|    |  - File scaricabili (materiale)                            |          |
+|    |  - Asset media generici                                     |          |
+|    +------------------------------------------------------------+          |
+|                                                                             |
++-----------------------------------------------------------------------------+
+                                       |
+                                       | HTTPS (Cloudflare DNS/SSL)
+                                       v
+                              +----------------+
+                              |    BROWSER     |
+                              +----------------+
+
+3.2 FLUSSO DATI
+
+Utente pubblico:
+  Browser -> Hetzner VPS (HTML statico + API) -> Database/Storage locale
+
+Amministratore:
+  Browser -> Admin Panel (VPS) -> API Backend (autenticata) -> Database/Storage
+
+================================================================================
+## 4. STACK TECNOLOGICO
+================================================================================
+
+4.1 FRONTEND
+
++------------------+-----------------------------------------------------------+
+| Componente       | Tecnologia                                                |
++------------------+-----------------------------------------------------------+
+| Framework        | Astro 5                                                   |
+| Runtime          | Bun                                                       |
+| Styling          | Tailwind CSS                                              |
+| Componenti UI    | React (per parti interattive - island architecture)      |
+| Linguaggio       | TypeScript                                                |
+| Contenuti        | MDX (per contenuti statici opzionali)                    |
+| i18n             | Astro i18n nativo + file JSON traduzioni UI              |
++------------------+-----------------------------------------------------------+
+
+Motivazioni:
+- Astro: performance superiori grazie a island architecture (JS solo dove serve)
+- Bun: build 10x piu' veloci, runtime moderno, tooling unificato con backend
+- Tailwind: utility-first, design system coerente, zero CSS inutilizzato
+
+4.2 BACKEND
+
++------------------+-----------------------------------------------------------+
+| Componente       | Tecnologia                                                |
++------------------+-----------------------------------------------------------+
+| Runtime          | Bun                                                       |
+| Framework        | Elysia                                                    |
+| Linguaggio       | TypeScript                                                |
+| Validazione      | TypeBox (integrato in Elysia)                            |
+| Autenticazione   | JWT                                                       |
+| Documentazione   | OpenAPI/Swagger (generazione automatica)                 |
++------------------+-----------------------------------------------------------+
+
+Motivazioni:
+- Bun: stesso runtime del frontend, stack unificato
+- Elysia: framework nativo Bun, type-safe, performance eccellenti, leggero
+- TypeScript end-to-end: type safety dalla UI al database
+
+4.3 DATABASE
+
++------------------+-----------------------------------------------------------+
+| Componente       | Tecnologia                                                |
++------------------+-----------------------------------------------------------+
+| Database         | SQLite                                                    |
+| ORM/Query        | Drizzle ORM oppure query native                          |
+| Migrazioni       | Drizzle Kit oppure script manuali                        |
++------------------+-----------------------------------------------------------+
+
+Motivazioni:
+- Volume dati ridotto (centinaia di record, non migliaia)
+- Single writer (solo l'amministratore)
+- Zero latenza di rete (database locale su VPS)
+- Backup semplice (copia file)
+- Nessun servizio aggiuntivo da gestire
+
+4.4 HOSTING E INFRASTRUTTURA
+
++------------------+------------------+----------------------------------------+
+| Servizio         | Provider         | Scopo                                  |
++------------------+------------------+----------------------------------------+
+| Frontend         | Hetzner VPS      | Astro SSG/SSR servito via Bun/nginx   |
+| Backend          | Hetzner VPS      | API server + database                 |
+| Media Storage    | Hetzner VPS      | Filesystem locale o MinIO self-hosted |
+| DNS              | Cloudflare       | Gestione dominio + SSL + CDN caching  |
+| Dominio          | Esistente        | marcomarchione.it                     |
++------------------+------------------+----------------------------------------+
+
+Vantaggi architettura self-hosted:
+- Controllo totale sull'infrastruttura
+- Nessuna dipendenza da servizi cloud proprietari
+- Costi prevedibili e contenuti
+- Privacy dei dati garantita (tutto in EU)
+- Possibilita' di ottimizzazioni custom
+
+================================================================================
+## 5. STRUTTURA DATI
+================================================================================
+
+5.1 ENTITA' PRINCIPALI
+
+CONTENT_BASE (tabella padre per tutti i contenuti)
++-- id (identificativo univoco)
++-- type (project | material | news)
++-- slug (URL-friendly identifier)
++-- status (draft | published | archived)
++-- featured (boolean - contenuto in evidenza)
++-- created_at
++-- updated_at
++-- published_at
+
+CONTENT_TRANSLATIONS (traduzioni multilingua)
++-- id
++-- content_id (riferimento a content_base)
++-- lang (it | en | es | de)
++-- title
++-- description
++-- body (contenuto Markdown)
++-- meta_title (SEO)
++-- meta_description (SEO)
+
+PROJECTS (estensione per progetti)
++-- content_id (riferimento a content_base)
++-- github_url
++-- demo_url
++-- project_status (in-progress | completed | archived)
++-- start_date
++-- end_date
+
+MATERIALS (estensione per materiale)
++-- content_id (riferimento a content_base)
++-- category (guide | template | resource | tool)
++-- download_url
++-- file_size
+
+NEWS (estensione per notizie)
++-- content_id (riferimento a content_base)
++-- cover_image
++-- reading_time
+
+TECHNOLOGIES (tecnologie/tag per progetti)
++-- id
++-- name
++-- icon
++-- color
+
+TAGS (tag per notizie)
++-- id
++-- name
++-- slug
+
+MEDIA (libreria media)
++-- id
++-- filename
++-- mime_type
++-- size
++-- storage_path (path locale su filesystem)
++-- alt_text
++-- created_at
+
+5.2 RELAZIONI
+
+- content_base -> content_translations: 1 a N (una traduzione per lingua)
+- content_base -> projects/materials/news: 1 a 1 (estensione specifica per tipo)
+- projects -> technologies: N a N (un progetto ha piu' tecnologie)
+- news -> tags: N a N (una notizia ha piu' tag)
+
+================================================================================
+## 6. STRUTTURA PAGINE E ROUTING
+================================================================================
+
+6.1 SITO PUBBLICO
+
+URL multilingua con prefisso lingua:
+
+Landing Page
++-- /it/                          (homepage italiano)
++-- /en/                          (homepage inglese)
++-- /es/                          (homepage spagnolo)
++-- /de/                          (homepage tedesco)
+
+Progetti
++-- /it/progetti/                 (lista progetti)
++-- /it/progetti/[slug]/          (dettaglio progetto)
++-- /en/projects/
++-- /en/projects/[slug]/
++-- /es/proyectos/
++-- /es/proyectos/[slug]/
++-- /de/projekte/
++-- /de/projekte/[slug]/
+
+Materiale
++-- /it/materiale/
++-- /it/materiale/[slug]/
++-- /en/materials/
++-- /es/materiales/
++-- /de/materialien/
+
+Notizie
++-- /it/notizie/
++-- /it/notizie/[slug]/
++-- /en/news/
++-- /es/noticias/
++-- /de/neuigkeiten/
+
+Pagine Legali
++-- /it/privacy/
++-- /it/cookie-policy/
++-- (equivalenti per altre lingue)
+
+6.2 ADMIN PANEL
+
+Tutte le rotte sotto /admin/ (SPA React):
+
+/admin/                           Dashboard con statistiche e accessi rapidi
+/admin/projects/                  Lista progetti con filtri e ricerca
+/admin/projects/new/              Creazione nuovo progetto
+/admin/projects/[id]/             Modifica progetto esistente
+/admin/materials/                 Lista materiale
+/admin/materials/new/             Creazione nuovo materiale
+/admin/materials/[id]/            Modifica materiale
+/admin/news/                      Lista notizie
+/admin/news/new/                  Creazione nuova notizia
+/admin/news/[id]/                 Modifica notizia
+/admin/media/                     Libreria media con upload
+/admin/settings/                  Impostazioni generali
+
+================================================================================
+## 7. API ENDPOINTS
+================================================================================
+
+7.1 API PUBBLICA (senza autenticazione)
+
+GET /api/v1/projects                    Lista progetti pubblicati
+GET /api/v1/projects/:slug              Dettaglio progetto
+GET /api/v1/materials                   Lista materiale pubblicato
+GET /api/v1/materials/:slug             Dettaglio materiale
+GET /api/v1/news                        Lista notizie pubblicate
+GET /api/v1/news/:slug                  Dettaglio notizia
+GET /api/v1/technologies                Lista tecnologie
+
+Parametri comuni:
+- lang: filtro lingua (it, en, es, de)
+- limit: paginazione
+- offset: paginazione
+- featured: solo contenuti in evidenza
+
+7.2 API ADMIN (autenticazione JWT richiesta)
+
+Autenticazione:
+POST /api/v1/auth/login                 Login amministratore
+POST /api/v1/auth/refresh               Refresh token
+POST /api/v1/auth/logout                Logout
+
+Progetti:
+GET    /api/v1/admin/projects           Lista tutti (anche bozze)
+POST   /api/v1/admin/projects           Crea progetto
+GET    /api/v1/admin/projects/:id       Dettaglio con tutte le traduzioni
+PUT    /api/v1/admin/projects/:id       Modifica progetto
+DELETE /api/v1/admin/projects/:id       Elimina progetto
+
+Materiale:
+GET    /api/v1/admin/materials          Lista tutti
+POST   /api/v1/admin/materials          Crea materiale
+GET    /api/v1/admin/materials/:id      Dettaglio
+PUT    /api/v1/admin/materials/:id      Modifica
+DELETE /api/v1/admin/materials/:id      Elimina
+
+Notizie:
+GET    /api/v1/admin/news               Lista tutte
+POST   /api/v1/admin/news               Crea notizia
+GET    /api/v1/admin/news/:id           Dettaglio
+PUT    /api/v1/admin/news/:id           Modifica
+DELETE /api/v1/admin/news/:id           Elimina
+
+Media:
+GET    /api/v1/admin/media              Lista media
+POST   /api/v1/admin/media/upload       Upload file (storage locale)
+DELETE /api/v1/admin/media/:id          Elimina file
+
+Tecnologie e Tag:
+GET    /api/v1/admin/technologies       Lista tecnologie
+POST   /api/v1/admin/technologies       Crea tecnologia
+DELETE /api/v1/admin/technologies/:id   Elimina tecnologia
+GET    /api/v1/admin/tags               Lista tag
+POST   /api/v1/admin/tags               Crea tag
+DELETE /api/v1/admin/tags/:id           Elimina tag
+
+================================================================================
+## 8. BRAND IDENTITY
+================================================================================
+
+8.1 POSIZIONAMENTO
+
+Titolo: Marco Marchione
+Sottotitolo: Agent Software Developer
+Claim: "Intelligent Automation, Human Craftsmanship"
+
+Valori comunicati:
+- Autonomia intelligente (come un AI agent)
+- Automazione dei processi
+- Innovazione pragmatica
+- Artigianalita' tecnica
+
+8.2 SISTEMA COLORI
+
+Primary - "Agent Blue"
+- Principale: #3d7eff
+- Range: dal #eef4ff (50) al #1e3a5f (900)
+- Uso: elementi principali, CTA, link
+
+Accent - "Neural Violet"
+- Principale: #8b5cf6
+- Range: dal #a78bfa (400) al #7c3aed (600)
+- Uso: accenti, highlight, elementi AI/tech
+
+Neutral - Grigi sofisticati
+- Range: dal #fafafa (50) al #0c0c0d (950)
+- Uso: testi, sfondi, bordi
+
+Semantici:
+- Success: #10b981
+- Warning: #f59e0b
+- Error: #ef4444
+
+Modalita': Dark mode come default (standard tech industry)
+
+8.3 TIPOGRAFIA
+
+Display (titoli hero): Space Grotesk
+- Geometrico, tech-forward, impatto visivo
+
+Body (testo): Inter
+- Massima leggibilita', ottimizzato per UI
+
+Mono (codice): JetBrains Mono
+- Legature, leggibilita' codice
+
+8.4 LOGO
+
+Concept: "Stacked Initials" - Due M sovrapposte
+- Evoca iterazione, ricorsivita' (concetti coding)
+- Forma richiama chip/processore
+- Minimal ma memorabile
+
+Varianti:
+- [MM] - Bracket style
+- //MM - Comment style
+- <M/> - Tag style
+
+8.5 ELEMENTI DISTINTIVI
+
+- Gradient mesh backgrounds (primary -> accent)
+- Glass morphism cards (blur + trasparenza)
+- Micro-interactions con spring physics
+- Terminal aesthetics (prompt-like, typing animations)
+- Grid overlay sottile (precision engineering)
+
+================================================================================
+## 9. REQUISITI NON FUNZIONALI
+================================================================================
+
+9.1 PERFORMANCE
+
+Target Core Web Vitals:
+- LCP (Largest Contentful Paint): < 2.5s
+- FID (First Input Delay): < 100ms
+- CLS (Cumulative Layout Shift): < 0.1
+
+Strategie:
+- Static Site Generation per pagine pubbliche
+- Image optimization automatica (Astro built-in)
+- Lazy loading per immagini below-the-fold
+- Minificazione CSS/JS
+- Cloudflare CDN per caching asset statici
+
+9.2 ACCESSIBILITA'
+
+Standard: WCAG 2.1 Level AA
+
+Requisiti:
+- Contrasto colori adeguato
+- Navigazione da tastiera completa
+- Alt text per tutte le immagini
+- Struttura heading semantica
+- Focus states visibili
+
+9.3 SEO
+
+Requisiti:
+- Meta title e description per ogni pagina
+- Open Graph tags per social sharing
+- Sitemap XML multilingua
+- hreflang tags per versioni linguistiche
+- Structured data (JSON-LD) per progetti
+- URL canonici
+
+9.4 SICUREZZA
+
+- HTTPS everywhere (Cloudflare SSL)
+- JWT con expiration breve + refresh token
+- Rate limiting su API
+- Input validation e sanitization
+- CORS configurato correttamente
+- Headers di sicurezza (CSP, X-Frame-Options, etc.)
+- Firewall VPS configurato
+
+9.5 GDPR COMPLIANCE
+
+Requisiti:
+- Cookie banner con consenso granulare
+- Privacy policy in tutte le lingue
+- Cookie policy in tutte le lingue
+- Nessun tracking prima del consenso
+- Opzione "gestisci preferenze" sempre visibile
+
+Implementazione rapida:
+- Libreria vanilla-cookieconsent
+- Analytics self-hosted o Cloudflare Web Analytics (cookieless)
+
+================================================================================
+## 10. INFRASTRUTTURA E COSTI
+================================================================================
+
+10.1 DETTAGLIO SERVIZI
+
+Hetzner VPS (Server Unificato)
+- Piano: CX32 (o superiore per maggiore capacita')
+- Specifiche: 4 vCPU, 8GB RAM, 80GB SSD
+- Location: Falkenstein (Germania) - GDPR compliant
+- Ospita: Frontend, Backend, Database, Media Storage
+- Costo: ~7.50 EUR/mese
+
+Cloudflare (DNS + CDN + SSL)
+- Piano: Free
+- Include: gestione DNS, SSL universale, DDoS protection, CDN caching
+- Nota: usato solo per DNS/SSL, non per hosting
+
+10.2 COSTI MENSILI
+
++---------------------+-------------+
+| Servizio            | Costo/mese  |
++---------------------+-------------+
+| Hetzner VPS (CX32)  | ~7.50 EUR   |
+| Cloudflare DNS/SSL  | 0 EUR       |
+| Dominio (annuale)   | ~1 EUR      |
++---------------------+-------------+
+| TOTALE              | ~8.50/mese  |
++---------------------+-------------+
+
+Nota: costo leggermente superiore rispetto a architettura distribuita,
+ma con vantaggi significativi in termini di controllo, privacy e semplicita'.
+
+================================================================================
+## 11. ROADMAP IMPLEMENTATIVA
+================================================================================
+
+FASE 1: SETUP INFRASTRUTTURA (2 giorni)
+- Provisioning VPS Hetzner (CX32)
+- Configurazione Cloudflare DNS
+- Setup certificato SSL
+- Configurazione nginx/reverse proxy
+- Setup repository Git
+- Configurazione CI/CD base
+
+FASE 2: BACKEND CORE (5 giorni)
+- Inizializzazione progetto Bun + Elysia
+- Schema database e migrazioni
+- Sistema autenticazione JWT
+- CRUD API per tutti i content type
+- Upload media su filesystem locale
+- Documentazione OpenAPI
+
+FASE 3: ADMIN PANEL (6 giorni)
+- Setup React + Vite
+- Layout e navigazione
+- Form editor progetti (con tabs multilingua)
+- Form editor materiale
+- Form editor notizie
+- Media manager
+- Dashboard statistiche
+
+FASE 4: FRONTEND PUBBLICO - STRUTTURA (3 giorni)
+- Setup Astro + configurazione i18n
+- Layout base e componenti UI core
+- Sistema routing multilingua
+- Design tokens e Tailwind config
+
+FASE 5: FRONTEND PUBBLICO - PAGINE (5 giorni)
+- Landing page con tutte le sezioni
+- Pagine lista (progetti, materiale, notizie)
+- Pagine dettaglio
+- Pagine legali (privacy, cookie)
+- Animazioni e micro-interactions
+
+FASE 6: BRAND E POLISH (3 giorni)
+- Finalizzazione logo
+- Raffinamento design
+- Dark/light mode
+- Responsive testing
+- Performance optimization
+
+FASE 7: GDPR E LEGAL (1 giorno)
+- Implementazione cookie consent
+- Contenuti privacy policy
+- Contenuti cookie policy
+- Testing compliance
+
+FASE 8: TESTING E DEPLOY (2 giorni)
+- Testing cross-browser
+- Testing accessibilita'
+- Security review
+- Deploy produzione
+- Monitoring setup
+
+TOTALE STIMATO: 27 giorni lavorativi
+
+================================================================================
+## 12. DIPENDENZE E RISCHI
+================================================================================
+
+12.1 DIPENDENZE
+
+Critiche:
+- Disponibilita' Hetzner datacenter
+- Accesso al dominio marcomarchione.it
+
+Non critiche:
+- Cloudflare DNS (fallback su altro DNS provider)
+- Font esterni (fallback su system fonts)
+- CDN librerie esterne (bundle locale come backup)
+
+12.2 RISCHI E MITIGAZIONI
+
+Rischio: Downtime VPS Hetzner
+Impatto: Intero sito non disponibile
+Mitigazione: Monitoring con alerting, backup automatici, snapshot VPS regolari
+
+Rischio: Perdita dati database
+Impatto: Perdita contenuti
+Mitigazione: Backup giornaliero SQLite su storage esterno, retention 30 giorni
+
+Rischio: Spazio disco esaurito
+Impatto: Upload media bloccati
+Mitigazione: Monitoring disk usage, ottimizzazione immagini, upgrade VPS se necessario
+
+Rischio: Rate limiting API
+Impatto: Admin panel lento
+Mitigazione: Implementare caching, ottimizzare query
+
+Rischio: Sovraccarico server
+Impatto: Rallentamenti o crash
+Mitigazione: Caching aggressivo, CDN per asset statici, upgrade VPS se necessario
+
+================================================================================
+## 13. METRICHE DI SUCCESSO
+================================================================================
+
+Tecniche:
+- Lighthouse score > 90 su tutte le categorie
+- Time to First Byte < 200ms
+- Uptime > 99.5%
+
+Funzionali:
+- Tempo creazione nuovo contenuto < 5 minuti
+- Tutte le lingue sempre sincronizzate
+- Zero errori 500 in produzione
+
+Business:
+- Posizionamento SEO prima pagina per "Marco Marchione"
+- Traffico organico crescente mese su mese
+- Feedback positivo da visitatori/recruiter
+
+================================================================================
+## 14. NOTE FINALI
+================================================================================
+
+Questo documento rappresenta la pianificazione architetturale completa per
+marcomarchione.it. Le decisioni tecnologiche sono state prese privilegiando:
+
+1. Coerenza dello stack (Bun + TypeScript end-to-end)
+2. Controllo totale (tutto self-hosted su VPS proprio)
+3. Indipendenza da vendor (nessun servizio cloud proprietario per hosting)
+4. Privacy e GDPR (dati interamente in EU su infrastruttura controllata)
+5. Semplicita' operativa (singolo server, zero dipendenze esterne critiche)
+6. Costi prevedibili (~8.50 EUR/mese fissi)
+7. Performance eccellenti (SSG + CDN caching via Cloudflare)
+
+Il CMS custom, pur richiedendo piu' effort iniziale rispetto a soluzioni off-the-shelf,
+garantisce flessibilita' totale e diventa esso stesso un progetto da showcasare
+nel portfolio.
+
+L'architettura completamente self-hosted riflette la filosofia "Agent Software
+Developer": autonomia, controllo, e indipendenza da servizi esterni.
+
+================================================================================
+                              FINE DOCUMENTO
+================================================================================
