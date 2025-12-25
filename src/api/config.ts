@@ -13,6 +13,8 @@
  * - JWT_REFRESH_EXPIRY: Refresh token expiry (default: "7d")
  * - UPLOADS_PATH: Path for uploaded media files (default: "./uploads")
  */
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 
 /** Supported environment types */
 export type NodeEnv = 'development' | 'production';
@@ -37,6 +39,68 @@ export interface Config {
   JWT_REFRESH_EXPIRY: string;
   /** Path for uploaded media files (default: "./uploads") */
   UPLOADS_PATH: string;
+}
+
+/**
+ * Parses .env file manually to avoid variable expansion.
+ * Bun's dotenv loader expands shell variables, which breaks bcrypt hashes.
+ *
+ * @returns Map of environment variables from .env file
+ */
+function parseEnvFile(): Map<string, string> {
+  const envMap = new Map<string, string>();
+  const envPath = join(process.cwd(), '.env');
+
+  if (!existsSync(envPath)) {
+    return envMap;
+  }
+
+  const content = readFileSync(envPath, 'utf-8');
+  const lines = content.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Skip comments and empty lines
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    const equalsIndex = trimmed.indexOf('=');
+    if (equalsIndex === -1) {
+      continue;
+    }
+
+    const key = trimmed.substring(0, equalsIndex).trim();
+    let value = trimmed.substring(equalsIndex + 1).trim();
+
+    // Remove surrounding quotes if present
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+
+    envMap.set(key, value);
+  }
+
+  return envMap;
+}
+
+// Parse .env file once at module load
+const envFileVars = parseEnvFile();
+
+/**
+ * Gets an environment variable, preferring manually parsed .env for specific keys.
+ *
+ * @param key - Environment variable key
+ * @returns Value from .env file or process.env
+ */
+function getEnv(key: string): string | undefined {
+  // For ADMIN_PASSWORD_HASH, always use manually parsed value to avoid expansion
+  if (key === 'ADMIN_PASSWORD_HASH') {
+    return envFileVars.get(key);
+  }
+  // For other vars, use process.env which includes .env loading
+  return process.env[key] || envFileVars.get(key);
 }
 
 /**
@@ -126,6 +190,11 @@ function parsePasswordHash(value: string | undefined, isProduction: boolean): st
     return '$2b$10$development-hash-for-testing-only';
   }
 
+  // Validate bcrypt hash format
+  if (!value.startsWith('$2')) {
+    console.warn('[CONFIG] Warning: ADMIN_PASSWORD_HASH does not appear to be a valid bcrypt hash');
+  }
+
   return value;
 }
 
@@ -158,11 +227,11 @@ function parseUploadsPath(value: string | undefined): string {
  * @returns Validated configuration object
  */
 export function loadConfig(): Config {
-  const NODE_ENV = parseNodeEnv(process.env.NODE_ENV);
+  const NODE_ENV = parseNodeEnv(getEnv('NODE_ENV'));
   const isProduction = NODE_ENV === 'production';
-  const PORT = parsePort(process.env.PORT);
-  const DATABASE_PATH = process.env.DATABASE_PATH ?? './data.db';
-  const additionalOrigins = parseOrigins(process.env.CORS_ORIGINS);
+  const PORT = parsePort(getEnv('PORT'));
+  const DATABASE_PATH = getEnv('DATABASE_PATH') ?? './data.db';
+  const additionalOrigins = parseOrigins(getEnv('CORS_ORIGINS'));
 
   // Default allowed origins
   const defaultOrigins = ['https://marcomarchione.it'];
@@ -171,13 +240,13 @@ export function loadConfig(): Config {
   const CORS_ORIGINS = [...defaultOrigins, ...additionalOrigins];
 
   // Parse authentication configuration
-  const JWT_SECRET = parseJwtSecret(process.env.JWT_SECRET, isProduction);
-  const ADMIN_PASSWORD_HASH = parsePasswordHash(process.env.ADMIN_PASSWORD_HASH, isProduction);
-  const JWT_ACCESS_EXPIRY = parseExpiry(process.env.JWT_ACCESS_EXPIRY, '15m');
-  const JWT_REFRESH_EXPIRY = parseExpiry(process.env.JWT_REFRESH_EXPIRY, '7d');
+  const JWT_SECRET = parseJwtSecret(getEnv('JWT_SECRET'), isProduction);
+  const ADMIN_PASSWORD_HASH = parsePasswordHash(getEnv('ADMIN_PASSWORD_HASH'), isProduction);
+  const JWT_ACCESS_EXPIRY = parseExpiry(getEnv('JWT_ACCESS_EXPIRY'), '15m');
+  const JWT_REFRESH_EXPIRY = parseExpiry(getEnv('JWT_REFRESH_EXPIRY'), '7d');
 
   // Parse media configuration
-  const UPLOADS_PATH = parseUploadsPath(process.env.UPLOADS_PATH);
+  const UPLOADS_PATH = parseUploadsPath(getEnv('UPLOADS_PATH'));
 
   return {
     NODE_ENV,
