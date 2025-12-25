@@ -1,0 +1,24 @@
+# Admin Panel Development Dockerfile
+# Supports hot reload with Vite dev server
+
+FROM oven/bun:1.1
+WORKDIR /app
+
+# Copy workspace files
+COPY package.json bun.lock* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/admin/package.json ./packages/admin/
+
+# Install dependencies
+RUN bun install
+
+# Copy source (will be overwritten by volume mount)
+COPY packages/shared ./packages/shared
+COPY packages/admin ./packages/admin
+
+WORKDIR /app/packages/admin
+
+EXPOSE 5173
+
+# Vite dev server with host flag for Docker
+CMD ["bun", "run", "vite", "--host", "0.0.0.0"]

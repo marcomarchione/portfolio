@@ -1,0 +1,73 @@
+# Development configuration with hot reload
+# Usage: docker-compose -f docker-compose.dev.yml up
+
+services:
+  # Backend API with hot reload
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile.dev
+    container_name: marcomarchione-api-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_PATH=/app/packages/api/data/data.db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:4321
+      - JWT_SECRET=development-secret-that-is-at-least-32-characters-long
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:-$$2b$$10$$development-hash-for-testing-only}
+    volumes:
+      - ./packages/shared:/app/packages/shared
+      - ./packages/api:/app/packages/api
+      - api-data-dev:/app/packages/api/data
+      - api-uploads-dev:/app/packages/api/uploads
+      - /app/packages/api/node_modules
+    networks:
+      - app-network-dev
+
+  # Admin Panel with hot reload
+  admin:
+    build:
+      context: .
+      dockerfile: packages/admin/Dockerfile.dev
+    container_name: marcomarchione-admin-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./packages/shared:/app/packages/shared
+      - ./packages/admin:/app/packages/admin
+      - /app/packages/admin/node_modules
+    depends_on:
+      - api
+    networks:
+      - app-network-dev
+
+  # Public Website with hot reload
+  web:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile.dev
+    container_name: marcomarchione-web-dev
+    ports:
+      - "4321:4321"
+    environment:
+      - PUBLIC_API_URL=http://localhost:3000
+    volumes:
+      - ./packages/shared:/app/packages/shared
+      - ./packages/web:/app/packages/web
+      - /app/packages/web/node_modules
+    depends_on:
+      - api
+    networks:
+      - app-network-dev
+
+volumes:
+  api-data-dev:
+  api-uploads-dev:
+
+networks:
+  app-network-dev:
+    driver: bridge

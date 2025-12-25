@@ -1,0 +1,56 @@
+# Dependencies
+node_modules
+packages/*/node_modules
+
+# Build outputs
+dist
+packages/*/dist
+.astro
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+packages/api/data
+
+# Uploads
+packages/api/uploads
+
+# Environment files
+.env
+.env.*
+!.env.example
+packages/*/.env
+packages/*/.env.*
+!packages/*/.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test files
+coverage
+packages/admin/playwright-report
+packages/admin/test-results
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Claude settings
+.claude
+
+# Misc
+.DS_Store
+Thumbs.db
