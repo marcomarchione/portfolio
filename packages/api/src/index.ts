@@ -69,7 +69,8 @@ export function startServer() {
   app.listen(config.PORT);
 
   const envMode = isDevelopment() ? 'development' : 'production';
-  console.log(`[SERVER] API server started on port ${config.PORT} (${envMode})`);
+  const pkgVersion = process.env.npm_package_version || '0.1.0';
+  console.log(`[SERVER] API v${pkgVersion} started on port ${config.PORT} (${envMode})`);
 
   if (isDevelopment()) {
     console.log(`[SERVER] Swagger UI available at http://localhost:${config.PORT}/api/docs`);
