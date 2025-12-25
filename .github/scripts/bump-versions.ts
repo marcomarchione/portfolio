@@ -143,7 +143,7 @@ async function updatePackageVersion(
  * Create a git tag
  */
 async function createTag(tag: string): Promise<void> {
-  await exec(`git tag ${tag}`);
+  await exec(`git tag "${tag}"`);
 }
 
 /**
@@ -239,9 +239,16 @@ ${updates.map((u) => `- ${u.name}: ${u.oldVersion} → ${u.newVersion} (${u.bump
     console.log(`🏷️  Created tag: ${tag}`);
   }
 
-  // Push with tags
-  await exec("git push --follow-tags");
-  console.log("\n🚀 Pushed to remote with tags");
+  // Push commit
+  await exec("git push");
+  console.log("\n🚀 Pushed commit to remote");
+
+  // Push tags explicitly
+  for (const update of updates) {
+    const tag = `${PACKAGE_PREFIX}/${update.name}@${update.newVersion}`;
+    await exec(`git push origin "${tag}"`);
+    console.log(`🏷️  Pushed tag: ${tag}`);
+  }
 
   console.log("\n✅ Version bump complete!");
 }
