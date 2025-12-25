@@ -37,6 +37,11 @@ const swaggerConfig = {
   },
   path: '/api/docs',
   exclude: ['/api/docs', '/api/docs/json'],
+  scalarConfig: {
+    spec: {
+      url: '/api/docs/json',
+    },
+  },
 };
 
 /**
