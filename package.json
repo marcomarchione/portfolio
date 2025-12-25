@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "bun test",
+    "test": "bun test src/",
     "test:db": "bun test src/db/",
     "test:api": "bun test src/api/",
     "api:dev": "bun run --watch src/api/index.ts",
