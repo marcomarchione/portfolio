@@ -8,13 +8,14 @@
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
-    "composite": true
+    "composite": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["./src/*"]
+    }
   },
-  "references": [
-    { "path": "./packages/shared" },
-    { "path": "./packages/api" },
-    { "path": "./packages/admin" },
-    { "path": "./packages/web" }
-  ],
-  "files": []
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
