@@ -12,9 +12,9 @@
 
 5. [x] **Media Upload & Local Storage** — Implement file upload endpoints with local VPS filesystem storage for images, documents, and assets with proper validation, size limits, and URL generation `M`
 
-## Upcoming
+6. [x] **Admin Panel Foundation** — Create React + Vite admin application with routing, authentication flow, protected routes, and base layout with navigation sidebar `M`
 
-6. [ ] **Admin Panel Foundation** — Create React + Vite admin application with routing, authentication flow, protected routes, and base layout with navigation sidebar `M`
+## Upcoming
 
 7. [ ] **Content Editor Forms** — Build rich editing interfaces for projects, materials, and news including multilingual input fields, markdown/rich text editor, and media selection `L`
 
