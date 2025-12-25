@@ -11,9 +11,8 @@ import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import * as schema from './schema';
 
-// Path to migrations directory
-const MIGRATIONS_DIR =
-  '/home/marchione/Progetti/marcomarchione.it/marcomarchione.it/src/db/migrations';
+// Path to migrations directory (relative to this file)
+const MIGRATIONS_DIR = join(import.meta.dir, 'migrations');
 
 type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
 
