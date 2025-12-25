@@ -4,76 +4,117 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Portfolio CMS backend for marcomarchione.it - a multilingual content management system with Elysia API and SQLite database.
+Personal portfolio website monorepo with CMS backend, admin panel, and public frontend. Uses Bun workspaces.
 
-## Common Commands
+## Commands
 
 ```bash
-# Development
-bun run api:dev          # Start API with hot reload (port 3000)
-bun run db:studio        # Open Drizzle Studio for DB inspection
+# Install dependencies
+bun install
+
+# Development (all packages)
+bun run dev
+
+# Development (individual)
+bun run dev:api    # http://localhost:3000
+bun run dev:admin  # http://localhost:5173
+bun run dev:web    # http://localhost:4321
 
 # Testing
-bun test                 # Run all tests
-bun test src/db/         # Run only database tests
-bun test src/api/        # Run only API tests
-bun test path/to/file.test.ts  # Run single test file
+bun run test                          # Run all API tests
+bun test src/path/to/file.test.ts     # Run single test (from packages/api)
+bun test --watch                      # Watch mode
 
 # Database
-bun run db:generate      # Generate migration from schema changes
-bun run db:migrate       # Apply pending migrations
-bun run db:push          # Push schema directly (dev only)
+bun run db:push      # Push schema to database
+bun run db:studio    # Open Drizzle Studio
+bun run db:generate  # Generate migrations
 
-# Utilities
-bun run media:cleanup    # Clean up orphaned media files
+# Type checking
+bun run typecheck
+
+# Docker
+bun run docker:dev   # Development with hot reload
+bun run docker:up    # Production
 ```
 
 ## Architecture
 
-### API Layer (`src/api/`)
-- **Framework**: Elysia with TypeBox validation
-- **Auth**: JWT-based single admin authentication
-- **Routes**: Versioned under `/api/v1`
-  - Public: `/projects`, `/materials`, `/news`, `/technologies`
-  - Admin: `/admin/*` (authenticated CRUD operations)
-  - Auth: `/auth/login`, `/auth/refresh`, `/auth/logout`
-- **Swagger**: Available at `/api/docs` in development
+### Monorepo Structure
 
-### Database Layer (`src/db/`)
-- **ORM**: Drizzle with bun:sqlite driver
-- **Schema**: Unified content model with extension tables
-  - `content_base` → shared metadata for all content types
-  - `content_translations` → multilingual content (IT, EN, ES, DE)
-  - Extension tables: `projects`, `materials`, `news`
-  - Lookup tables: `technologies`, `tags`, `media`
-  - Junction tables: `project_technologies`, `news_tags`
-
-### Services (`src/services/`)
-- **Media**: Image processing with Sharp, file validation, storage management
-
-## Key Patterns
-
-### Content Model
-All content types share `content_base` table with type-specific extension tables joined by `contentId`.
-
-### Testing
-Tests use in-memory SQLite with migrations applied. Use test utilities from `src/db/test-utils.ts`:
-```typescript
-import { createTestDatabase, resetDatabase, closeDatabase } from '@/db/test-utils';
+```
+packages/
+├── api/      # Elysia REST API + SQLite/Drizzle
+├── admin/    # React + Vite admin panel
+├── web/      # Astro public website
+└── shared/   # TypeScript types and constants
 ```
 
-### Path Aliases
-- `@/*` → `./src/*`
-- `@db/*` → `./src/db/*`
+### API Package (`packages/api`)
 
-## Environment Variables
+**Entry Point**: `src/index.ts` creates Elysia app with middleware chain:
+1. `errorHandler` - Global error handling
+2. `corsMiddleware` - CORS configuration
+3. `databasePlugin` - Injects Drizzle db instance
+4. `swaggerPlugin` - OpenAPI docs (dev only)
+5. `apiRoutes` - All routes under `/api/v1`
 
-Required in production:
-- `JWT_SECRET` (min 32 chars)
-- `ADMIN_PASSWORD_HASH` (bcrypt hash)
+**Route Organization**:
+- `routes/public/` - Read-only endpoints (projects, materials, news, technologies)
+- `routes/admin/` - Protected CRUD endpoints (require JWT)
+- `routes/auth.ts` - Login/refresh token endpoints
 
-Optional:
-- `PORT` (default: 3000)
-- `DATABASE_PATH` (default: ./data.db)
-- `UPLOADS_PATH` (default: ./uploads)
-- `CORS_ORIGINS` (comma-separated)
+**Database Layer**:
+- `db/schema/` - Drizzle table definitions
+- `db/queries/` - Query functions by domain
+- `db/relations.ts` - Table relationships
+
+**Key Patterns**:
+- Content uses base table + translations pattern (`content_base` + `content_translations`)
+- Media has variants (original, thumbnail, medium, large)
+- All admin routes require `Authorization: Bearer <token>` header
+
+### Shared Package (`packages/shared`)
+
+Exports types and constants used by all packages:
+- `LANGUAGES`: ['it', 'en', 'es', 'de']
+- `CONTENT_STATUSES`: ['draft', 'published', 'archived']
+- API response types, content types, auth types
+
+### Testing
+
+Tests use in-memory SQLite databases for isolation.
+
+```typescript
+import { createTestApp, createTestAppWithAuth } from '../test-utils';
+
+// Basic test app
+const testApp = createTestApp();
+await testApp.app.handle(new Request('http://localhost/api/v1/health'));
+testApp.cleanup();
+
+// With authentication
+const authApp = createTestAppWithAuth();
+const token = await authApp.generateAccessToken();
+await authApp.app.handle(new Request('http://localhost/api/v1/admin/projects', {
+  headers: { Authorization: `Bearer ${token}` }
+}));
+authApp.cleanup();
+```
+
+## Environment
+
+API environment variables in `packages/api/.env`:
+- `JWT_SECRET` - Min 32 chars
+- `ADMIN_PASSWORD_HASH` - bcrypt hash
+- `DATABASE_PATH` - SQLite file path
+- `CORS_ORIGINS` - Comma-separated origins
+
+## Versioning
+
+Uses Conventional Commits with automatic version bumping:
+- `feat:` → minor bump
+- `fix:` → patch bump
+- `BREAKING CHANGE:` → major bump
+
+Versions are independent per package. Tags format: `@marcomarchione/pkg@version`
