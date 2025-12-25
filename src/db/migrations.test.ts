@@ -9,6 +9,7 @@ import { Database } from 'bun:sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { eq } from 'drizzle-orm';
 import { readFileSync } from 'fs';
+import { join } from 'path';
 
 // Import all schemas
 import { contentBase } from './schema/content-base';
@@ -30,9 +31,8 @@ describe('Migration and Database Integrity', () => {
     sqlite = new Database(':memory:');
     sqlite.exec('PRAGMA foreign_keys = ON');
 
-    // Read and execute the migration SQL
-    const migrationPath =
-      '/home/marchione/Progetti/marcomarchione.it/marcomarchione.it/src/db/migrations/0000_initial_schema.sql';
+    // Read and execute the migration SQL (relative to this file)
+    const migrationPath = join(import.meta.dir, 'migrations', '0000_initial_schema.sql');
     const migrationSql = readFileSync(migrationPath, 'utf-8');
 
     // Split by statement breakpoint and execute each statement
