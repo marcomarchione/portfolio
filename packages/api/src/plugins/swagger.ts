@@ -37,10 +37,10 @@ const swaggerConfig = {
   },
   path: '/api/docs',
   exclude: ['/api/docs', '/api/docs/json'],
+  // Configure Scalar to use absolute URL for the OpenAPI spec
   scalarConfig: {
     spec: {
-      // Use relative URL from /api/docs to /api/docs/json
-      url: './json',
+      url: '/api/docs/json',
     },
   },
 };
