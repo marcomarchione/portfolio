@@ -26,4 +26,4 @@ jobs:
         run: bun run test
         env:
           NODE_ENV: test
-          JWT_SECRET: test-secret-for-ci-that-is-at-least-32-characters-long
+          JWT_SECRET: development-secret-that-is-at-least-32-characters-long
