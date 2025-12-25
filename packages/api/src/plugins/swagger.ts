@@ -39,7 +39,8 @@ const swaggerConfig = {
   exclude: ['/api/docs', '/api/docs/json'],
   scalarConfig: {
     spec: {
-      url: '/api/docs/json',
+      // Use relative URL from /api/docs to /api/docs/json
+      url: './json',
     },
   },
 };
