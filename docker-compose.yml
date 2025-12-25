@@ -1,0 +1,75 @@
+services:
+  # Backend API (Elysia + Bun)
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    container_name: marcomarchione-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_PATH=/app/packages/api/data/data.db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:4321,http://localhost:8080,http://localhost:8081
+      - JWT_SECRET=${JWT_SECRET:-development-secret-that-is-at-least-32-characters-long}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      - JWT_ACCESS_EXPIRY=15m
+      - JWT_REFRESH_EXPIRY=7d
+      - UPLOADS_PATH=/app/packages/api/uploads
+    volumes:
+      - api-data:/app/packages/api/data
+      - api-uploads:/app/packages/api/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - app-network
+
+  # Admin Panel (React + Vite)
+  admin:
+    build:
+      context: .
+      dockerfile: packages/admin/Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: marcomarchione-admin
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Public Website (Astro)
+  web:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile
+      args:
+        - PUBLIC_API_URL=http://api:3000
+    container_name: marcomarchione-web
+    restart: unless-stopped
+    ports:
+      - "4321:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  api-data:
+    driver: local
+  api-uploads:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,24 @@
+# API Development Dockerfile
+# Supports hot reload with mounted volumes
+
+FROM oven/bun:1.1
+WORKDIR /app
+
+# Copy workspace files
+COPY package.json bun.lock* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/api/package.json ./packages/api/
+
+# Install dependencies
+RUN bun install
+
+# Copy source (will be overwritten by volume mount)
+COPY packages/shared ./packages/shared
+COPY packages/api ./packages/api
+
+WORKDIR /app/packages/api
+
+EXPOSE 3000
+
+# Use --watch for hot reload
+CMD ["bun", "run", "--watch", "src/index.ts"]
