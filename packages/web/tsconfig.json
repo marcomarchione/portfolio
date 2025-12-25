@@ -1,0 +1,16 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@marcomarchione/shared": ["../shared/src"],
+      "@marcomarchione/shared/*": ["../shared/src/*"]
+    }
+  },
+  "references": [
+    { "path": "../shared" }
+  ],
+  "include": ["src/**/*", ".astro/**/*", "astro.config.mjs"],
+  "exclude": ["node_modules", "dist"]
+}
