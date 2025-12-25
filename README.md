@@ -1,193 +1,136 @@
-# Portfolio CMS
+# marcomarchione.it
 
-A modern, performant backend CMS for managing portfolio content, built with cutting-edge technologies.
+Personal portfolio website with CMS backend, admin panel, and public frontend.
 
 ## Tech Stack
 
-- **Runtime**: [Bun](https://bun.sh/) - Fast all-in-one JavaScript runtime
-- **API Framework**: [Elysia](https://elysiajs.com/) - TypeScript-first web framework
-- **Database**: SQLite with [Drizzle ORM](https://orm.drizzle.team/) - Type-safe SQL
-- **Image Processing**: [Sharp](https://sharp.pixelplumbing.com/) - High-performance image manipulation
-- **Authentication**: JWT-based authentication
-- **Admin Panel**: React + Vite + TanStack Query + Tailwind CSS
+| Package | Technology |
+|---------|------------|
+| **api** | [Bun](https://bun.sh/) + [Elysia](https://elysiajs.com/) + [Drizzle ORM](https://orm.drizzle.team/) + SQLite |
+| **admin** | React + Vite + TanStack Query + Tailwind CSS |
+| **web** | [Astro](https://astro.build/) + React + Tailwind CSS |
+| **shared** | TypeScript types and constants |
 
-## Features
+## Project Structure
 
-- RESTful API with OpenAPI/Swagger documentation
-- Content management for projects, materials, news, and technologies
-- Multi-language support (i18n)
-- Media upload with automatic image optimization
-- Tag and technology relationship management
-- Admin and public API separation
-- Comprehensive test coverage
-- Modern admin panel with responsive design
+```
+packages/
+├── api/          # Backend REST API
+├── admin/        # Admin panel (React)
+├── web/          # Public website (Astro)
+└── shared/       # Shared types and constants
+```
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) v1.0 or higher
-- Node.js 20.19+ (for admin panel build)
+- [Bun](https://bun.sh/) v1.0+
+- [Docker](https://www.docker.com/) (optional)
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/marcomarchione/portfolio.git
-cd portfolio
-
-# Install dependencies
+# Install all dependencies
 bun install
 
-# Set up database
+# Setup database
 bun run db:push
 
-# Install admin panel dependencies
-cd admin && bun install && cd ..
+# Copy environment file
+cp packages/api/.env.example packages/api/.env
+# Edit packages/api/.env with your values
 ```
 
-### Environment Variables
+### Development
 
-Create a `.env` file in the root directory:
+```bash
+# Run all packages
+bun run dev
+
+# Or run individually
+bun run dev:api    # API on http://localhost:3000
+bun run dev:admin  # Admin on http://localhost:5173
+bun run dev:web    # Web on http://localhost:4321
+```
+
+### Docker
+
+```bash
+# Development (with hot reload)
+bun run docker:dev
+
+# Production
+bun run docker:up
+```
+
+## Environment Variables
+
+### API (`packages/api/.env`)
 
 ```env
-PORT=3000
-JWT_SECRET=your-secret-key
-ADMIN_PASSWORD_HASH=your-bcrypt-hash
 NODE_ENV=development
+PORT=3000
+DATABASE_PATH=./data.db
+CORS_ORIGINS=http://localhost:5173,http://localhost:4321
+JWT_SECRET=your-secret-at-least-32-characters-long
+ADMIN_PASSWORD_HASH=$2b$10$your-bcrypt-hash
 ```
 
-For the admin panel, create `admin/.env.development`:
+Generate password hash:
+```bash
+bun -e "console.log(await Bun.password.hash('your-password', { algorithm: 'bcrypt', cost: 10 }))"
+```
+
+### Admin (`packages/admin/.env.development`)
 
 ```env
 VITE_API_URL=http://localhost:3000
 ```
 
-### Running the Application
+### Web (`packages/web/.env`)
 
-```bash
-# Development mode with hot reload
-bun run api:dev
-
-# Production mode
-bun run api:start
+```env
+PUBLIC_API_URL=http://localhost:3000
 ```
 
-### Running the Admin Panel
-
-```bash
-# Navigate to admin directory
-cd admin
-
-# Start development server
-bun run dev
-```
-
-The admin panel will be available at `http://localhost:5173`.
-
-### API Documentation
-
-When running in development mode, Swagger UI is available at:
-```
-http://localhost:3000/api/docs
-```
-
-Health check endpoint:
-```
-http://localhost:3000/api/v1/health
-```
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── api/
-│   │   ├── auth/          # JWT authentication
-│   │   ├── middleware/    # CORS, error handling, auth middleware
-│   │   ├── plugins/       # Elysia plugins (database, swagger)
-│   │   ├── routes/
-│   │   │   ├── admin/     # Protected admin endpoints
-│   │   │   └── public/    # Public read-only endpoints
-│   │   └── types/         # API schemas and types
-│   ├── db/
-│   │   ├── queries/       # Database query functions
-│   │   └── schema/        # Drizzle table definitions
-│   ├── services/
-│   │   └── media/         # Image processing and storage
-│   └── scripts/           # Utility scripts
-└── admin/                 # Admin panel (React + Vite)
-    └── src/
-        ├── components/    # React components
-        │   ├── auth/      # Authentication components
-        │   ├── common/    # Shared components
-        │   └── layout/    # Layout components
-        ├── contexts/      # React contexts (Auth, UI)
-        ├── lib/           # Utilities
-        │   ├── api/       # API client
-        │   ├── auth/      # Token management
-        │   └── query/     # TanStack Query config
-        ├── pages/         # Page components
-        ├── routes/        # Router configuration
-        └── types/         # TypeScript types
-```
-
-## Available Scripts
-
-### Backend
+## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `bun run api:dev` | Start API server in development mode |
-| `bun run api:start` | Start API server in production mode |
-| `bun run test` | Run all tests |
-| `bun run test:db` | Run database tests |
-| `bun run test:api` | Run API tests |
-| `bun run db:generate` | Generate database migrations |
-| `bun run db:migrate` | Run database migrations |
+| `bun run dev` | Start all packages in dev mode |
+| `bun run build` | Build all packages |
+| `bun run test` | Run API tests |
+| `bun run typecheck` | TypeScript check all packages |
 | `bun run db:push` | Push schema to database |
 | `bun run db:studio` | Open Drizzle Studio |
-| `bun run media:cleanup` | Clean up orphaned media files |
-
-### Admin Panel
-
-| Command | Description |
-|---------|-------------|
-| `bun run dev` | Start development server |
-| `bun run build` | Build for production |
-| `bun run preview` | Preview production build |
-| `bun run lint` | Run ESLint |
+| `bun run docker:dev` | Run with Docker (dev mode) |
+| `bun run docker:up` | Run with Docker (production) |
 
 ## API Endpoints
 
-### Public Endpoints
+### Public
 
-- `GET /api/v1/projects` - List all projects
-- `GET /api/v1/materials` - List all materials
-- `GET /api/v1/news` - List all news
-- `GET /api/v1/technologies` - List all technologies
+- `GET /api/v1/projects` - List projects
+- `GET /api/v1/materials` - List materials
+- `GET /api/v1/news` - List news
+- `GET /api/v1/technologies` - List technologies
+- `GET /api/v1/health` - Health check
 
-### Authentication Endpoints
+### Auth
 
-- `POST /api/v1/auth/login` - Authenticate and get JWT tokens
-- `POST /api/v1/auth/refresh` - Refresh access token
-- `POST /api/v1/auth/logout` - Logout (client-side)
+- `POST /api/v1/auth/login` - Login
+- `POST /api/v1/auth/refresh` - Refresh token
 
-### Admin Endpoints (Protected)
+### Admin (Protected)
 
-- `POST /api/v1/admin/projects` - Create project
-- `PUT /api/v1/admin/projects/:id` - Update project
-- `DELETE /api/v1/admin/projects/:id` - Delete project
-- `POST /api/v1/admin/media/upload` - Upload media file
-- *(Similar CRUD operations for materials, news, technologies, tags)*
+- `POST/PUT/DELETE /api/v1/admin/projects/:id`
+- `POST/PUT/DELETE /api/v1/admin/materials/:id`
+- `POST/PUT/DELETE /api/v1/admin/news/:id`
+- `POST/PUT/DELETE /api/v1/admin/technologies/:id`
+- `POST /api/v1/admin/media/upload`
 
-## Admin Panel Features
-
-- **Authentication**: JWT-based login with automatic token refresh
-- **Protected Routes**: All content management routes require authentication
-- **Responsive Design**: Desktop sidebar, mobile hamburger menu
-- **Dark Mode**: Modern dark theme with glass morphism effects
-- **Cross-tab Sync**: Authentication state syncs across browser tabs
+API documentation available at `http://localhost:3000/api/docs` (dev mode).
 
 ## Testing
 
@@ -195,10 +138,19 @@ http://localhost:3000/api/v1/health
 # Run all tests
 bun run test
 
-# Run specific test suites
-bun run test:db
-bun run test:api
+# Run with watch
+bun run test:api --watch
 ```
+
+## Versioning
+
+This project uses automatic versioning based on [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` - Minor version bump (0.x.0)
+- `fix:` - Patch version bump (0.0.x)
+- `BREAKING CHANGE:` - Major version bump (x.0.0)
+
+Versions are managed independently per package.
 
 ## License
 
