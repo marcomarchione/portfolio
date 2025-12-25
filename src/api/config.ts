@@ -95,9 +95,10 @@ const envFileVars = parseEnvFile();
  * @returns Value from .env file or process.env
  */
 function getEnv(key: string): string | undefined {
-  // For ADMIN_PASSWORD_HASH, always use manually parsed value to avoid expansion
+  // For ADMIN_PASSWORD_HASH, prefer manually parsed .env to avoid shell expansion
+  // but fall back to process.env for testing and CI environments
   if (key === 'ADMIN_PASSWORD_HASH') {
-    return envFileVars.get(key);
+    return envFileVars.get(key) ?? process.env[key];
   }
   // For other vars, use process.env which includes .env loading
   return process.env[key] || envFileVars.get(key);
