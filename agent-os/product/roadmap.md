@@ -14,9 +14,9 @@
 
 6. [x] **Admin Panel Foundation** — Create React + Vite admin application with routing, authentication flow, protected routes, and base layout with navigation sidebar `M`
 
-## Upcoming
+7. [x] **Content Editor Forms** — Build rich editing interfaces for projects, materials, and news including multilingual input fields, markdown/rich text editor, and media selection `L`
 
-7. [ ] **Content Editor Forms** — Build rich editing interfaces for projects, materials, and news including multilingual input fields, markdown/rich text editor, and media selection `L`
+## Upcoming
 
 8. [ ] **Media Manager UI** — Implement admin media library with upload interface, file browser, image preview, and integration with content editor forms for media selection `M`
 

@@ -33,6 +33,8 @@
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml build"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "playwright": "^1.57.0",
     "typescript": "^5.7.2"
   }
 }
