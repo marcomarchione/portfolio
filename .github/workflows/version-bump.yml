@@ -1,17 +1,18 @@
 name: Version Bump
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
     branches: [main]
-    paths-ignore:
-      - '*.md'
-      - '.github/workflows/version-bump.yml'
 
 jobs:
   version-bump:
     runs-on: ubuntu-latest
-    # Skip if commit is from this workflow (avoid infinite loop)
-    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+    # Only run if Tests workflow succeeded and commit is not from this workflow
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      !contains(github.event.workflow_run.head_commit.message, 'chore(release)')
 
     permissions:
       contents: write
@@ -20,6 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
