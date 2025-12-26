@@ -9,7 +9,7 @@
  */
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Save, ArrowLeft, Calendar, ExternalLink, Github, Star } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Calendar, ExternalLink, Github } from 'lucide-react';
 import { Page } from '@/components/common/Page';
 import {
   LanguageTabs,
@@ -20,7 +20,7 @@ import {
   ToggleField,
   FormField,
 } from '@/components/forms';
-import { useContentForm, type SharedFields } from '@/hooks/useContentForm';
+import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
 import { projectKeys, settingsKeys } from '@/lib/query/keys';
 import { showSuccess, showApiError } from '@/components/common/Toast';
@@ -28,7 +28,6 @@ import { validateUrl } from '@/lib/validation/content';
 import type { Project, ContentStatus, Language, ProjectStatus as ProjectStatusType } from '@marcomarchione/shared';
 import { LANGUAGES, PROJECT_STATUSES } from '@marcomarchione/shared';
 import type { ApiResponse } from '@/types/api';
-import type { TranslationCompletionStatus } from '@/types/forms';
 
 /**
  * Project-specific fields.

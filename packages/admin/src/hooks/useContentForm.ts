@@ -6,14 +6,21 @@
  */
 import { useState, useCallback, useMemo } from 'react';
 import type { Language, ContentStatus } from '@marcomarchione/shared';
-import { LANGUAGES } from '@marcomarchione/shared';
 import type { TranslationCompletionStatus, LanguageTab } from '@/types/forms';
 import {
   validateSlug,
-  validateUrl,
   type TranslationData,
-  type TranslationsData,
 } from '@/lib/validation/content';
+
+/**
+ * Internal translations type where all fields are optional for form state.
+ */
+interface FormTranslationsData {
+  it: TranslationData;
+  en: TranslationData;
+  es: TranslationData;
+  de: TranslationData;
+}
 
 /**
  * Shared fields present in all content types.
@@ -57,7 +64,7 @@ export const DEFAULT_TRANSLATION: TranslationData = {
 /**
  * Default translations for all languages.
  */
-export const DEFAULT_TRANSLATIONS: TranslationsData = {
+export const DEFAULT_TRANSLATIONS: FormTranslationsData = {
   it: { ...DEFAULT_TRANSLATION },
   en: { ...DEFAULT_TRANSLATION },
   es: { ...DEFAULT_TRANSLATION },
@@ -71,7 +78,7 @@ export interface UseContentFormOptions<TSpecific> {
   /** Initial shared fields values */
   initialSharedFields?: Partial<SharedFields>;
   /** Initial translations values */
-  initialTranslations?: Partial<TranslationsData>;
+  initialTranslations?: Partial<FormTranslationsData>;
   /** Initial type-specific fields */
   initialSpecificFields?: TSpecific;
   /** Default type-specific fields */
@@ -90,7 +97,7 @@ export interface UseContentFormReturn<TSpecific> {
   updateSharedFields: (updates: Partial<SharedFields>) => void;
 
   // Translations
-  translations: TranslationsData;
+  translations: FormTranslationsData;
   activeTab: LanguageTab;
   setActiveTab: (tab: LanguageTab) => void;
   completionStatus: TranslationCompletionStatus;
@@ -120,7 +127,7 @@ export interface UseContentFormReturn<TSpecific> {
   // Utilities
   getFormData: () => {
     sharedFields: SharedFields;
-    translations: TranslationsData;
+    translations: FormTranslationsData;
     specificFields: TSpecific;
   };
 }
@@ -129,7 +136,7 @@ export interface UseContentFormReturn<TSpecific> {
  * Generic content form hook.
  * Manages shared fields, translations, and type-specific fields.
  */
-export function useContentForm<TSpecific extends Record<string, unknown>>(
+export function useContentForm<TSpecific extends object>(
   options: UseContentFormOptions<TSpecific>
 ): UseContentFormReturn<TSpecific> {
   const {
@@ -147,11 +154,11 @@ export function useContentForm<TSpecific extends Record<string, unknown>>(
   }));
 
   // Translations state
-  const [translations, setTranslations] = useState<TranslationsData>(() => ({
-    it: { ...DEFAULT_TRANSLATION, ...initialTranslations.it },
-    en: { ...DEFAULT_TRANSLATION, ...initialTranslations.en },
-    es: { ...DEFAULT_TRANSLATION, ...initialTranslations.es },
-    de: { ...DEFAULT_TRANSLATION, ...initialTranslations.de },
+  const [translations, setTranslations] = useState<FormTranslationsData>(() => ({
+    it: { ...DEFAULT_TRANSLATION, ...initialTranslations?.it },
+    en: { ...DEFAULT_TRANSLATION, ...initialTranslations?.en },
+    es: { ...DEFAULT_TRANSLATION, ...initialTranslations?.es },
+    de: { ...DEFAULT_TRANSLATION, ...initialTranslations?.de },
   }));
 
   // Active language tab
@@ -306,10 +313,10 @@ export function useContentForm<TSpecific extends Record<string, unknown>>(
       ...initialSharedFields,
     });
     setTranslations({
-      it: { ...DEFAULT_TRANSLATION, ...initialTranslations.it },
-      en: { ...DEFAULT_TRANSLATION, ...initialTranslations.en },
-      es: { ...DEFAULT_TRANSLATION, ...initialTranslations.es },
-      de: { ...DEFAULT_TRANSLATION, ...initialTranslations.de },
+      it: { ...DEFAULT_TRANSLATION, ...initialTranslations?.it },
+      en: { ...DEFAULT_TRANSLATION, ...initialTranslations?.en },
+      es: { ...DEFAULT_TRANSLATION, ...initialTranslations?.es },
+      de: { ...DEFAULT_TRANSLATION, ...initialTranslations?.de },
     });
     setSpecificFieldsState({
       ...defaultSpecificFields,

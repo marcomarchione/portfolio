@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useContentForm, DEFAULT_SHARED_FIELDS, DEFAULT_TRANSLATION } from './useContentForm';
+import { useContentForm } from './useContentForm';
 
 // Default specific fields for testing
 const defaultProjectFields = {
@@ -79,6 +79,10 @@ describe('useContentForm', () => {
         },
         initialSpecificFields: {
           githubUrl: 'https://github.com/test',
+          demoUrl: '',
+          projectStatus: 'in-progress' as const,
+          startDate: null,
+          endDate: null,
           technologyIds: [1, 2],
         },
       })

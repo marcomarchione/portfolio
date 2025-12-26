@@ -79,8 +79,6 @@ describe('MarkdownEditor', () => {
     expect(editorContainer).toBeInTheDocument();
 
     // Check that the container has proper height styling
-    // The component sets min-height via inline style or container style
-    const containerStyle = window.getComputedStyle(editorContainer as Element);
     const editorWrapper = document.querySelector('[data-testid="markdown-editor"]');
     expect(editorWrapper).toHaveStyle({ minHeight: `${minHeight}px` });
   });

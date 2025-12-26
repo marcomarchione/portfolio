@@ -8,7 +8,7 @@
  * - Cover image picker with preview
  * - Multilingual translations with markdown editor
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save, ArrowLeft, Clock, Image as ImageIcon, X } from 'lucide-react';
