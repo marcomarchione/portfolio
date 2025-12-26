@@ -1,0 +1,193 @@
+/**
+ * Markdown Editor Styles
+ *
+ * Custom styles to integrate @uiw/react-md-editor with the admin
+ * design system using Space Grotesk/Inter/JetBrains Mono fonts,
+ * dark theme, and glass morphism effects.
+ */
+
+/* Wrapper container */
+.markdown-editor-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main editor container override */
+.markdown-editor-wrapper .w-md-editor {
+  --color-canvas-default: rgba(255, 255, 255, 0.05) !important;
+  --color-canvas-subtle: rgba(255, 255, 255, 0.02) !important;
+  --color-border-default: rgba(255, 255, 255, 0.1) !important;
+  --color-border-muted: rgba(255, 255, 255, 0.08) !important;
+  --color-fg-default: #e5e5e5 !important;
+  --color-fg-muted: #a3a3a3 !important;
+  --color-accent-fg: #3d7eff !important;
+
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  box-shadow: none !important;
+}
+
+/* Focus state for accessibility */
+.markdown-editor-wrapper .w-md-editor:focus-within {
+  outline: 2px solid #3d7eff;
+  outline-offset: 2px;
+  border-color: rgba(61, 126, 255, 0.3) !important;
+}
+
+/* Toolbar styling */
+.markdown-editor-wrapper .w-md-editor-toolbar {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+  padding: 0.5rem !important;
+  min-height: auto !important;
+}
+
+/* Toolbar buttons */
+.markdown-editor-wrapper .w-md-editor-toolbar button {
+  color: #a3a3a3 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0.375rem 0.5rem !important;
+  border-radius: 0.375rem !important;
+  transition: all 0.15s ease !important;
+}
+
+.markdown-editor-wrapper .w-md-editor-toolbar button:hover {
+  color: #e5e5e5 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.markdown-editor-wrapper .w-md-editor-toolbar button:active,
+.markdown-editor-wrapper .w-md-editor-toolbar button[data-active='true'] {
+  color: #3d7eff !important;
+  background: rgba(61, 126, 255, 0.15) !important;
+}
+
+/* Toolbar dividers */
+.markdown-editor-wrapper .w-md-editor-toolbar-divider {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  height: 1rem !important;
+  margin: 0 0.25rem !important;
+}
+
+/* Content area */
+.markdown-editor-wrapper .w-md-editor-content {
+  background: transparent !important;
+}
+
+/* Text area for markdown editing */
+.markdown-editor-wrapper .w-md-editor-text-input,
+.markdown-editor-wrapper .w-md-editor-text-pre {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+  color: #e5e5e5 !important;
+  padding: 1rem !important;
+}
+
+/* Placeholder text */
+.markdown-editor-wrapper .w-md-editor-text-input::placeholder {
+  color: #525252 !important;
+}
+
+/* Code syntax highlighting in preview */
+.markdown-editor-wrapper .wmde-markdown {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  color: #e5e5e5 !important;
+  background: transparent !important;
+}
+
+.markdown-editor-wrapper .wmde-markdown code {
+  font-family: 'JetBrains Mono', monospace !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0.25rem !important;
+  padding: 0.125rem 0.375rem !important;
+  color: #f87171 !important;
+}
+
+.markdown-editor-wrapper .wmde-markdown pre {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.markdown-editor-wrapper .wmde-markdown pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  color: #e5e5e5 !important;
+}
+
+/* Headings in preview */
+.markdown-editor-wrapper .wmde-markdown h1,
+.markdown-editor-wrapper .wmde-markdown h2,
+.markdown-editor-wrapper .wmde-markdown h3,
+.markdown-editor-wrapper .wmde-markdown h4,
+.markdown-editor-wrapper .wmde-markdown h5,
+.markdown-editor-wrapper .wmde-markdown h6 {
+  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  color: #fafafa !important;
+  border-bottom: none !important;
+}
+
+/* Links in preview */
+.markdown-editor-wrapper .wmde-markdown a {
+  color: #3d7eff !important;
+}
+
+.markdown-editor-wrapper .wmde-markdown a:hover {
+  color: #60a5fa !important;
+}
+
+/* Lists in preview */
+.markdown-editor-wrapper .wmde-markdown ul,
+.markdown-editor-wrapper .wmde-markdown ol {
+  color: #e5e5e5 !important;
+}
+
+/* Blockquotes in preview */
+.markdown-editor-wrapper .wmde-markdown blockquote {
+  border-left: 4px solid #3d7eff !important;
+  background: rgba(61, 126, 255, 0.1) !important;
+  color: #d4d4d4 !important;
+  padding: 0.5rem 1rem !important;
+  margin: 1rem 0 !important;
+  border-radius: 0 0.375rem 0.375rem 0 !important;
+}
+
+/* Drag bar for resizing */
+.markdown-editor-wrapper .w-md-editor-bar {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.markdown-editor-wrapper .w-md-editor-bar svg {
+  color: #525252 !important;
+}
+
+.markdown-editor-wrapper .w-md-editor-bar:hover svg {
+  color: #a3a3a3 !important;
+}
+
+/* Scrollbar styling */
+.markdown-editor-wrapper .w-md-editor-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.markdown-editor-wrapper .w-md-editor-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.markdown-editor-wrapper .w-md-editor-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.markdown-editor-wrapper .w-md-editor-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

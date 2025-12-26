@@ -10,6 +10,7 @@ import { adminNewsRoutes } from './news';
 import { adminTechnologiesRoutes } from './technologies';
 import { adminTagsRoutes } from './tags';
 import { adminMediaRoutes } from './media';
+import { adminContentRoutes } from './content';
 
 /**
  * Admin routes plugin.
@@ -22,6 +23,7 @@ import { adminMediaRoutes } from './media';
  * - /admin/technologies - CRUD for technologies
  * - /admin/tags - CRUD for tags
  * - /admin/media - Upload and manage media files
+ * - /admin/{contentType}/{id}/publish - Publish/unpublish content
  *
  * All routes require valid JWT access token.
  */
@@ -31,4 +33,5 @@ export const adminRoutes = new Elysia({ name: 'admin-routes', prefix: '/admin' }
   .use(adminNewsRoutes)
   .use(adminTechnologiesRoutes)
   .use(adminTagsRoutes)
-  .use(adminMediaRoutes);
+  .use(adminMediaRoutes)
+  .use(adminContentRoutes);
