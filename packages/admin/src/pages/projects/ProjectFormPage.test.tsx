@@ -5,7 +5,6 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ProjectFormPage from './ProjectFormPage';
@@ -26,15 +25,9 @@ vi.mock('@/components/common/Toast', () => ({
   ToastProvider: () => null,
 }));
 
-import { get, put, post, patch } from '@/lib/api/client';
-import { showSuccess, showApiError } from '@/components/common/Toast';
+import { get } from '@/lib/api/client';
 
 const mockGet = vi.mocked(get);
-const mockPut = vi.mocked(put);
-const mockPost = vi.mocked(post);
-const mockPatch = vi.mocked(patch);
-const mockShowSuccess = vi.mocked(showSuccess);
-const mockShowApiError = vi.mocked(showApiError);
 
 // Sample project data
 const mockProject = {
