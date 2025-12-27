@@ -52,12 +52,12 @@ export function LanguageTabs({
             className={`
               relative flex items-center gap-2 px-4 py-2 rounded-lg
               font-display font-medium text-sm
-              transition-all duration-200
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
+              transition-all duration-300 border
+              outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset
               ${
                 isActive
-                  ? 'bg-gradient-to-br from-primary-500/20 to-accent-500/20 text-neutral-100 border border-white/10'
-                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                  ? 'bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-neutral-100 border-primary-500/30'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5 border-transparent'
               }
             `}
             title={`${fullName} translation${isComplete ? ' (complete)' : ' (incomplete)'}`}
