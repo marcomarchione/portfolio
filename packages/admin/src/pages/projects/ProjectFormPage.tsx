@@ -19,6 +19,7 @@ import {
   SlugInput,
   ToggleField,
   FormField,
+  SelectField,
 } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
@@ -58,6 +59,14 @@ const PROJECT_STATUS_LABELS: Record<ProjectStatusType, string> = {
   'completed': 'Completed',
   'archived': 'Archived',
 };
+
+/**
+ * Project status options for SelectField.
+ */
+const PROJECT_STATUS_OPTIONS = PROJECT_STATUSES.map((status) => ({
+  value: status,
+  label: PROJECT_STATUS_LABELS[status],
+}));
 
 /**
  * Validates project-specific fields.
@@ -435,23 +444,13 @@ export default function ProjectFormPage() {
             </FormField>
 
             {/* Project Status */}
-            <FormField
+            <SelectField
+              id="projectStatus"
               label="Project Status"
-              htmlFor="projectStatus"
-            >
-              <select
-                id="projectStatus"
-                value={form.specificFields.projectStatus}
-                onChange={(e) => form.setSpecificField('projectStatus', e.target.value as ProjectStatusType)}
-                className="w-full px-4 py-2 rounded-lg bg-neutral-800/50 border border-neutral-700 text-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-              >
-                {PROJECT_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {PROJECT_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+              options={PROJECT_STATUS_OPTIONS}
+              value={form.specificFields.projectStatus}
+              onChange={(value) => form.setSpecificField('projectStatus', value as ProjectStatusType)}
+            />
 
             {/* Start Date */}
             <FormField

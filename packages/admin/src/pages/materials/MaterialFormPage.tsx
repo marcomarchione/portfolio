@@ -20,6 +20,7 @@ import {
   SlugInput,
   ToggleField,
   FormField,
+  SelectField,
 } from '@/components/forms';
 import type { SelectedMedia } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
@@ -55,6 +56,14 @@ const CATEGORY_LABELS: Record<MaterialCategory, string> = {
   'resource': 'Resource',
   'tool': 'Tool',
 };
+
+/**
+ * Category options for SelectField.
+ */
+const CATEGORY_OPTIONS = MATERIAL_CATEGORIES.map((cat) => ({
+  value: cat,
+  label: CATEGORY_LABELS[cat],
+}));
 
 /**
  * Validates material-specific fields.
@@ -365,29 +374,15 @@ export default function MaterialFormPage() {
           </h2>
           <div className="grid gap-6 md:grid-cols-2">
             {/* Category */}
-            <FormField
+            <SelectField
+              id="category"
               label="Category"
-              htmlFor="category"
+              options={CATEGORY_OPTIONS}
+              value={form.specificFields.category}
+              onChange={(value) => form.setSpecificField('category', value as MaterialCategory)}
               required
-            >
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-                  <FolderOpen className="w-4 h-4" />
-                </span>
-                <select
-                  id="category"
-                  value={form.specificFields.category}
-                  onChange={(e) => form.setSpecificField('category', e.target.value as MaterialCategory)}
-                  className="w-full px-4 py-2 pl-10 rounded-lg bg-neutral-800/50 border border-neutral-700 text-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                >
-                  {MATERIAL_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {CATEGORY_LABELS[cat]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </FormField>
+              icon={<FolderOpen className="w-4 h-4" />}
+            />
 
             {/* File Size */}
             <FormField

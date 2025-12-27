@@ -11,6 +11,8 @@ export { MarkdownEditor } from './MarkdownEditor';
 export { MediaPicker } from './MediaPicker';
 export type { SelectedMedia, MediaPickerProps } from './MediaPicker';
 export { PublishToggle } from './PublishToggle';
+export { SelectField } from './SelectField';
+export type { SelectFieldProps, SelectOption } from './SelectField';
 export { SlugInput } from './SlugInput';
 export type { SlugInputProps } from './SlugInput';
 export { ToggleField } from './ToggleField';
