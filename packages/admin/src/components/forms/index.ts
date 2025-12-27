@@ -3,6 +3,8 @@
  *
  * Reusable form components for content editing.
  */
+export { DateField } from './DateField';
+export type { DateFieldProps } from './DateField';
 export { FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
 export { ItemSelector } from './ItemSelector';

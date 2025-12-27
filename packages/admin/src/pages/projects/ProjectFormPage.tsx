@@ -9,7 +9,7 @@
  */
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Save, ArrowLeft, Calendar, ExternalLink, Github } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ExternalLink, Github } from 'lucide-react';
 import { Page } from '@/components/common/Page';
 import {
   LanguageTabs,
@@ -20,6 +20,7 @@ import {
   ToggleField,
   FormField,
   SelectField,
+  DateField,
 } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
@@ -453,42 +454,23 @@ export default function ProjectFormPage() {
             />
 
             {/* Start Date */}
-            <FormField
+            <DateField
+              id="startDate"
               label="Start Date"
-              htmlFor="startDate"
-            >
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-                  <Calendar className="w-4 h-4" />
-                </span>
-                <input
-                  type="date"
-                  id="startDate"
-                  value={form.specificFields.startDate?.split('T')[0] || ''}
-                  onChange={(e) => form.setSpecificField('startDate', e.target.value ? new Date(e.target.value).toISOString() : null)}
-                  className="w-full px-4 py-2 pl-10 rounded-lg bg-neutral-800/50 border border-neutral-700 text-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                />
-              </div>
-            </FormField>
+              value={form.specificFields.startDate}
+              onChange={(value) => form.setSpecificField('startDate', value)}
+              placeholder="dd/mm/yyyy"
+            />
 
             {/* End Date */}
-            <FormField
+            <DateField
+              id="endDate"
               label="End Date"
-              htmlFor="endDate"
-            >
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-                  <Calendar className="w-4 h-4" />
-                </span>
-                <input
-                  type="date"
-                  id="endDate"
-                  value={form.specificFields.endDate?.split('T')[0] || ''}
-                  onChange={(e) => form.setSpecificField('endDate', e.target.value ? new Date(e.target.value).toISOString() : null)}
-                  className="w-full px-4 py-2 pl-10 rounded-lg bg-neutral-800/50 border border-neutral-700 text-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                />
-              </div>
-            </FormField>
+              value={form.specificFields.endDate}
+              onChange={(value) => form.setSpecificField('endDate', value)}
+              placeholder="dd/mm/yyyy"
+              minDate={form.specificFields.startDate || undefined}
+            />
           </div>
         </div>
 
