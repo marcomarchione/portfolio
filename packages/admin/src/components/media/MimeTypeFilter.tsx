@@ -2,9 +2,10 @@
  * MIME Type Filter Component
  *
  * Custom dropdown filter for filtering media by MIME type category.
- * Uses div-based implementation to match the design system.
+ * Uses React Portal for proper z-index layering.
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Filter } from 'lucide-react';
 import type { MimeTypeFilterValue } from '@/types/media';
 
@@ -27,22 +28,55 @@ const FILTER_OPTIONS: { value: MimeTypeFilterValue; label: string }[] = [
 export function MimeTypeFilter({ value, onChange }: MimeTypeFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, width: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLUListElement>(null);
 
   // Find the currently selected option
   const selectedOption = FILTER_OPTIONS.find((opt) => opt.value === value);
 
+  // Calculate popup position
+  const updatePosition = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPopupPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 150),
+      });
+    }
+  }, []);
+
+  // Update position on scroll/resize
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isOpen, updatePosition]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        popupRef.current && !popupRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -86,6 +120,9 @@ export function MimeTypeFilter({ value, onChange }: MimeTypeFilterProps) {
   };
 
   const toggleOpen = () => {
+    if (!isOpen) {
+      updatePosition();
+    }
     setIsOpen(!isOpen);
     if (!isOpen) {
       const currentIndex = FILTER_OPTIONS.findIndex((opt) => opt.value === value);
@@ -93,10 +130,61 @@ export function MimeTypeFilter({ value, onChange }: MimeTypeFilterProps) {
     }
   };
 
+  // Dropdown menu rendered via portal
+  const dropdownMenu = isOpen ? createPortal(
+    <ul
+      ref={popupRef}
+      role="listbox"
+      className="
+        fixed py-1 rounded-lg
+        bg-neutral-900 border border-neutral-700
+        shadow-xl shadow-black/20
+      "
+      style={{
+        top: popupPosition.top,
+        left: popupPosition.left,
+        width: popupPosition.width,
+        zIndex: 99999,
+      }}
+    >
+      {FILTER_OPTIONS.map((option, index) => {
+        const isSelected = option.value === value;
+        const isFocused = index === focusedIndex;
+
+        return (
+          <li
+            key={option.value}
+            role="option"
+            aria-selected={isSelected}
+            onClick={() => handleOptionClick(option.value)}
+            onMouseEnter={() => setFocusedIndex(index)}
+            className={`
+              px-4 py-2 cursor-pointer flex items-center justify-between
+              transition-colors text-sm
+              ${isSelected
+                ? 'bg-primary-500/20 text-primary-300'
+                : isFocused
+                  ? 'bg-neutral-800 text-neutral-200'
+                  : 'text-neutral-300 hover:bg-neutral-800'
+              }
+            `}
+          >
+            <span>{option.label}</span>
+            {isSelected && (
+              <Check className="w-4 h-4 text-primary-400" />
+            )}
+          </li>
+        );
+      })}
+    </ul>,
+    document.body
+  ) : null;
+
   return (
-    <div className="relative inline-block" ref={containerRef}>
+    <div className="relative inline-block">
       {/* Trigger button */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={toggleOpen}
         onKeyDown={handleKeyDown}
@@ -117,48 +205,8 @@ export function MimeTypeFilter({ value, onChange }: MimeTypeFilterProps) {
         />
       </button>
 
-      {/* Dropdown menu */}
-      {isOpen && (
-        <ul
-          role="listbox"
-          className="
-            absolute z-50 w-full mt-1 py-1 rounded-lg
-            bg-neutral-900 border border-neutral-700
-            shadow-xl shadow-black/20
-            min-w-[150px]
-          "
-        >
-          {FILTER_OPTIONS.map((option, index) => {
-            const isSelected = option.value === value;
-            const isFocused = index === focusedIndex;
-
-            return (
-              <li
-                key={option.value}
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => handleOptionClick(option.value)}
-                onMouseEnter={() => setFocusedIndex(index)}
-                className={`
-                  px-4 py-2 cursor-pointer flex items-center justify-between
-                  transition-colors text-sm
-                  ${isSelected
-                    ? 'bg-primary-500/20 text-primary-300'
-                    : isFocused
-                      ? 'bg-neutral-800 text-neutral-200'
-                      : 'text-neutral-300 hover:bg-neutral-800'
-                  }
-                `}
-              >
-                <span>{option.label}</span>
-                {isSelected && (
-                  <Check className="w-4 h-4 text-primary-400" />
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {/* Dropdown menu via portal */}
+      {dropdownMenu}
     </div>
   );
 }
