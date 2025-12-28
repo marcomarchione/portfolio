@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const ADMIN_URL = 'http://localhost:5174';
+const ADMIN_URL = 'http://localhost:5173';
 const API_URL = 'http://localhost:3000';
 
 test.describe('Admin Panel Form Components', () => {

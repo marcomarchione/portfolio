@@ -22,10 +22,14 @@ import {
   insertMedia,
   getMediaById,
   listMedia,
+  listDeletedMedia,
   countMedia,
+  countDeletedMedia,
   updateMediaAltText,
   updateMediaVariants,
   softDeleteMedia,
+  restoreMedia,
+  permanentlyDeleteMedia,
 } from '../../db/queries';
 import {
   validateFileType,
@@ -35,7 +39,7 @@ import {
   saveFile,
   processImage,
   getPublicUrl,
-  getFilePath,
+  deleteFile,
   isRasterImage,
 } from '../../services/media';
 import { config } from '../../config';
@@ -200,6 +204,35 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
     }
   )
   .get(
+    '/trash',
+    async ({ query, db }) => {
+      const limit = query.limit ?? 20;
+      const offset = query.offset ?? 0;
+      const mimeType = query.mimeType;
+
+      const options = {
+        limit,
+        offset,
+        mimeType,
+      };
+
+      const mediaList = listDeletedMedia(db, options);
+      const total = countDeletedMedia(db, options);
+
+      const formattedList = mediaList.map(formatMediaResponse);
+
+      return createPaginatedResponse(formattedList, total, offset, limit);
+    },
+    {
+      query: MediaQuerySchema,
+      detail: {
+        tags: ['admin', 'media'],
+        summary: 'List trashed media files',
+        description: 'Returns a paginated list of soft-deleted media files.',
+      },
+    }
+  )
+  .get(
     '/:id',
     async ({ params, db }) => {
       const id = parseInt(params.id, 10);
@@ -243,6 +276,31 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
       },
     }
   )
+  .post(
+    '/:id/restore',
+    async ({ params, db }) => {
+      const id = parseInt(params.id, 10);
+
+      const media = restoreMedia(db, id);
+
+      if (!media) {
+        throw new NotFoundError('Media not found or not in trash');
+      }
+
+      return createResponse({
+        message: 'Media restored',
+        ...formatMediaResponse(media),
+      });
+    },
+    {
+      params: MediaIdParamSchema,
+      detail: {
+        tags: ['admin', 'media'],
+        summary: 'Restore media from trash',
+        description: 'Restores a soft-deleted media file by clearing the deletedAt timestamp.',
+      },
+    }
+  )
   .delete(
     '/:id',
     async ({ params, db }) => {
@@ -267,6 +325,47 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
         summary: 'Soft delete media',
         description:
           'Marks a media file as deleted. Files are permanently removed after 30 days.',
+      },
+    }
+  )
+  .delete(
+    '/:id/permanent',
+    async ({ params, db }) => {
+      const id = parseInt(params.id, 10);
+
+      // Get media including deleted to verify it exists and is in trash
+      const media = getMediaById(db, id, true);
+
+      if (!media) {
+        throw new NotFoundError('Media not found');
+      }
+
+      if (!media.deletedAt) {
+        throw new ValidationError('Media must be in trash before permanent deletion');
+      }
+
+      // Delete files from disk (original + variants)
+      await deleteFile(config.UPLOADS_PATH, media.storageKey, true);
+
+      // Delete database record
+      const deleted = permanentlyDeleteMedia(db, id);
+
+      if (!deleted) {
+        throw new NotFoundError('Media not found');
+      }
+
+      return createResponse({
+        message: 'Media permanently deleted',
+        id,
+      });
+    },
+    {
+      params: MediaIdParamSchema,
+      detail: {
+        tags: ['admin', 'media'],
+        summary: 'Permanently delete media',
+        description:
+          'Permanently removes a media file and its variants from the filesystem and database. Item must be in trash first.',
       },
     }
   );

@@ -3,7 +3,7 @@
  *
  * Database operations for media table.
  */
-import { eq, and, isNull, lt, sql, desc, like } from 'drizzle-orm';
+import { eq, and, isNull, isNotNull, lt, sql, desc, like } from 'drizzle-orm';
 import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import * as schema from '../schema';
 import type { Media, NewMedia } from '../schema';
@@ -16,6 +16,13 @@ export interface ListMediaOptions {
   offset?: number;
   mimeType?: string;
   includeDeleted?: boolean;
+}
+
+/** Options for listing deleted media */
+export interface ListDeletedMediaOptions {
+  limit?: number;
+  offset?: number;
+  mimeType?: string;
 }
 
 /**
@@ -100,6 +107,58 @@ export function listMedia(db: DrizzleDB, options: ListMediaOptions = {}): Media[
   }
 
   return query.all();
+}
+
+/**
+ * Lists soft-deleted media records.
+ * Orders by deletedAt descending (most recently deleted first).
+ *
+ * @param db - Drizzle database instance
+ * @param options - List options
+ * @returns Array of soft-deleted media records
+ */
+export function listDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions = {}): Media[] {
+  const { limit = 20, offset = 0, mimeType } = options;
+
+  const conditions = [isNotNull(schema.media.deletedAt)];
+
+  if (mimeType) {
+    conditions.push(like(schema.media.mimeType, `${mimeType}%`));
+  }
+
+  return db
+    .select()
+    .from(schema.media)
+    .where(and(...conditions))
+    .orderBy(desc(schema.media.deletedAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+}
+
+/**
+ * Counts soft-deleted media records.
+ *
+ * @param db - Drizzle database instance
+ * @param options - List options
+ * @returns Total count of soft-deleted records
+ */
+export function countDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions = {}): number {
+  const { mimeType } = options;
+
+  const conditions = [isNotNull(schema.media.deletedAt)];
+
+  if (mimeType) {
+    conditions.push(like(schema.media.mimeType, `${mimeType}%`));
+  }
+
+  const result = db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.media)
+    .where(and(...conditions))
+    .get();
+
+  return result?.count ?? 0;
 }
 
 /**
@@ -208,6 +267,33 @@ export function softDeleteMedia(db: DrizzleDB, id: number): Media | undefined {
 }
 
 /**
+ * Restores a soft-deleted media record by clearing deletedAt timestamp.
+ *
+ * @param db - Drizzle database instance
+ * @param id - Media ID
+ * @returns Updated media record or undefined if not found/not deleted
+ */
+export function restoreMedia(db: DrizzleDB, id: number): Media | undefined {
+  // Get media including deleted ones
+  const media = getMediaById(db, id, true);
+  if (!media) {
+    return undefined;
+  }
+
+  // Only restore if it was actually deleted
+  if (!media.deletedAt) {
+    return undefined;
+  }
+
+  db.update(schema.media)
+    .set({ deletedAt: null })
+    .where(eq(schema.media.id, id))
+    .run();
+
+  return getMediaById(db, id);
+}
+
+/**
  * Gets soft-deleted media records older than specified days.
  * Used for cleanup operations.
  *
@@ -236,13 +322,15 @@ export function getExpiredSoftDeletedMedia(db: DrizzleDB, daysOld: number = 30):
  *
  * @param db - Drizzle database instance
  * @param id - Media ID
- * @returns true if record was deleted
+ * @returns true if record existed and was deleted
  */
 export function permanentlyDeleteMedia(db: DrizzleDB, id: number): boolean {
-  const result = db
-    .delete(schema.media)
-    .where(eq(schema.media.id, id))
-    .run();
+  // Check if media exists before deleting
+  const media = getMediaById(db, id, true);
+  if (!media) {
+    return false;
+  }
 
-  return result.changes > 0;
+  db.delete(schema.media).where(eq(schema.media.id, id)).run();
+  return true;
 }

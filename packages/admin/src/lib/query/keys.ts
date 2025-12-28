@@ -71,6 +71,11 @@ export const mediaKeys = {
   details: () => [...mediaKeys.all, 'detail'] as const,
   /** Single media detail */
   detail: (id: string) => [...mediaKeys.details(), id] as const,
+  /** Trash-related queries */
+  trash: () => [...mediaKeys.all, 'trash'] as const,
+  /** Filtered trash list */
+  trashList: (filters: Record<string, unknown>) =>
+    [...mediaKeys.trash(), filters] as const,
 };
 
 /**
