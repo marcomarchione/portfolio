@@ -54,14 +54,88 @@ bun run dev:admin  # Admin on http://localhost:5173
 bun run dev:web    # Web on http://localhost:4321
 ```
 
-### Docker
+### Docker Compose
+
+#### Development (hot reload)
 
 ```bash
-# Development (with hot reload)
-bun run docker:dev
+# Start all services with hot reload
+docker compose -f docker-compose.dev.yml up
 
-# Production
-bun run docker:up
+# Start in background (detached)
+docker compose -f docker-compose.dev.yml up -d
+
+# Start specific service
+docker compose -f docker-compose.dev.yml up api
+docker compose -f docker-compose.dev.yml up admin
+docker compose -f docker-compose.dev.yml up web
+
+# Rebuild and start (after Dockerfile changes)
+docker compose -f docker-compose.dev.yml up --build
+
+# View logs
+docker compose -f docker-compose.dev.yml logs -f
+docker compose -f docker-compose.dev.yml logs -f api    # Single service
+
+# Stop all services
+docker compose -f docker-compose.dev.yml down
+
+# Stop and remove volumes (reset data)
+docker compose -f docker-compose.dev.yml down -v
+```
+
+#### Production
+
+```bash
+# Start all services
+docker compose up -d
+
+# Rebuild and start
+docker compose up -d --build
+
+# View logs
+docker compose logs -f
+
+# Stop all services
+docker compose down
+
+# Stop and remove volumes
+docker compose down -v
+```
+
+#### Useful Commands
+
+```bash
+# Check running containers
+docker compose ps
+docker compose -f docker-compose.dev.yml ps
+
+# Restart a specific service
+docker compose restart api
+docker compose -f docker-compose.dev.yml restart admin
+
+# Execute command in running container
+docker compose exec api sh
+docker compose -f docker-compose.dev.yml exec api bun run db:studio
+
+# View resource usage
+docker compose stats
+```
+
+#### Services & Ports
+
+| Service | Dev Port | Prod Port | Description |
+|---------|----------|-----------|-------------|
+| api | 3000 | 3000 | Backend REST API |
+| admin | 5173 | 5173 | Admin Panel |
+| web | 4321 | 4321 | Public Website |
+
+#### npm Scripts (shortcuts)
+
+```bash
+# These scripts are aliases for docker compose commands
+bun run docker:dev    # docker compose -f docker-compose.dev.yml up
+bun run docker:up     # docker compose up -d
 ```
 
 ## Environment Variables
