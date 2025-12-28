@@ -20,10 +20,15 @@ bun run dev:api    # http://localhost:3000
 bun run dev:admin  # http://localhost:5173
 bun run dev:web    # http://localhost:4321
 
-# Testing
+# Testing - API (from packages/api directory)
 bun run test                          # Run all API tests
-bun test src/path/to/file.test.ts     # Run single test (from packages/api)
+bun test src/path/to/file.test.ts     # Run single test
 bun test --watch                      # Watch mode
+
+# Testing - Admin (from packages/admin directory)
+bun run test                          # Run Vitest unit tests
+bun run playwright test               # Run Playwright E2E tests
+bun run playwright test file.spec.ts  # Run single E2E test
 
 # Database
 bun run db:push      # Push schema to database
@@ -34,8 +39,10 @@ bun run db:generate  # Generate migrations
 bun run typecheck
 
 # Docker
-bun run docker:dev   # Development with hot reload
-bun run docker:up    # Production
+docker compose -f docker-compose.dev.yml up      # Development with hot reload
+docker compose -f docker-compose.dev.yml up -d   # Detached mode
+docker compose up -d                              # Production
+docker compose logs -f api                        # View service logs
 ```
 
 ## Architecture
@@ -74,6 +81,22 @@ packages/
 - Media has variants (original, thumbnail, medium, large)
 - All admin routes require `Authorization: Bearer <token>` header
 
+### Admin Package (`packages/admin`)
+
+React + Vite SPA with TanStack Query for data fetching.
+
+**Structure**:
+- `components/` - Reusable UI components (forms, media, common)
+- `pages/` - Route pages (projects, materials, news, technologies, media)
+- `hooks/` - Custom hooks (useContentForm, useMediaLibrary)
+- `lib/api/` - API client wrapper
+- `lib/query/` - TanStack Query keys and utilities
+
+**Key Patterns**:
+- Custom form components use React Portal for dropdowns (z-index layering)
+- Content forms share logic via `useContentForm` hook
+- Media library uses URL search params for state (pagination, filters)
+
 ### Shared Package (`packages/shared`)
 
 Exports types and constants used by all packages:
@@ -109,6 +132,21 @@ API environment variables in `packages/api/.env`:
 - `ADMIN_PASSWORD_HASH` - bcrypt hash
 - `DATABASE_PATH` - SQLite file path
 - `CORS_ORIGINS` - Comma-separated origins
+
+## Commit Conventions
+
+Uses Conventional Commits format: `type(scope): description`
+
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
+
+**Scopes**: `frontend`, `backend`, `db`, `i18n`, `admin`, `api`, `ui`, `auth`, `media`
+
+**Examples**:
+```bash
+feat(admin): add media library with upload support
+fix(api): handle missing translation gracefully
+refactor(db): extract query functions to repository pattern
+```
 
 ## Versioning
 
