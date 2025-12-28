@@ -25,7 +25,7 @@ export function AltTextEditor({ mediaId, initialValue }: AltTextEditorProps) {
   const queryClient = useQueryClient();
   const [value, setValue] = useState(initialValue || '');
   const [showSaved, setShowSaved] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update value when initialValue changes
   useEffect(() => {

@@ -3,9 +3,8 @@
  *
  * Tests for trash view, restore, and permanent delete.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { MetadataPanel } from './MetadataPanel';
 import { MediaToolbar } from './MediaToolbar';
 import type { MediaItem } from '@/types/media';
@@ -22,22 +21,6 @@ const mockDeletedMedia: MediaItem = {
   createdAt: '2025-01-01T00:00:00.000Z',
   deletedAt: '2025-01-10T00:00:00.000Z',
 };
-
-function createTestQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-}
-
-function renderWithProviders(ui: React.ReactElement) {
-  const queryClient = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
-  );
-}
 
 describe('Trash Functionality', () => {
   beforeEach(() => {

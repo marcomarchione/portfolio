@@ -4,7 +4,7 @@
  * State management for the media library including pagination, filtering,
  * and URL search parameter synchronization.
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { get } from '@/lib/api/client';
