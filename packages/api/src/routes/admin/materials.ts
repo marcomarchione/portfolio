@@ -26,6 +26,7 @@ import {
   upsertTranslation,
 } from '../../db/queries';
 import type { ContentStatus, Language, MaterialCategory } from '../../db/schema';
+import type { ContentSortField, SortOrder } from '../../db/queries/content';
 
 /**
  * Formats a material for admin API response.
@@ -69,12 +70,18 @@ export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix
       const limit = query.limit ?? 20;
       const offset = query.offset ?? 0;
       const status = query.status as ContentStatus | undefined;
+      const search = query.search;
+      const sortBy = query.sortBy as ContentSortField | undefined;
+      const sortOrder = query.sortOrder as SortOrder | undefined;
 
       const options = {
         limit,
         offset,
         status,
         publishedOnly: false,
+        search,
+        sortBy,
+        sortOrder,
       };
 
       const materials = listMaterials(db, options);
@@ -95,7 +102,7 @@ export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix
         tags: ['admin', 'materials'],
         summary: 'List all materials (admin)',
         description:
-          'Returns a paginated list of all materials with all translations. Includes drafts and archived.',
+          'Returns a paginated list of all materials with all translations. Supports search by Italian title and sorting.',
       },
     }
   )

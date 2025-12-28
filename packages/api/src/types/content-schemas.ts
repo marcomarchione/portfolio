@@ -19,6 +19,14 @@ export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export const MATERIAL_CATEGORIES = ['guide', 'template', 'resource', 'tool'] as const;
 export type MaterialCategory = (typeof MATERIAL_CATEGORIES)[number];
 
+/** Sort fields for content lists */
+export const CONTENT_SORT_FIELDS = ['title', 'createdAt', 'updatedAt'] as const;
+export type ContentSortField = (typeof CONTENT_SORT_FIELDS)[number];
+
+/** Sort orders */
+export const SORT_ORDERS = ['asc', 'desc'] as const;
+export type SortOrder = (typeof SORT_ORDERS)[number];
+
 /**
  * Content status enum schema.
  * Validates draft/published/archived status values.
@@ -42,6 +50,22 @@ export const ProjectStatusSchema = Type.Union(
 export const MaterialCategorySchema = Type.Union(
   MATERIAL_CATEGORIES.map((cat) => Type.Literal(cat)),
   { description: 'Material category type' }
+);
+
+/**
+ * Content sort field enum schema.
+ */
+export const ContentSortFieldSchema = Type.Union(
+  CONTENT_SORT_FIELDS.map((field) => Type.Literal(field)),
+  { description: 'Field to sort by' }
+);
+
+/**
+ * Sort order enum schema.
+ */
+export const SortOrderSchema = Type.Union(
+  SORT_ORDERS.map((order) => Type.Literal(order)),
+  { description: 'Sort direction' }
 );
 
 /** URL schema - uses pattern for basic validation */
@@ -93,7 +117,7 @@ export type NewsQuery = Static<typeof NewsQuerySchema>;
 
 /**
  * Admin list query schema.
- * Adds status filter for admin endpoints.
+ * Adds status filter, search, and sorting for admin endpoints.
  */
 export const AdminListQuerySchema = Type.Object({
   limit: Type.Optional(
@@ -112,6 +136,13 @@ export const AdminListQuerySchema = Type.Object({
     })
   ),
   status: Type.Optional(ContentStatusSchema),
+  search: Type.Optional(
+    Type.String({
+      description: 'Search term to filter by Italian title',
+    })
+  ),
+  sortBy: Type.Optional(ContentSortFieldSchema),
+  sortOrder: Type.Optional(SortOrderSchema),
 });
 export type AdminListQuery = Static<typeof AdminListQuerySchema>;
 

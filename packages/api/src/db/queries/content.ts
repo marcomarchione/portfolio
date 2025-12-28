@@ -3,12 +3,18 @@
  *
  * Base content lookup and listing functions for content_base table.
  */
-import { eq, and, sql, desc, asc } from 'drizzle-orm';
+import { eq, and, sql, desc, asc, like } from 'drizzle-orm';
 import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import * as schema from '../schema';
 import type { ContentType, ContentStatus } from '../schema';
 
 type DrizzleDB = BunSQLiteDatabase<typeof schema>;
+
+/** Sort fields for content lists */
+export type ContentSortField = 'title' | 'createdAt' | 'updatedAt';
+
+/** Sort order */
+export type SortOrder = 'asc' | 'desc';
 
 /** Options for listing content */
 export interface ListContentOptions {
@@ -17,6 +23,12 @@ export interface ListContentOptions {
   status?: ContentStatus;
   featured?: boolean;
   publishedOnly?: boolean;
+  /** Search term to filter by Italian title (case-insensitive LIKE) */
+  search?: string;
+  /** Field to sort by */
+  sortBy?: ContentSortField;
+  /** Sort order */
+  sortOrder?: SortOrder;
 }
 
 /**

@@ -3,11 +3,12 @@
  *
  * Material-specific database operations.
  */
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, asc, like } from 'drizzle-orm';
 import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import type { SQL } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { ContentStatus, Language, MaterialCategory } from '../schema';
-import { getContentById, type ListContentOptions } from './content';
+import { getContentById, type ListContentOptions, type ContentSortField, type SortOrder } from './content';
 
 type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
@@ -105,16 +106,50 @@ export function getMaterialWithAllTranslations(db: DrizzleDB, id: number) {
 }
 
 /**
- * Lists materials with optional category filter.
+ * Builds sort clause based on options.
+ */
+function buildSortClause(
+  sortBy: ContentSortField = 'updatedAt',
+  sortOrder: SortOrder = 'desc',
+  hasItalianTitle: boolean
+): SQL[] {
+  const orderFn = sortOrder === 'asc' ? asc : desc;
+
+  switch (sortBy) {
+    case 'title':
+      if (hasItalianTitle) {
+        return [orderFn(schema.contentTranslations.title)];
+      }
+      return [orderFn(schema.contentBase.updatedAt)];
+    case 'createdAt':
+      return [orderFn(schema.contentBase.createdAt)];
+    case 'updatedAt':
+    default:
+      return [orderFn(schema.contentBase.updatedAt)];
+  }
+}
+
+/**
+ * Lists materials with optional category filter, search, and sorting.
  *
  * @param db - Drizzle database instance
  * @param options - List options
  * @returns Array of materials
  */
 export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}) {
-  const { limit = 20, offset = 0, status, featured, publishedOnly = false, category } = options;
+  const {
+    limit = 20,
+    offset = 0,
+    status,
+    featured,
+    publishedOnly = false,
+    category,
+    search,
+    sortBy = 'updatedAt',
+    sortOrder = 'desc',
+  } = options;
 
-  const conditions = [eq(schema.contentBase.type, 'material')];
+  const conditions: SQL[] = [eq(schema.contentBase.type, 'material')];
 
   if (status) {
     conditions.push(eq(schema.contentBase.status, status));
@@ -130,6 +165,40 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
     conditions.push(eq(schema.materials.category, category));
   }
 
+  // Determine if we need to join Italian translations (for search or title sort)
+  const needsItalianJoin = search || sortBy === 'title';
+
+  if (needsItalianJoin) {
+    if (search) {
+      conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+    }
+
+    const results = db
+      .select({
+        content: schema.contentBase,
+        material: schema.materials,
+      })
+      .from(schema.contentBase)
+      .innerJoin(schema.materials, eq(schema.contentBase.id, schema.materials.contentId))
+      .leftJoin(
+        schema.contentTranslations,
+        and(
+          eq(schema.contentBase.id, schema.contentTranslations.contentId),
+          eq(schema.contentTranslations.lang, 'it')
+        )
+      )
+      .where(and(...conditions))
+      .orderBy(...buildSortClause(sortBy, sortOrder, true))
+      .limit(limit)
+      .offset(offset)
+      .all();
+
+    return results.map((r) => ({
+      ...r.content,
+      ...r.material,
+    }));
+  }
+
   const results = db
     .select({
       content: schema.contentBase,
@@ -138,7 +207,7 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
     .from(schema.contentBase)
     .innerJoin(schema.materials, eq(schema.contentBase.id, schema.materials.contentId))
     .where(and(...conditions))
-    .orderBy(desc(schema.contentBase.publishedAt), desc(schema.contentBase.createdAt))
+    .orderBy(...buildSortClause(sortBy, sortOrder, false))
     .limit(limit)
     .offset(offset)
     .all();
@@ -157,9 +226,9 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
  * @returns Total count
  */
 export function countMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}) {
-  const { status, featured, publishedOnly = false, category } = options;
+  const { status, featured, publishedOnly = false, category, search } = options;
 
-  const conditions = [eq(schema.contentBase.type, 'material')];
+  const conditions: SQL[] = [eq(schema.contentBase.type, 'material')];
 
   if (status) {
     conditions.push(eq(schema.contentBase.status, status));
@@ -173,6 +242,26 @@ export function countMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}
 
   if (category) {
     conditions.push(eq(schema.materials.category, category));
+  }
+
+  if (search) {
+    conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+
+    const result = db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.contentBase)
+      .innerJoin(schema.materials, eq(schema.contentBase.id, schema.materials.contentId))
+      .leftJoin(
+        schema.contentTranslations,
+        and(
+          eq(schema.contentBase.id, schema.contentTranslations.contentId),
+          eq(schema.contentTranslations.lang, 'it')
+        )
+      )
+      .where(and(...conditions))
+      .get();
+
+    return result?.count ?? 0;
   }
 
   const result = db

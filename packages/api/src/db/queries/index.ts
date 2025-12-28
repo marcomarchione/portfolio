@@ -16,6 +16,15 @@ export {
   type ListContentOptions,
 } from './content';
 
+// Dashboard queries
+export {
+  getContentStatistics,
+  getRecentItems,
+  type ContentTypeStats,
+  type DashboardStats,
+  type RecentItem,
+} from './dashboard';
+
 // Project queries
 export {
   getProjectWithTranslation,

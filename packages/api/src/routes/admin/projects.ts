@@ -33,6 +33,7 @@ import {
   getProjectTechnologies,
 } from '../../db/queries';
 import type { ContentStatus, Language } from '../../db/schema';
+import type { ContentSortField, SortOrder } from '../../db/queries/content';
 
 /**
  * Formats a project for admin API response.
@@ -79,12 +80,18 @@ export const adminProjectsRoutes = new Elysia({ name: 'admin-projects', prefix: 
       const limit = query.limit ?? 20;
       const offset = query.offset ?? 0;
       const status = query.status as ContentStatus | undefined;
+      const search = query.search;
+      const sortBy = query.sortBy as ContentSortField | undefined;
+      const sortOrder = query.sortOrder as SortOrder | undefined;
 
       const options = {
         limit,
         offset,
         status,
         publishedOnly: false,
+        search,
+        sortBy,
+        sortOrder,
       };
 
       const projects = listProjects(db, options);
@@ -105,7 +112,7 @@ export const adminProjectsRoutes = new Elysia({ name: 'admin-projects', prefix: 
         tags: ['admin', 'projects'],
         summary: 'List all projects (admin)',
         description:
-          'Returns a paginated list of all projects with all translations. Includes drafts and archived.',
+          'Returns a paginated list of all projects with all translations. Supports search by Italian title and sorting.',
       },
     }
   )

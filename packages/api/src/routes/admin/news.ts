@@ -30,6 +30,7 @@ import {
   removeTag,
 } from '../../db/queries';
 import type { ContentStatus, Language } from '../../db/schema';
+import type { ContentSortField, SortOrder } from '../../db/queries/content';
 
 /**
  * Formats a news item for admin API response.
@@ -73,12 +74,18 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
       const limit = query.limit ?? 20;
       const offset = query.offset ?? 0;
       const status = query.status as ContentStatus | undefined;
+      const search = query.search;
+      const sortBy = query.sortBy as ContentSortField | undefined;
+      const sortOrder = query.sortOrder as SortOrder | undefined;
 
       const options = {
         limit,
         offset,
         status,
         publishedOnly: false,
+        search,
+        sortBy,
+        sortOrder,
       };
 
       const newsItems = listNews(db, options);
@@ -99,7 +106,7 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
         tags: ['admin', 'news'],
         summary: 'List all news (admin)',
         description:
-          'Returns a paginated list of all news items with all translations. Includes drafts and archived.',
+          'Returns a paginated list of all news items with all translations. Supports search by Italian title and sorting.',
       },
     }
   )

@@ -3,11 +3,12 @@
  *
  * News-specific database operations including joins with tags.
  */
-import { eq, and, sql, desc, inArray } from 'drizzle-orm';
+import { eq, and, sql, desc, asc, inArray, like } from 'drizzle-orm';
 import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import type { SQL } from 'drizzle-orm';
 import * as schema from '../schema';
 import type { ContentStatus, Language } from '../schema';
-import { getContentById, type ListContentOptions } from './content';
+import { getContentById, type ListContentOptions, type ContentSortField, type SortOrder } from './content';
 
 type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
@@ -122,16 +123,50 @@ export function getNewsWithAllTranslations(db: DrizzleDB, id: number) {
 }
 
 /**
- * Lists news with optional tag filter.
+ * Builds sort clause based on options.
+ */
+function buildSortClause(
+  sortBy: ContentSortField = 'updatedAt',
+  sortOrder: SortOrder = 'desc',
+  hasItalianTitle: boolean
+): SQL[] {
+  const orderFn = sortOrder === 'asc' ? asc : desc;
+
+  switch (sortBy) {
+    case 'title':
+      if (hasItalianTitle) {
+        return [orderFn(schema.contentTranslations.title)];
+      }
+      return [orderFn(schema.contentBase.updatedAt)];
+    case 'createdAt':
+      return [orderFn(schema.contentBase.createdAt)];
+    case 'updatedAt':
+    default:
+      return [orderFn(schema.contentBase.updatedAt)];
+  }
+}
+
+/**
+ * Lists news with optional tag filter, search, and sorting.
  *
  * @param db - Drizzle database instance
  * @param options - List options
  * @returns Array of news items
  */
 export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
-  const { limit = 20, offset = 0, status, featured, publishedOnly = false, tag } = options;
+  const {
+    limit = 20,
+    offset = 0,
+    status,
+    featured,
+    publishedOnly = false,
+    tag,
+    search,
+    sortBy = 'updatedAt',
+    sortOrder = 'desc',
+  } = options;
 
-  const conditions = [eq(schema.contentBase.type, 'news')];
+  const conditions: SQL[] = [eq(schema.contentBase.type, 'news')];
 
   if (status) {
     conditions.push(eq(schema.contentBase.status, status));
@@ -169,6 +204,40 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     }
   }
 
+  // Determine if we need to join Italian translations (for search or title sort)
+  const needsItalianJoin = search || sortBy === 'title';
+
+  if (needsItalianJoin) {
+    if (search) {
+      conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+    }
+
+    const results = db
+      .select({
+        content: schema.contentBase,
+        news: schema.news,
+      })
+      .from(schema.contentBase)
+      .innerJoin(schema.news, eq(schema.contentBase.id, schema.news.contentId))
+      .leftJoin(
+        schema.contentTranslations,
+        and(
+          eq(schema.contentBase.id, schema.contentTranslations.contentId),
+          eq(schema.contentTranslations.lang, 'it')
+        )
+      )
+      .where(and(...conditions))
+      .orderBy(...buildSortClause(sortBy, sortOrder, true))
+      .limit(limit)
+      .offset(offset)
+      .all();
+
+    return results.map((r) => ({
+      ...r.content,
+      ...r.news,
+    }));
+  }
+
   const results = db
     .select({
       content: schema.contentBase,
@@ -177,7 +246,7 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     .from(schema.contentBase)
     .innerJoin(schema.news, eq(schema.contentBase.id, schema.news.contentId))
     .where(and(...conditions))
-    .orderBy(desc(schema.contentBase.publishedAt), desc(schema.contentBase.createdAt))
+    .orderBy(...buildSortClause(sortBy, sortOrder, false))
     .limit(limit)
     .offset(offset)
     .all();
@@ -196,9 +265,9 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
  * @returns Total count
  */
 export function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
-  const { status, featured, publishedOnly = false, tag } = options;
+  const { status, featured, publishedOnly = false, tag, search } = options;
 
-  const conditions = [eq(schema.contentBase.type, 'news')];
+  const conditions: SQL[] = [eq(schema.contentBase.type, 'news')];
 
   if (status) {
     conditions.push(eq(schema.contentBase.status, status));
@@ -234,6 +303,26 @@ export function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     } else {
       return 0;
     }
+  }
+
+  if (search) {
+    conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+
+    const result = db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.contentBase)
+      .innerJoin(schema.news, eq(schema.contentBase.id, schema.news.contentId))
+      .leftJoin(
+        schema.contentTranslations,
+        and(
+          eq(schema.contentBase.id, schema.contentTranslations.contentId),
+          eq(schema.contentTranslations.lang, 'it')
+        )
+      )
+      .where(and(...conditions))
+      .get();
+
+    return result?.count ?? 0;
   }
 
   const result = db

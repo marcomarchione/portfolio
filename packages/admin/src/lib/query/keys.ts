@@ -6,6 +6,18 @@
  */
 
 /**
+ * Dashboard query keys.
+ */
+export const dashboardKeys = {
+  /** All dashboard-related queries */
+  all: ['dashboard'] as const,
+  /** Dashboard statistics */
+  stats: () => [...dashboardKeys.all, 'stats'] as const,
+  /** Recent items */
+  recent: (limit?: number) => [...dashboardKeys.all, 'recent', { limit }] as const,
+};
+
+/**
  * Project query keys.
  */
 export const projectKeys = {
