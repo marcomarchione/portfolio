@@ -116,12 +116,26 @@ export const NewsQuerySchema = Type.Object({
 export type NewsQuery = Static<typeof NewsQuerySchema>;
 
 /**
+ * Integer or numeric string schema for query params.
+ * Query parameters come as strings, so we need to decode them.
+ */
+const IntegerOrString = (opts: { minimum?: number; maximum?: number; default?: number; description?: string }) =>
+  Type.Transform(
+    Type.Union([
+      Type.Number(opts),
+      Type.String({ pattern: '^-?[0-9]+$' }),
+    ])
+  )
+    .Decode((value) => (typeof value === 'string' ? parseInt(value, 10) : value))
+    .Encode((value) => value);
+
+/**
  * Admin list query schema.
  * Adds status filter, search, and sorting for admin endpoints.
  */
 export const AdminListQuerySchema = Type.Object({
   limit: Type.Optional(
-    Type.Integer({
+    IntegerOrString({
       minimum: 1,
       maximum: 100,
       default: 20,
@@ -129,7 +143,7 @@ export const AdminListQuerySchema = Type.Object({
     })
   ),
   offset: Type.Optional(
-    Type.Integer({
+    IntegerOrString({
       minimum: 0,
       default: 0,
       description: 'Number of items to skip',

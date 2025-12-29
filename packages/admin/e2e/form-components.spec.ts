@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
 
 const ADMIN_URL = 'http://localhost:5173';
 const API_URL = 'http://localhost:3000';
@@ -16,7 +17,7 @@ test.describe('Admin Panel Form Components', () => {
     if (await loginForm.isVisible()) {
       // Try to login with admin credentials
       await page.fill('input[type="text"], input[name="username"]', 'admin');
-      await page.fill('input[type="password"]', 'admin123');
+      await page.fill('input[type="password"]', 'admin');
       await page.click('button[type="submit"]');
 
       // Wait for navigation after login
@@ -26,14 +27,14 @@ test.describe('Admin Panel Form Components', () => {
 
   test('Technologies selector loads without 500 error', async ({ page }) => {
     // Navigate to Projects -> New Project
-    await page.click('text=Projects');
+    await page.click('nav >> text=Projects');
     await page.waitForLoadState('networkidle');
 
     // Take screenshot of projects list
     await page.screenshot({ path: 'e2e/screenshots/01-projects-list.png', fullPage: true });
 
     // Click on New Project button
-    const newProjectBtn = page.locator('text=New Project, text=Add Project, button:has-text("New"), a:has-text("New")').first();
+    const newProjectBtn = page.locator('a:has-text("New Project")');
     await newProjectBtn.click();
     await page.waitForLoadState('networkidle');
 
@@ -44,7 +45,7 @@ test.describe('Admin Panel Form Components', () => {
     const techSelector = page.locator('[data-testid="technologies-selector"], label:has-text("Technologies"), text=Technologies');
 
     // Check for any error messages
-    const errorMessages = page.locator('.error, [class*="error"], text=500, text=Error');
+    const errorMessages = page.locator('.error, [class*="error"]');
     const errorCount = await errorMessages.count();
 
     console.log('Error messages found:', errorCount);
@@ -55,10 +56,10 @@ test.describe('Admin Panel Form Components', () => {
 
   test('MarkdownEditor works correctly', async ({ page }) => {
     // Navigate to Projects -> New Project
-    await page.click('text=Projects');
+    await page.click('nav >> text=Projects');
     await page.waitForLoadState('networkidle');
 
-    const newProjectBtn = page.locator('text=New Project, text=Add Project, button:has-text("New"), a:has-text("New")').first();
+    const newProjectBtn = page.locator('a:has-text("New Project")');
     await newProjectBtn.click();
     await page.waitForLoadState('networkidle');
 
@@ -77,10 +78,10 @@ test.describe('Admin Panel Form Components', () => {
 
   test('LanguageTabs switch between languages', async ({ page }) => {
     // Navigate to Projects -> New Project
-    await page.click('text=Projects');
+    await page.click('nav >> text=Projects');
     await page.waitForLoadState('networkidle');
 
-    const newProjectBtn = page.locator('text=New Project, text=Add Project, button:has-text("New"), a:has-text("New")').first();
+    const newProjectBtn = page.locator('a:has-text("New Project")');
     await newProjectBtn.click();
     await page.waitForLoadState('networkidle');
 
@@ -121,7 +122,7 @@ test.describe('Admin Panel Form Components', () => {
 
   test('Materials form works', async ({ page }) => {
     // Navigate to Materials
-    await page.click('text=Materials');
+    await page.click('nav >> text=Materials');
     await page.waitForLoadState('networkidle');
 
     await page.screenshot({ path: 'e2e/screenshots/09-materials-list.png', fullPage: true });
@@ -140,7 +141,7 @@ test.describe('Admin Panel Form Components', () => {
 
   test('News form works', async ({ page }) => {
     // Navigate to News
-    await page.click('text=News');
+    await page.click('nav >> text=News');
     await page.waitForLoadState('networkidle');
 
     await page.screenshot({ path: 'e2e/screenshots/11-news-list.png', fullPage: true });
@@ -207,7 +208,6 @@ test.describe('Admin Panel Form Components', () => {
     console.log('Network errors:', networkErrors);
 
     // Save errors to file
-    const fs = require('fs');
     fs.writeFileSync('e2e/screenshots/errors.json', JSON.stringify({
       consoleErrors,
       networkErrors

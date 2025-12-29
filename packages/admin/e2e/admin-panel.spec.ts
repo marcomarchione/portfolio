@@ -205,8 +205,8 @@ test.describe('Responsive Behavior', () => {
     await page.click('button[aria-label="Toggle menu"]');
     await expect(page.locator('[role="dialog"]')).toBeVisible();
 
-    // Click on Projects link
-    await page.click('text=Projects');
+    // Click on Projects link in the sidebar dialog
+    await page.locator('[role="dialog"] >> a:has-text("Projects")').click();
 
     // Should navigate to Projects
     await expect(page).toHaveURL('/projects');
