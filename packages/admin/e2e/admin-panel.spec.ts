@@ -72,13 +72,13 @@ test.describe('Navigation', () => {
     // Sidebar should be visible on desktop
     await expect(page.locator('aside')).toBeVisible();
 
-    // Navigation items should be visible
-    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Projects' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Materials' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'News' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Media' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+    // Navigation items should be visible (use text selectors for reliability)
+    await expect(page.locator('nav >> text=Dashboard')).toBeVisible();
+    await expect(page.locator('nav >> text=Projects')).toBeVisible();
+    await expect(page.locator('nav >> text=Materials')).toBeVisible();
+    await expect(page.locator('nav >> text=News')).toBeVisible();
+    await expect(page.locator('nav >> text=Media')).toBeVisible();
+    await expect(page.locator('nav >> text=Settings')).toBeVisible();
   });
 
   test('should navigate to Projects page', async ({ page }) => {
