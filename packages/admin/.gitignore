@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Playwright test output
+e2e/test-results/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
