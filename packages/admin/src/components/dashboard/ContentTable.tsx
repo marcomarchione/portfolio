@@ -5,7 +5,7 @@
  * Supports sorting, row selection, and action buttons.
  */
 import { Link } from 'react-router-dom';
-import { Edit, Archive, MoreHorizontal } from 'lucide-react';
+import { Edit, Archive } from 'lucide-react';
 import type { ContentStatus, Language } from '@marcomarchione/shared';
 import { StatusBadge } from './StatusBadge';
 import { TranslationIndicator } from './TranslationIndicator';
@@ -18,7 +18,9 @@ export interface ContentItem {
   slug: string;
   status: ContentStatus;
   featured: boolean;
+  createdAt: string;
   updatedAt: string;
+  publishedAt: string | null;
   translations: Array<{
     lang: Language;
     title: string;

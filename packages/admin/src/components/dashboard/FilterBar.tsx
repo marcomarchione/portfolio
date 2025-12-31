@@ -8,7 +8,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Filter, ArrowUpDown, X, ChevronDown, Check } from 'lucide-react';
 import type { ContentStatus } from '@marcomarchione/shared';
-import { CONTENT_STATUSES } from '@marcomarchione/shared';
 
 export type SortField = 'title' | 'createdAt' | 'updatedAt';
 export type SortOrder = 'asc' | 'desc';

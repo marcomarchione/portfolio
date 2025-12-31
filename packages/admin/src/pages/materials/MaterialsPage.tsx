@@ -66,7 +66,9 @@ export default function MaterialsPage() {
     slug: item.slug,
     status: item.status,
     featured: item.featured,
+    createdAt: item.createdAt,
     updatedAt: item.updatedAt,
+    publishedAt: item.publishedAt,
     translations: item.translations.map((t) => ({
       lang: t.lang as Language,
       title: t.title,
@@ -123,11 +125,11 @@ export default function MaterialsPage() {
       {/* Archive Confirmation Dialog */}
       <ConfirmDialog
         isOpen={archiveId !== null}
-        onClose={() => setArchiveId(null)}
+        onCancel={() => setArchiveId(null)}
         onConfirm={confirmArchive}
         title="Archive Material"
-        description="Are you sure you want to archive this material? It will be moved to the archived status and hidden from public view."
-        confirmText="Archive"
+        message="Are you sure you want to archive this material? It will be moved to the archived status and hidden from public view."
+        confirmLabel="Archive"
         isLoading={isArchiving}
       />
     </Page>

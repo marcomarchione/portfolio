@@ -24,7 +24,7 @@ import {
 } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
-import { projectKeys, settingsKeys } from '@/lib/query/keys';
+import { projectKeys } from '@/lib/query/keys';
 import { showSuccess, showApiError } from '@/components/common/Toast';
 import { validateUrl } from '@/lib/validation/content';
 import type { Project, ContentStatus, Language, ProjectStatus as ProjectStatusType } from '@marcomarchione/shared';
@@ -175,30 +175,6 @@ export default function ProjectFormPage() {
     }) => put<ApiResponse<Project>>(`/admin/projects/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
-    },
-  });
-
-  // Update translation mutation
-  const updateTranslationMutation = useMutation({
-    mutationFn: ({ lang, data }: {
-      lang: Language;
-      data: {
-        title: string;
-        description?: string | null;
-        body?: string | null;
-        metaTitle?: string | null;
-        metaDescription?: string | null;
-      };
-    }) => put<ApiResponse<unknown>>(`/admin/projects/${id}/translations/${lang}`, data),
-  });
-
-  // Assign technologies mutation
-  const assignTechnologiesMutation = useMutation({
-    mutationFn: (technologyIds: number[]) =>
-      post<ApiResponse<Project>>(`/admin/projects/${id}/technologies`, { technologyIds }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(id || '') });
-      queryClient.invalidateQueries({ queryKey: settingsKeys.technologies() });
     },
   });
 

@@ -127,7 +127,9 @@ describe('ContentTable', () => {
       slug: 'test-project',
       status: 'published' as const,
       featured: true,
+      createdAt: '2024-01-14T10:00:00Z',
       updatedAt: '2024-01-15T10:00:00Z',
+      publishedAt: '2024-01-15T10:00:00Z',
       translations: [
         { lang: 'it' as const, title: 'Progetto Test' },
         { lang: 'en' as const, title: 'Test Project' },

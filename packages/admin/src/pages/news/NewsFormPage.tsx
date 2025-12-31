@@ -26,7 +26,7 @@ import {
 import type { SelectedMedia } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
-import { newsKeys, settingsKeys } from '@/lib/query/keys';
+import { newsKeys } from '@/lib/query/keys';
 import { showSuccess, showApiError } from '@/components/common/Toast';
 import type { News, ContentStatus, Language } from '@marcomarchione/shared';
 import { LANGUAGES } from '@marcomarchione/shared';
@@ -145,30 +145,6 @@ export default function NewsFormPage() {
     }) => put<ApiResponse<News>>(`/admin/news/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: newsKeys.all });
-    },
-  });
-
-  // Update translation mutation
-  const updateTranslationMutation = useMutation({
-    mutationFn: ({ lang, data }: {
-      lang: Language;
-      data: {
-        title: string;
-        description?: string | null;
-        body?: string | null;
-        metaTitle?: string | null;
-        metaDescription?: string | null;
-      };
-    }) => put<ApiResponse<unknown>>(`/admin/news/${id}/translations/${lang}`, data),
-  });
-
-  // Assign tags mutation
-  const assignTagsMutation = useMutation({
-    mutationFn: (tagIds: number[]) =>
-      post<ApiResponse<News>>(`/admin/news/${id}/tags`, { tagIds }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: newsKeys.detail(id || '') });
-      queryClient.invalidateQueries({ queryKey: settingsKeys.tags() });
     },
   });
 

@@ -4,9 +4,6 @@
  * Tests for dashboard and content list page functionality.
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
 import { useContentList } from '@/hooks/useContentList';
 import { useArchiveContent } from '@/hooks/useArchiveContent';
 
@@ -18,19 +15,6 @@ vi.mock('@/lib/api/client', () => ({
   del: vi.fn(),
 }));
 
-// Test wrapper with providers
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{children}</BrowserRouter>
-    </QueryClientProvider>
-  );
-}
-
 describe('useContentList hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -39,8 +23,8 @@ describe('useContentList hook', () => {
   test('returns items and pagination data', () => {
     const mockData = {
       items: [
-        { id: 1, slug: 'test-1', status: 'draft', featured: false, updatedAt: '2024-01-15', translations: [] },
-        { id: 2, slug: 'test-2', status: 'published', featured: true, updatedAt: '2024-01-16', translations: [] },
+        { id: 1, slug: 'test-1', status: 'draft' as const, featured: false, createdAt: '2024-01-14', updatedAt: '2024-01-15', publishedAt: null, translations: [] },
+        { id: 2, slug: 'test-2', status: 'published' as const, featured: true, createdAt: '2024-01-15', updatedAt: '2024-01-16', publishedAt: '2024-01-16', translations: [] },
       ],
       total: 2,
       totalPages: 1,

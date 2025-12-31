@@ -174,20 +174,6 @@ export default function MaterialFormPage() {
     },
   });
 
-  // Update translation mutation
-  const updateTranslationMutation = useMutation({
-    mutationFn: ({ lang, data }: {
-      lang: Language;
-      data: {
-        title: string;
-        description?: string | null;
-        body?: string | null;
-        metaTitle?: string | null;
-        metaDescription?: string | null;
-      };
-    }) => put<ApiResponse<unknown>>(`/admin/materials/${id}/translations/${lang}`, data),
-  });
-
   // Status update mutation
   const updateStatusMutation = useMutation({
     mutationFn: (status: ContentStatus) =>

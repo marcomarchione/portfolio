@@ -30,14 +30,9 @@ export interface ContentListItem {
   updatedAt: string;
   publishedAt: string | null;
   translations: Array<{
-    id: number;
-    contentId: number;
     lang: Language;
     title: string;
-    description: string | null;
-    body: string | null;
-    metaTitle: string | null;
-    metaDescription: string | null;
+    [key: string]: unknown;
   }>;
 }
 
