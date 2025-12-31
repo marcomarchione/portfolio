@@ -260,6 +260,19 @@ test.describe('Full CRUD Operations', () => {
       await page.screenshot({ path: 'e2e/screenshots/03-projects-list.png', fullPage: true });
     });
 
+    test('Count in subtitle matches actual table rows', async ({ page }) => {
+      // Get the subtitle with count (e.g., "18 projects")
+      const subtitle = await page.locator('text=/\\d+ projects?/').first().innerText();
+      const displayedCount = parseInt(subtitle.match(/(\d+)/)?.[1] || '0', 10);
+
+      // Count actual rows in the table
+      const tableRows = await page.locator('table tbody tr').count();
+
+      // They should match (unless paginated, which uses limit 20)
+      const expectedRows = displayedCount > 20 ? 20 : displayedCount;
+      expect(tableRows).toBe(expectedRows);
+    });
+
     test('Can view project details', async ({ page }) => {
       // Click edit icon in first row
       const editLink = page.locator('table tbody tr').first().locator('a').first();
@@ -307,6 +320,15 @@ test.describe('Full CRUD Operations', () => {
       await page.screenshot({ path: 'e2e/screenshots/07-materials-list.png', fullPage: true });
     });
 
+    test('Count in subtitle matches actual table rows', async ({ page }) => {
+      await expect(page.locator('h1:has-text("Materials")')).toBeVisible({ timeout: 15000 });
+      const subtitle = await page.locator('text=/\\d+ materials?/').first().innerText();
+      const displayedCount = parseInt(subtitle.match(/(\d+)/)?.[1] || '0', 10);
+      const tableRows = await page.locator('table tbody tr').count();
+      const expectedRows = displayedCount > 20 ? 20 : displayedCount;
+      expect(tableRows).toBe(expectedRows);
+    });
+
     test('Can view material details', async ({ page }) => {
       await page.waitForTimeout(1000);
       const editLink = page.locator('table tbody tr').first().locator('a').first();
@@ -329,6 +351,15 @@ test.describe('Full CRUD Operations', () => {
       const table = page.locator('table').first();
       await expect(table).toBeVisible({ timeout: 10000 });
       await page.screenshot({ path: 'e2e/screenshots/09-news-list.png', fullPage: true });
+    });
+
+    test('Count in subtitle matches actual table rows', async ({ page }) => {
+      await expect(page.locator('h1:has-text("News")')).toBeVisible({ timeout: 15000 });
+      const subtitle = await page.locator('text=/\\d+ articles?/').first().innerText();
+      const displayedCount = parseInt(subtitle.match(/(\d+)/)?.[1] || '0', 10);
+      const tableRows = await page.locator('table tbody tr').count();
+      const expectedRows = displayedCount > 20 ? 20 : displayedCount;
+      expect(tableRows).toBe(expectedRows);
     });
 
     test('Can view news details', async ({ page }) => {

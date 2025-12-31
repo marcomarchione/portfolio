@@ -144,6 +144,23 @@ export default function ProjectFormPage() {
     validateSpecificFields: validateProjectFields,
   });
 
+  // Create mutation for new projects
+  const createProjectMutation = useMutation({
+    mutationFn: (data: {
+      slug: string;
+      status?: ContentStatus;
+      featured?: boolean;
+      githubUrl?: string | null;
+      demoUrl?: string | null;
+      projectStatus?: ProjectStatusType;
+      startDate?: string | null;
+      endDate?: string | null;
+    }) => post<ApiResponse<Project>>('/admin/projects', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+    },
+  });
+
   // Update mutation for shared + project fields
   const updateProjectMutation = useMutation({
     mutationFn: (data: {
@@ -212,41 +229,82 @@ export default function ProjectFormPage() {
     form.setIsSubmitting(true);
 
     try {
-      // 1. Update shared + project fields
-      await updateProjectMutation.mutateAsync({
-        slug: form.sharedFields.slug,
-        featured: form.sharedFields.featured,
-        githubUrl: form.specificFields.githubUrl,
-        demoUrl: form.specificFields.demoUrl,
-        projectStatus: form.specificFields.projectStatus,
-        startDate: form.specificFields.startDate,
-        endDate: form.specificFields.endDate,
-      });
+      let projectId: string;
 
-      // 2. Update translations for each language that has content
+      if (isEditing) {
+        // Update existing project
+        await updateProjectMutation.mutateAsync({
+          slug: form.sharedFields.slug,
+          featured: form.sharedFields.featured,
+          githubUrl: form.specificFields.githubUrl,
+          demoUrl: form.specificFields.demoUrl,
+          projectStatus: form.specificFields.projectStatus,
+          startDate: form.specificFields.startDate,
+          endDate: form.specificFields.endDate,
+        });
+        projectId = id!;
+      } else {
+        // Create new project - only send non-null optional values
+        const createData: {
+          slug: string;
+          featured?: boolean;
+          githubUrl?: string;
+          demoUrl?: string;
+          projectStatus?: typeof form.specificFields.projectStatus;
+          startDate?: string;
+          endDate?: string;
+        } = {
+          slug: form.sharedFields.slug,
+          featured: form.sharedFields.featured,
+          projectStatus: form.specificFields.projectStatus,
+        };
+        if (form.specificFields.githubUrl) createData.githubUrl = form.specificFields.githubUrl;
+        if (form.specificFields.demoUrl) createData.demoUrl = form.specificFields.demoUrl;
+        if (form.specificFields.startDate) createData.startDate = form.specificFields.startDate;
+        if (form.specificFields.endDate) createData.endDate = form.specificFields.endDate;
+
+        const response = await createProjectMutation.mutateAsync(createData);
+        projectId = String(response.data.id);
+      }
+
+      // 2. Save translations for each language that has content
       const translationPromises = LANGUAGES.map(async (lang) => {
         const translation = form.translations[lang];
         if (translation?.title) {
-          await updateTranslationMutation.mutateAsync({
-            lang,
-            data: {
-              title: translation.title,
-              description: translation.description || null,
-              body: translation.body || null,
-              metaTitle: translation.metaTitle || null,
-              metaDescription: translation.metaDescription || null,
-            },
-          });
+          const translationData: {
+            title: string;
+            description?: string;
+            body?: string;
+            metaTitle?: string;
+            metaDescription?: string;
+          } = { title: translation.title };
+          if (translation.description) translationData.description = translation.description;
+          if (translation.body) translationData.body = translation.body;
+          if (translation.metaTitle) translationData.metaTitle = translation.metaTitle;
+          if (translation.metaDescription) translationData.metaDescription = translation.metaDescription;
+
+          await put<ApiResponse<unknown>>(`/admin/projects/${projectId}/translations/${lang}`, translationData);
         }
       });
 
       await Promise.all(translationPromises);
 
-      // 3. Update technologies
-      await assignTechnologiesMutation.mutateAsync(form.specificFields.technologyIds);
+      // 3. Assign technologies
+      if (form.specificFields.technologyIds.length > 0) {
+        await post<ApiResponse<Project>>(`/admin/projects/${projectId}/technologies`, {
+          technologyIds: form.specificFields.technologyIds,
+        });
+      }
 
-      showSuccess('Project saved successfully');
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(id || '') });
+      showSuccess(isEditing ? 'Project saved successfully' : 'Project created successfully');
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+
+      // Navigate to edit page if we just created
+      if (!isEditing) {
+        navigate(`/projects/${projectId}/edit`);
+      } else {
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+      }
     } catch (error) {
       showApiError(error);
     } finally {

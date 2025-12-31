@@ -98,9 +98,11 @@ export function getMaterialWithAllTranslations(db: DrizzleDB, id: number) {
     .where(eq(schema.contentTranslations.contentId, id))
     .all();
 
+  // Return with content.id as the primary id (not material.id)
   return {
     ...content,
     ...material,
+    id: content.id, // Ensure content_base ID is used
     translations,
   };
 }
@@ -196,6 +198,7 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
     return results.map((r) => ({
       ...r.content,
       ...r.material,
+      id: r.content.id, // Ensure content_base ID is used, not materials.id
     }));
   }
 
@@ -215,6 +218,7 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
   return results.map((r) => ({
     ...r.content,
     ...r.material,
+    id: r.content.id, // Ensure content_base ID is used, not materials.id
   }));
 }
 
@@ -320,9 +324,11 @@ export function createMaterial(db: DrizzleDB, data: CreateMaterialData) {
     .where(eq(schema.materials.contentId, content.id))
     .get()!;
 
+  // Return with content.id as the primary id (not material.id)
   return {
     ...content,
     ...material,
+    id: content.id, // Ensure content_base ID is used
     translations: [],
   };
 }

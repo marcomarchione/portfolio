@@ -126,9 +126,11 @@ export function getProjectWithAllTranslations(db: DrizzleDB, id: number) {
     .all()
     .map((r) => r.technology);
 
+  // Return with content.id as the primary id (not project.id)
   return {
     ...content,
     ...project,
+    id: content.id, // Ensure content_base ID is used
     translations,
     technologies,
   };
@@ -250,6 +252,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
     return results.map((r) => ({
       ...r.content,
       ...r.project,
+      id: r.content.id, // Ensure content_base ID is used, not projects.id
     }));
   }
 
@@ -270,6 +273,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
   return results.map((r) => ({
     ...r.content,
     ...r.project,
+    id: r.content.id, // Ensure content_base ID is used, not projects.id
   }));
 }
 
@@ -400,9 +404,11 @@ export function createProject(db: DrizzleDB, data: CreateProjectData) {
     .where(eq(schema.projects.contentId, content.id))
     .get()!;
 
+  // Return with content.id as the primary id (not project.id)
   return {
     ...content,
     ...project,
+    id: content.id, // Ensure content_base ID is used
     translations: [],
     technologies: [],
   };

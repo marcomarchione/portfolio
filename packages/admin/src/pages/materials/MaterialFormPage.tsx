@@ -24,7 +24,7 @@ import {
 } from '@/components/forms';
 import type { SelectedMedia } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
-import { get, put, patch } from '@/lib/api/client';
+import { get, put, post, patch } from '@/lib/api/client';
 import { materialKeys } from '@/lib/query/keys';
 import { showSuccess, showApiError } from '@/components/common/Toast';
 import { validateUrl } from '@/lib/validation/content';
@@ -144,6 +144,21 @@ export default function MaterialFormPage() {
     validateSpecificFields: validateMaterialFields,
   });
 
+  // Create mutation for new materials
+  const createMaterialMutation = useMutation({
+    mutationFn: (data: {
+      slug: string;
+      category: MaterialCategory;
+      downloadUrl: string;
+      status?: ContentStatus;
+      featured?: boolean;
+      fileSize?: number | null;
+    }) => post<ApiResponse<Material>>('/admin/materials', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: materialKeys.all });
+    },
+  });
+
   // Update mutation for shared + material fields
   const updateMaterialMutation = useMutation({
     mutationFn: (data: {
@@ -204,36 +219,69 @@ export default function MaterialFormPage() {
     form.setIsSubmitting(true);
 
     try {
-      // 1. Update shared + material fields
-      await updateMaterialMutation.mutateAsync({
-        slug: form.sharedFields.slug,
-        featured: form.sharedFields.featured,
-        category: form.specificFields.category,
-        downloadUrl: form.specificFields.downloadUrl,
-        fileSize: form.specificFields.fileSize,
-      });
+      let materialId: string;
 
-      // 2. Update translations
+      if (isEditing) {
+        // Update existing material
+        await updateMaterialMutation.mutateAsync({
+          slug: form.sharedFields.slug,
+          featured: form.sharedFields.featured,
+          category: form.specificFields.category,
+          downloadUrl: form.specificFields.downloadUrl,
+          fileSize: form.specificFields.fileSize,
+        });
+        materialId = id!;
+      } else {
+        // Create new material - only send non-null optional values
+        const createData: {
+          slug: string;
+          category: typeof form.specificFields.category;
+          downloadUrl: string;
+          featured?: boolean;
+          fileSize?: number;
+        } = {
+          slug: form.sharedFields.slug,
+          category: form.specificFields.category,
+          downloadUrl: form.specificFields.downloadUrl,
+          featured: form.sharedFields.featured,
+        };
+        if (form.specificFields.fileSize !== null) createData.fileSize = form.specificFields.fileSize;
+
+        const response = await createMaterialMutation.mutateAsync(createData);
+        materialId = String(response.data.id);
+      }
+
+      // 2. Save translations
       const translationPromises = LANGUAGES.map(async (lang) => {
         const translation = form.translations[lang];
         if (translation?.title) {
-          await updateTranslationMutation.mutateAsync({
-            lang,
-            data: {
-              title: translation.title,
-              description: translation.description || null,
-              body: translation.body || null,
-              metaTitle: translation.metaTitle || null,
-              metaDescription: translation.metaDescription || null,
-            },
-          });
+          const translationData: {
+            title: string;
+            description?: string;
+            body?: string;
+            metaTitle?: string;
+            metaDescription?: string;
+          } = { title: translation.title };
+          if (translation.description) translationData.description = translation.description;
+          if (translation.body) translationData.body = translation.body;
+          if (translation.metaTitle) translationData.metaTitle = translation.metaTitle;
+          if (translation.metaDescription) translationData.metaDescription = translation.metaDescription;
+
+          await put<ApiResponse<unknown>>(`/admin/materials/${materialId}/translations/${lang}`, translationData);
         }
       });
 
       await Promise.all(translationPromises);
 
-      showSuccess('Material saved successfully');
-      queryClient.invalidateQueries({ queryKey: materialKeys.detail(id || '') });
+      showSuccess(isEditing ? 'Material saved successfully' : 'Material created successfully');
+      queryClient.invalidateQueries({ queryKey: materialKeys.all });
+
+      // Navigate to edit page if we just created
+      if (!isEditing) {
+        navigate(`/materials/${materialId}/edit`);
+      } else {
+        queryClient.invalidateQueries({ queryKey: materialKeys.detail(materialId) });
+      }
     } catch (error) {
       showApiError(error);
     } finally {

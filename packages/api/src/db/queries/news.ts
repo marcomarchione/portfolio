@@ -114,9 +114,11 @@ export function getNewsWithAllTranslations(db: DrizzleDB, id: number) {
     .all()
     .map((r) => r.tag);
 
+  // Return with content.id as the primary id (not newsItem.id)
   return {
     ...content,
     ...newsItem,
+    id: content.id, // Ensure content_base ID is used
     translations,
     tags,
   };
@@ -235,6 +237,7 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     return results.map((r) => ({
       ...r.content,
       ...r.news,
+      id: r.content.id, // Ensure content_base ID is used, not news.id
     }));
   }
 
@@ -254,6 +257,7 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
   return results.map((r) => ({
     ...r.content,
     ...r.news,
+    id: r.content.id, // Ensure content_base ID is used, not news.id
   }));
 }
 
@@ -380,9 +384,11 @@ export function createNews(db: DrizzleDB, data: CreateNewsData) {
     .where(eq(schema.news.contentId, content.id))
     .get()!;
 
+  // Return with content.id as the primary id (not newsItem.id)
   return {
     ...content,
     ...newsItem,
+    id: content.id, // Ensure content_base ID is used
     translations: [],
     tags: [],
   };

@@ -120,6 +120,20 @@ export default function NewsFormPage() {
     }
   }, [form.translations.it?.body, autoCalculateReadingTime]);
 
+  // Create mutation for new news articles
+  const createNewsMutation = useMutation({
+    mutationFn: (data: {
+      slug: string;
+      status?: ContentStatus;
+      featured?: boolean;
+      coverImage?: string | null;
+      readingTime?: number | null;
+    }) => post<ApiResponse<News>>('/admin/news', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: newsKeys.all });
+    },
+  });
+
   // Update mutation for shared + news fields
   const updateNewsMutation = useMutation({
     mutationFn: (data: {
@@ -200,38 +214,73 @@ export default function NewsFormPage() {
     form.setIsSubmitting(true);
 
     try {
-      // 1. Update shared + news fields
-      await updateNewsMutation.mutateAsync({
-        slug: form.sharedFields.slug,
-        featured: form.sharedFields.featured,
-        coverImage: form.specificFields.coverImage,
-        readingTime: form.specificFields.readingTime,
-      });
+      let newsId: string;
 
-      // 2. Update translations
+      if (isEditing) {
+        // Update existing news
+        await updateNewsMutation.mutateAsync({
+          slug: form.sharedFields.slug,
+          featured: form.sharedFields.featured,
+          coverImage: form.specificFields.coverImage,
+          readingTime: form.specificFields.readingTime,
+        });
+        newsId = id!;
+      } else {
+        // Create new news - only send non-null optional values
+        const createData: {
+          slug: string;
+          featured?: boolean;
+          coverImage?: string;
+          readingTime?: number;
+        } = {
+          slug: form.sharedFields.slug,
+          featured: form.sharedFields.featured,
+        };
+        if (form.specificFields.coverImage) createData.coverImage = form.specificFields.coverImage;
+        if (form.specificFields.readingTime !== null) createData.readingTime = form.specificFields.readingTime;
+
+        const response = await createNewsMutation.mutateAsync(createData);
+        newsId = String(response.data.id);
+      }
+
+      // 2. Save translations
       const translationPromises = LANGUAGES.map(async (lang) => {
         const translation = form.translations[lang];
         if (translation?.title) {
-          await updateTranslationMutation.mutateAsync({
-            lang,
-            data: {
-              title: translation.title,
-              description: translation.description || null,
-              body: translation.body || null,
-              metaTitle: translation.metaTitle || null,
-              metaDescription: translation.metaDescription || null,
-            },
-          });
+          const translationData: {
+            title: string;
+            description?: string;
+            body?: string;
+            metaTitle?: string;
+            metaDescription?: string;
+          } = { title: translation.title };
+          if (translation.description) translationData.description = translation.description;
+          if (translation.body) translationData.body = translation.body;
+          if (translation.metaTitle) translationData.metaTitle = translation.metaTitle;
+          if (translation.metaDescription) translationData.metaDescription = translation.metaDescription;
+
+          await put<ApiResponse<unknown>>(`/admin/news/${newsId}/translations/${lang}`, translationData);
         }
       });
 
       await Promise.all(translationPromises);
 
-      // 3. Update tags
-      await assignTagsMutation.mutateAsync(form.specificFields.tagIds);
+      // 3. Assign tags
+      if (form.specificFields.tagIds.length > 0) {
+        await post<ApiResponse<News>>(`/admin/news/${newsId}/tags`, {
+          tagIds: form.specificFields.tagIds,
+        });
+      }
 
-      showSuccess('Article saved successfully');
-      queryClient.invalidateQueries({ queryKey: newsKeys.detail(id || '') });
+      showSuccess(isEditing ? 'Article saved successfully' : 'Article created successfully');
+      queryClient.invalidateQueries({ queryKey: newsKeys.all });
+
+      // Navigate to edit page if we just created
+      if (!isEditing) {
+        navigate(`/news/${newsId}/edit`);
+      } else {
+        queryClient.invalidateQueries({ queryKey: newsKeys.detail(newsId) });
+      }
     } catch (error) {
       showApiError(error);
     } finally {
