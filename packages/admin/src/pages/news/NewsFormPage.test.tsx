@@ -152,7 +152,7 @@ describe('NewsFormPage', () => {
     expect(saveButton).toBeDisabled();
   });
 
-  it('displays reading time field with auto-calculation hint', async () => {
+  it('displays reading time field with manual override hint for existing articles', async () => {
     renderWithProviders('1');
 
     await waitFor(() => {
@@ -163,7 +163,7 @@ describe('NewsFormPage', () => {
     const readingTimeInput = screen.getByLabelText(/Reading Time/);
     expect(readingTimeInput).toBeInTheDocument();
 
-    // Auto-calculated hint should be shown
-    expect(screen.getByText(/Auto-calculated from Italian body/)).toBeInTheDocument();
+    // Manual override hint should be shown for articles with existing reading time
+    expect(screen.getByText(/Manual override/)).toBeInTheDocument();
   });
 });

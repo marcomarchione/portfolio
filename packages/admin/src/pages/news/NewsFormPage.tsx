@@ -8,7 +8,7 @@
  * - Cover image picker with preview
  * - Multilingual translations with markdown editor
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save, ArrowLeft, Clock, Image as ImageIcon, X } from 'lucide-react';
@@ -70,6 +70,9 @@ export default function NewsFormPage() {
   // Auto-calculate reading time flag
   const [autoCalculateReadingTime, setAutoCalculateReadingTime] = useState(true);
 
+  // Track if initial data has been loaded to disable auto-calculate for existing articles
+  const hasLoadedInitialData = useRef(false);
+
   // Fetch existing news data if editing
   const { data: newsResponse, isLoading: isLoadingNews } = useQuery({
     queryKey: newsKeys.detail(id || ''),
@@ -109,6 +112,14 @@ export default function NewsFormPage() {
       tagIds: news.tags?.map(t => t.id) || [],
     } : undefined,
   });
+
+  // Disable auto-calculate when loading existing article with reading time
+  useEffect(() => {
+    if (!hasLoadedInitialData.current && news?.readingTime != null) {
+      hasLoadedInitialData.current = true;
+      setAutoCalculateReadingTime(false);
+    }
+  }, [news?.readingTime]);
 
   // Auto-calculate reading time when Italian body changes
   useEffect(() => {

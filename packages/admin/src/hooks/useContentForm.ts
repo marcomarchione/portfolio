@@ -4,7 +4,7 @@
  * Generic hook for managing content editor form state including
  * shared fields, translations, validation, and submission.
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { Language, ContentStatus } from '@marcomarchione/shared';
 import type { TranslationCompletionStatus, LanguageTab } from '@/types/forms';
 import {
@@ -176,6 +176,51 @@ export function useContentForm<TSpecific extends object>(
   // Form metadata
   const [isDirty, setIsDirty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Track if this is the initial mount to avoid resetting on first render
+  const isInitialMount = useRef(true);
+  const hasInitialData = useRef(false);
+
+  // Sync state when initial values change (for async data loading)
+  // This handles the case where useQuery returns data after the first render
+  useEffect(() => {
+    // Skip the first mount since useState already handled initialization
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      // Track if we had initial data on mount
+      hasInitialData.current = Boolean(initialSharedFields?.slug);
+      return;
+    }
+
+    // Only sync if:
+    // 1. We didn't have initial data on mount (was loading)
+    // 2. We now have initial data
+    // 3. Form hasn't been modified by the user
+    if (!hasInitialData.current && initialSharedFields?.slug && !isDirty) {
+      // Mark that we now have initial data
+      hasInitialData.current = true;
+
+      // Sync shared fields
+      setSharedFields({
+        ...DEFAULT_SHARED_FIELDS,
+        ...initialSharedFields,
+      });
+
+      // Sync translations
+      setTranslations({
+        it: { ...DEFAULT_TRANSLATION, ...initialTranslations?.it },
+        en: { ...DEFAULT_TRANSLATION, ...initialTranslations?.en },
+        es: { ...DEFAULT_TRANSLATION, ...initialTranslations?.es },
+        de: { ...DEFAULT_TRANSLATION, ...initialTranslations?.de },
+      });
+
+      // Sync specific fields
+      setSpecificFieldsState({
+        ...defaultSpecificFields,
+        ...initialSpecificFields,
+      });
+    }
+  }, [initialSharedFields, initialTranslations, initialSpecificFields, defaultSpecificFields, isDirty]);
 
   // Calculate completion status for each language
   const completionStatus: TranslationCompletionStatus = useMemo(() => ({
