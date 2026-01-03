@@ -102,7 +102,7 @@ export const authMiddleware = new Elysia({ name: 'auth-middleware' })
     })
   )
   .derive({ as: 'scoped' }, async ({ request, jwt: jwtPlugin }) => {
-    return authGuard(request, jwtPlugin.verify);
+    return authGuard(request, jwtPlugin.verify) as unknown as Record<string, unknown>;
   });
 
 /**
@@ -121,6 +121,6 @@ export function createAuthMiddleware(secret: string) {
       })
     )
     .derive({ as: 'scoped' }, async ({ request, jwt: jwtPlugin }) => {
-      return authGuard(request, jwtPlugin.verify);
+      return authGuard(request, jwtPlugin.verify) as unknown as Record<string, unknown>;
     });
 }

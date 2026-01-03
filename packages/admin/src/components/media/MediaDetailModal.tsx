@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { get } from '@/lib/api/client';
 import { mediaKeys } from '@/lib/query/keys';
-import { MetadataPanel } from './MetadataPanel';
 import { VariantsPanel } from './VariantsPanel';
 import { AltTextEditor } from './AltTextEditor';
 import type { MediaItem } from '@/types/media';

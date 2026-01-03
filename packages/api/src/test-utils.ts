@@ -196,10 +196,10 @@ export function createTestAppWithAuth(options: AuthTestAppOptions = {}): AuthTes
   // Token generation helpers
   const tokenGenerator = new Elysia().use(jwt({ name: 'jwt', secret: jwtSecret }));
 
-  let jwtInstance: { sign: (payload: Record<string, unknown>) => Promise<string> } | null = null;
+  let jwtInstance: { sign: (payload: unknown) => Promise<string> } | null = null;
 
   tokenGenerator.get('/init', ({ jwt: jwtPlugin }) => {
-    jwtInstance = jwtPlugin;
+    jwtInstance = jwtPlugin as unknown as typeof jwtInstance;
     return 'ok';
   });
 
@@ -270,7 +270,7 @@ export async function generateTestToken(
 
   let token = '';
   app.get('/gen', async ({ jwt: jwtPlugin }) => {
-    token = await jwtPlugin.sign(payload);
+    token = await jwtPlugin.sign(payload as unknown as Parameters<typeof jwtPlugin.sign>[0]);
     return 'ok';
   });
 
