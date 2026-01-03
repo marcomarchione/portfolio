@@ -92,7 +92,9 @@ export function listMedia(db: DrizzleDB, options: ListMediaOptions = {}): Media[
   }
 
   if (mimeType) {
-    conditions.push(like(schema.media.mimeType, `${mimeType}%`));
+    // Convert glob pattern (e.g., "image/*") to SQL LIKE pattern (e.g., "image/%")
+    const likePattern = mimeType.replace(/\*/g, '%');
+    conditions.push(like(schema.media.mimeType, likePattern));
   }
 
   const query = db
@@ -123,7 +125,9 @@ export function listDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions
   const conditions = [isNotNull(schema.media.deletedAt)];
 
   if (mimeType) {
-    conditions.push(like(schema.media.mimeType, `${mimeType}%`));
+    // Convert glob pattern (e.g., "image/*") to SQL LIKE pattern (e.g., "image/%")
+    const likePattern = mimeType.replace(/\*/g, '%');
+    conditions.push(like(schema.media.mimeType, likePattern));
   }
 
   return db
@@ -149,7 +153,9 @@ export function countDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOption
   const conditions = [isNotNull(schema.media.deletedAt)];
 
   if (mimeType) {
-    conditions.push(like(schema.media.mimeType, `${mimeType}%`));
+    // Convert glob pattern (e.g., "image/*") to SQL LIKE pattern (e.g., "image/%")
+    const likePattern = mimeType.replace(/\*/g, '%');
+    conditions.push(like(schema.media.mimeType, likePattern));
   }
 
   const result = db
@@ -178,7 +184,9 @@ export function countMedia(db: DrizzleDB, options: ListMediaOptions = {}): numbe
   }
 
   if (mimeType) {
-    conditions.push(like(schema.media.mimeType, `${mimeType}%`));
+    // Convert glob pattern (e.g., "image/*") to SQL LIKE pattern (e.g., "image/%")
+    const likePattern = mimeType.replace(/\*/g, '%');
+    conditions.push(like(schema.media.mimeType, likePattern));
   }
 
   const query = db.select({ count: sql<number>`count(*)` }).from(schema.media);
