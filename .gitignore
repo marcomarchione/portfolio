@@ -48,3 +48,6 @@ packages/api/uploads/
 
 # Claude settings
 .claude/
+
+# Playwright MCP screenshots
+.playwright-mcp/
