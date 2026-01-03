@@ -239,8 +239,8 @@ ${updates.map((u) => `- ${u.name}: ${u.oldVersion} → ${u.newVersion} (${u.bump
     console.log(`🏷️  Created tag: ${tag}`);
   }
 
-  // Push commit
-  await exec("git push");
+  // Push commit to main branch explicitly (we're in detached HEAD from workflow_run)
+  await exec("git push origin HEAD:main");
   console.log("\n🚀 Pushed commit to remote");
 
   // Push tags explicitly
