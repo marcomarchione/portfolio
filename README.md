@@ -28,6 +28,18 @@ packages/
 - [Bun](https://bun.sh/) v1.3+
 - [Docker](https://www.docker.com/)
 
+### Cloning
+
+```bash
+# Clone with submodules (if you have access to private submodules)
+git clone --recurse-submodules git@github.com:marcomarchione/portfolio.git
+
+# Or clone without submodules (public access)
+git clone git@github.com:marcomarchione/portfolio.git
+```
+
+> **Note:** The `agent-os/` directory is a private submodule containing development specs and standards. The main codebase works independently without it.
+
 ### Development
 
 ```bash
