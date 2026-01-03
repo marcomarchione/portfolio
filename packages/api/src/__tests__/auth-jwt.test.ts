@@ -113,17 +113,17 @@ describe('JWT Token Management', () => {
 
   test('token verification fails for invalid signature', async () => {
     // Create two different JWT contexts with different secrets
-    const app1 = new Elysia().use(jwt({ name: 'jwt', secret: TEST_SECRET }));
-    const app2 = new Elysia().use(jwt({ name: 'jwt', secret: 'different-secret-also-at-least-32-chars' }));
+    const app1: any = new Elysia().use(jwt({ name: 'jwt', secret: TEST_SECRET }));
+    const app2: any = new Elysia().use(jwt({ name: 'jwt', secret: 'different-secret-also-at-least-32-chars' }));
 
-    let jwt1: JwtContext['jwt'] | null = null;
-    let jwt2: JwtContext['jwt'] | null = null;
+    let jwt1: any = null;
+    let jwt2: any = null;
 
-    app1.get('/test', ({ jwt }) => {
+    app1.get('/test', ({ jwt }: any) => {
       jwt1 = jwt;
       return 'ok';
     });
-    app2.get('/test', ({ jwt }) => {
+    app2.get('/test', ({ jwt }: any) => {
       jwt2 = jwt;
       return 'ok';
     });

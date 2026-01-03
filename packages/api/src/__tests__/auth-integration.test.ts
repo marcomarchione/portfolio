@@ -28,7 +28,7 @@ function createFullAuthApp() {
     .use(errorHandler)
     .use(createAuthRoutes(TEST_JWT_SECRET, TEST_PASSWORD_HASH))
     .group('/admin', (app) =>
-      app.use(createAuthMiddleware(TEST_JWT_SECRET)).get('/profile', ({ admin }) => ({
+      app.use(createAuthMiddleware(TEST_JWT_SECRET)).get('/profile', ({ admin }: any) => ({
         message: `Welcome ${admin.sub}`,
         role: 'admin',
       }))
@@ -212,7 +212,7 @@ describe('Authentication Integration', () => {
     const customApp = new Elysia()
       .use(errorHandler)
       .use(createAuthMiddleware(exactSecret))
-      .get('/test', ({ admin }) => ({ message: `Hello ${admin.sub}` }));
+      .get('/test', ({ admin }: any) => ({ message: `Hello ${admin.sub}` }));
 
     const now = Math.floor(Date.now() / 1000);
     const token = await generateTestToken(exactSecret, {

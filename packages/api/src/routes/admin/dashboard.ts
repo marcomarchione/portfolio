@@ -8,15 +8,17 @@ import { Elysia, t } from 'elysia';
 import { createResponse } from '../../types/responses';
 import { authMiddleware } from '../../middleware/auth';
 import { getContentStatistics, getRecentItems } from '../../db/queries/dashboard';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Admin dashboard routes plugin.
  */
-export const adminDashboardRoutes = new Elysia({ name: 'admin-dashboard', prefix: '/dashboard' })
+export const adminDashboardRoutes: any = new Elysia({ name: 'admin-dashboard', prefix: '/dashboard' })
   .use(authMiddleware)
   .get(
     '/stats',
-    async ({ db }) => {
+    async ({ db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const stats = getContentStatistics(db);
 
       return createResponse(stats);
@@ -32,7 +34,8 @@ export const adminDashboardRoutes = new Elysia({ name: 'admin-dashboard', prefix
   )
   .get(
     '/recent',
-    async ({ db, query }) => {
+    async ({ db: rawDb, query }) => {
+      const db = rawDb as DrizzleDB;
       const limit = query.limit ?? 10;
       const recentItems = getRecentItems(db, limit);
 

@@ -43,7 +43,7 @@ async function fileExists(path: string): Promise<boolean> {
 
 describe('Cleanup Service', () => {
   let sqlite: Database;
-  let db: ReturnType<typeof drizzle>;
+  let db: any;
 
   beforeAll(async () => {
     // Set up test database

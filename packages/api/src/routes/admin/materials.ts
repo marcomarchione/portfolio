@@ -27,6 +27,7 @@ import {
 } from '../../db/queries';
 import type { ContentStatus, Language, MaterialCategory } from '../../db/schema';
 import type { ContentSortField, SortOrder } from '../../db/queries/content';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Formats a material for admin API response.
@@ -62,13 +63,14 @@ function formatAdminMaterialResponse(
 /**
  * Admin materials routes plugin.
  */
-export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix: '/materials' })
+export const adminMaterialsRoutes: any = new Elysia({ name: 'admin-materials', prefix: '/materials' })
   .use(authMiddleware)
   .get(
     '/',
-    async ({ query, db }) => {
-      const limit = query.limit ?? 20;
-      const offset = query.offset ?? 0;
+    async ({ query, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
+      const limit = Number(query.limit ?? 20);
+      const offset = Number(query.offset ?? 0);
       const status = query.status as ContentStatus | undefined;
       const search = query.search;
       const sortBy = query.sortBy as ContentSortField | undefined;
@@ -108,7 +110,8 @@ export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix
   )
   .get(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const material = getMaterialWithAllTranslations(db, id);
 
@@ -129,7 +132,8 @@ export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix
   )
   .post(
     '/',
-    async ({ body, db, set }) => {
+    async ({ body, db: rawDb, set }) => {
+      const db = rawDb as DrizzleDB;
       const material = createMaterial(db, {
         slug: body.slug,
         category: body.category as MaterialCategory,
@@ -154,7 +158,8 @@ export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix
   )
   .put(
     '/:id',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const material = updateMaterial(db, id, {
@@ -185,7 +190,8 @@ export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix
   )
   .put(
     '/:id/translations/:lang',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const lang = params.lang as Language;
 
@@ -227,7 +233,8 @@ export const adminMaterialsRoutes = new Elysia({ name: 'admin-materials', prefix
   )
   .delete(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const archived = archiveContent(db, id);

@@ -28,7 +28,7 @@ import {
  * Authentication routes plugin.
  * Provides /auth/login, /auth/refresh, and /auth/logout endpoints.
  */
-export const authRoutes = new Elysia({ name: 'auth-routes', prefix: '/auth' })
+export const authRoutes: any = new Elysia({ name: 'auth-routes', prefix: '/auth' })
   .use(
     jwt({
       name: 'jwt',
@@ -53,7 +53,7 @@ export const authRoutes = new Elysia({ name: 'auth-routes', prefix: '/auth' })
       }
 
       // Generate token pair
-      const jwtContext: JwtContext = { jwt: jwtPlugin };
+      const jwtContext: JwtContext = { jwt: jwtPlugin as unknown as JwtContext['jwt'] };
       const accessToken = await generateAccessToken(jwtContext);
       const refreshToken = await generateRefreshToken(jwtContext);
 
@@ -79,7 +79,7 @@ export const authRoutes = new Elysia({ name: 'auth-routes', prefix: '/auth' })
       const { refreshToken: token } = body;
 
       // Verify refresh token
-      const jwtContext: JwtContext = { jwt: jwtPlugin };
+      const jwtContext: JwtContext = { jwt: jwtPlugin as unknown as JwtContext['jwt'] };
       const payload = await verifyRefreshToken(jwtContext, token);
 
       if (!payload) {
@@ -130,7 +130,7 @@ export const authRoutes = new Elysia({ name: 'auth-routes', prefix: '/auth' })
  * @param passwordHash - Admin password hash
  * @returns Configured auth routes
  */
-export function createAuthRoutes(secret: string, passwordHash: string) {
+export function createAuthRoutes(secret: string, passwordHash: string): any {
   return new Elysia({ name: 'auth-routes', prefix: '/auth' })
     .use(
       jwt({
@@ -153,7 +153,7 @@ export function createAuthRoutes(secret: string, passwordHash: string) {
           throw new UnauthorizedError('Invalid credentials');
         }
 
-        const jwtContext: JwtContext = { jwt: jwtPlugin };
+        const jwtContext: JwtContext = { jwt: jwtPlugin as unknown as JwtContext['jwt'] };
         const accessToken = await generateAccessToken(jwtContext);
         const refreshToken = await generateRefreshToken(jwtContext);
 
@@ -178,7 +178,7 @@ export function createAuthRoutes(secret: string, passwordHash: string) {
       async ({ body, jwt: jwtPlugin }) => {
         const { refreshToken: token } = body;
 
-        const jwtContext: JwtContext = { jwt: jwtPlugin };
+        const jwtContext: JwtContext = { jwt: jwtPlugin as unknown as JwtContext['jwt'] };
         const payload = await verifyRefreshToken(jwtContext, token);
 
         if (!payload) {

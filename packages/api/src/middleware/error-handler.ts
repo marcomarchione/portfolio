@@ -11,11 +11,9 @@ import { createErrorResponse, type ApiErrorResponse } from '../types/responses';
 /**
  * Error handler plugin for Elysia.
  * Provides global error handling with structured responses.
- *
- * Note: In Elysia, onError handlers in plugins have scoped behavior.
- * This plugin uses scoped: false to ensure global error handling.
+ * Uses { as: 'global' } to ensure errors are caught at the app level.
  */
-export const errorHandler = new Elysia({ name: 'error-handler', scoped: false }).onError(
+export const errorHandler = new Elysia({ name: 'error-handler' }).onError(
   { as: 'global' },
   ({ error, path, set }): ApiErrorResponse => {
     // Log error for debugging
@@ -50,7 +48,7 @@ export const errorHandler = new Elysia({ name: 'error-handler', scoped: false })
 
       return createErrorResponse(
         ERROR_CODES.VALIDATION_ERROR,
-        error.message || 'Request validation failed',
+        (error instanceof Error ? error.message : null) || 'Request validation failed',
         path,
         Object.keys(details).length > 0 ? details : null
       );

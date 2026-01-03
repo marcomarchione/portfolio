@@ -4,7 +4,7 @@
  * Provides validation schemas for content CRUD operations.
  * Extends base validation schemas with content-specific fields.
  */
-import { Type, type Static } from '@sinclair/typebox';
+import { Type, type Static, type TSchema } from '@sinclair/typebox';
 import { LangSchema, ListQuerySchema, SlugSchema, IdSchema, LANGUAGES } from './validation';
 
 /** Content statuses from database schema */
@@ -482,7 +482,7 @@ export const AdminNewsResponseSchema = Type.Object({
 /**
  * Generic API response wrapper for single items.
  */
-export const ApiResponseSchema = <T extends ReturnType<typeof Type.Object>>(schema: T) =>
+export const ApiResponseSchema = <T extends TSchema>(schema: T) =>
   Type.Object({
     data: schema,
   });
@@ -500,7 +500,7 @@ export const PaginationMetaSchema = Type.Object({
 /**
  * Generic paginated response wrapper.
  */
-export const PaginatedResponseSchema = <T extends ReturnType<typeof Type.Object>>(schema: T) =>
+export const PaginatedResponseSchema = <T extends TSchema>(schema: T) =>
   Type.Object({
     data: Type.Array(schema),
     pagination: PaginationMetaSchema,

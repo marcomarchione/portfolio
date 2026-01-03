@@ -31,10 +31,10 @@ function createTestApp() {
  * Generates a test token with the given payload.
  */
 async function generateTestToken(payload: Record<string, unknown>): Promise<string> {
-  const app = new Elysia().use(jwt({ name: 'jwt', secret: TEST_SECRET }));
+  const app: any = new Elysia().use(jwt({ name: 'jwt', secret: TEST_SECRET }));
 
   let token = '';
-  app.get('/gen', async ({ jwt: jwtPlugin }) => {
+  app.get('/gen', async ({ jwt: jwtPlugin }: any) => {
     token = await jwtPlugin.sign(payload);
     return 'ok';
   });

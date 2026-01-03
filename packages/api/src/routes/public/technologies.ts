@@ -7,6 +7,7 @@
 import { Elysia } from 'elysia';
 import { createResponse } from '../../types/responses';
 import { listTechnologies } from '../../db/queries';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Public technologies routes plugin.
@@ -16,7 +17,8 @@ export const publicTechnologiesRoutes = new Elysia({
   prefix: '/technologies',
 }).get(
   '/',
-  async ({ db }) => {
+  async (ctx: any) => {
+    const db = ctx.db as DrizzleDB;
     const technologies = listTechnologies(db);
     return createResponse(technologies);
   },

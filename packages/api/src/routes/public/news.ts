@@ -21,6 +21,7 @@ import {
   getNewsByContentId,
 } from '../../db/queries';
 import type { Language } from '../../db/schema';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Formats a news item for API response.
@@ -59,11 +60,13 @@ function formatNewsResponse(newsItem: NonNullable<ReturnType<typeof getNewsWithT
 export const publicNewsRoutes = new Elysia({ name: 'public-news', prefix: '/news' })
   .get(
     '/',
-    async ({ query, db }) => {
+    async (ctx: any) => {
+      const db = ctx.db as DrizzleDB;
+      const query = ctx.query;
       const lang = (query.lang ?? 'it') as Language;
-      const limit = query.limit ?? 20;
-      const offset = query.offset ?? 0;
-      const featured = query.featured;
+      const limit = Number(query.limit ?? 20);
+      const offset = Number(query.offset ?? 0);
+      const featured = query.featured === 'true' ? true : query.featured === 'false' ? false : query.featured;
       const tag = query.tag;
 
       const options = {
@@ -124,9 +127,10 @@ export const publicNewsRoutes = new Elysia({ name: 'public-news', prefix: '/news
   )
   .get(
     '/:slug',
-    async ({ params, query, db }) => {
-      const lang = (query.lang ?? 'it') as Language;
-      const newsItem = getNewsWithTranslation(db, params.slug, lang);
+    async (ctx: any) => {
+      const db = ctx.db as DrizzleDB;
+      const lang = (ctx.query.lang ?? 'it') as Language;
+      const newsItem = getNewsWithTranslation(db, ctx.params.slug, lang);
 
       if (!newsItem || newsItem.status !== 'published') {
         throw new NotFoundError('News article not found');

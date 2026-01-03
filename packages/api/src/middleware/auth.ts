@@ -94,7 +94,7 @@ async function authGuard(
  *   .get('/protected', ({ admin }) => `Hello ${admin.sub}`);
  * ```
  */
-export const authMiddleware = new Elysia({ name: 'auth-middleware' })
+export const authMiddleware: any = new Elysia({ name: 'auth-middleware' })
   .use(
     jwt({
       name: 'jwt',
@@ -112,7 +112,7 @@ export const authMiddleware = new Elysia({ name: 'auth-middleware' })
  * @param secret - JWT secret to use
  * @returns Configured auth middleware
  */
-export function createAuthMiddleware(secret: string) {
+export function createAuthMiddleware(secret: string): any {
   return new Elysia({ name: 'auth-middleware' })
     .use(
       jwt({

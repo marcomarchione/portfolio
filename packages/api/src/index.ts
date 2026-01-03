@@ -16,7 +16,7 @@ import { apiRoutes } from './routes';
  *
  * @returns Configured Elysia application
  */
-export function createApp() {
+export function createApp(): any {
   const app = new Elysia({ name: 'api' })
     // Global error handling
     .use(errorHandler)
@@ -38,7 +38,7 @@ export function createApp() {
  * Starts the API server.
  * Sets up graceful shutdown handling for SIGTERM/SIGINT.
  */
-export function startServer() {
+export function startServer(): any {
   const app = createApp();
 
   // Graceful shutdown handler

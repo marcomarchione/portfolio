@@ -21,6 +21,7 @@ import {
   deleteTag,
   isTagReferenced,
 } from '../../db/queries';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Conflict error for referential integrity violations.
@@ -47,11 +48,12 @@ function formatTagResponse(tag: ReturnType<typeof getTagById>) {
 /**
  * Admin tags routes plugin.
  */
-export const adminTagsRoutes = new Elysia({ name: 'admin-tags', prefix: '/tags' })
+export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/tags' })
   .use(authMiddleware)
   .get(
     '/',
-    async ({ db }) => {
+    async ({ db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const tags = listTags(db);
       return createResponse(tags.map(formatTagResponse).filter(Boolean));
     },
@@ -65,7 +67,8 @@ export const adminTagsRoutes = new Elysia({ name: 'admin-tags', prefix: '/tags' 
   )
   .get(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const tag = getTagById(db, id);
 
@@ -86,7 +89,8 @@ export const adminTagsRoutes = new Elysia({ name: 'admin-tags', prefix: '/tags' 
   )
   .post(
     '/',
-    async ({ body, db, set }) => {
+    async ({ body, db: rawDb, set }) => {
+      const db = rawDb as DrizzleDB;
       const tag = createTag(db, {
         name: body.name,
         slug: body.slug,
@@ -106,7 +110,8 @@ export const adminTagsRoutes = new Elysia({ name: 'admin-tags', prefix: '/tags' 
   )
   .put(
     '/:id',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const tag = updateTag(db, id, {
@@ -132,7 +137,8 @@ export const adminTagsRoutes = new Elysia({ name: 'admin-tags', prefix: '/tags' 
   )
   .delete(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       // Check if tag exists

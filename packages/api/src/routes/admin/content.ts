@@ -17,6 +17,7 @@ import {
   getNewsWithAllTranslations,
 } from '../../db/queries';
 import type { ContentStatus } from '../../db/schema';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Valid content types for the publish endpoint.
@@ -146,11 +147,12 @@ function getFormattedContentResponse(
  * Admin content routes plugin.
  * Provides shared content operations across all content types.
  */
-export const adminContentRoutes = new Elysia({ name: 'admin-content' })
+export const adminContentRoutes: any = new Elysia({ name: 'admin-content' })
   .use(authMiddleware)
   .patch(
     '/:contentType/:id/publish',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const contentType = params.contentType as ValidContentType;
       const id = parseInt(params.id, 10);
       const newStatus = body.status as ContentStatus;

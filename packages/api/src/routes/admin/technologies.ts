@@ -21,6 +21,7 @@ import {
   deleteTechnology,
   isTechnologyReferenced,
 } from '../../db/queries';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Conflict error for referential integrity violations.
@@ -48,11 +49,12 @@ function formatTechnologyResponse(technology: ReturnType<typeof getTechnologyByI
 /**
  * Admin technologies routes plugin.
  */
-export const adminTechnologiesRoutes = new Elysia({ name: 'admin-technologies', prefix: '/technologies' })
+export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologies', prefix: '/technologies' })
   .use(authMiddleware)
   .get(
     '/',
-    async ({ db }) => {
+    async ({ db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const technologies = listTechnologies(db);
       return createResponse(technologies.map(formatTechnologyResponse).filter(Boolean));
     },
@@ -66,7 +68,8 @@ export const adminTechnologiesRoutes = new Elysia({ name: 'admin-technologies', 
   )
   .get(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const technology = getTechnologyById(db, id);
 
@@ -87,7 +90,8 @@ export const adminTechnologiesRoutes = new Elysia({ name: 'admin-technologies', 
   )
   .post(
     '/',
-    async ({ body, db, set }) => {
+    async ({ body, db: rawDb, set }) => {
+      const db = rawDb as DrizzleDB;
       const technology = createTechnology(db, {
         name: body.name,
         icon: body.icon,
@@ -108,7 +112,8 @@ export const adminTechnologiesRoutes = new Elysia({ name: 'admin-technologies', 
   )
   .put(
     '/:id',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const technology = updateTechnology(db, id, {
@@ -135,7 +140,8 @@ export const adminTechnologiesRoutes = new Elysia({ name: 'admin-technologies', 
   )
   .delete(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       // Check if technology exists

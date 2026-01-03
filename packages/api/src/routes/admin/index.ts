@@ -30,7 +30,7 @@ import { adminDashboardRoutes } from './dashboard';
  *
  * All routes require valid JWT access token.
  */
-export const adminRoutes = new Elysia({ name: 'admin-routes', prefix: '/admin' })
+export const adminRoutes: any = new Elysia({ name: 'admin-routes', prefix: '/admin' })
   .use(adminDashboardRoutes)
   .use(adminProjectsRoutes)
   .use(adminMaterialsRoutes)

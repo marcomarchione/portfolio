@@ -10,7 +10,7 @@ import {
   testAuthRequest,
   type AuthTestApp,
 } from '../../test-utils';
-import { seedProject, seedMaterial, seedNews, seedTranslation } from '../../db/test-utils';
+import { seedProject, seedMaterial, seedNews } from '../../db/test-utils';
 
 describe('Dashboard Integration', () => {
   let testApp: AuthTestApp;

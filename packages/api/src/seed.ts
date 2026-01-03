@@ -63,7 +63,7 @@ async function seed() {
       },
       technologies: ['React', 'TypeScript', 'Bun', 'SQLite'],
       projectStatus: 'completed' as const,
-      repoUrl: 'https://github.com/marcomarchione/portfolio',
+      githubUrl: 'https://github.com/marcomarchione/portfolio',
     },
     {
       slug: 'ecommerce-platform',
@@ -75,6 +75,7 @@ async function seed() {
       },
       technologies: ['React', 'Node.js', 'TypeScript'],
       projectStatus: 'in-progress' as const,
+      githubUrl: undefined,
     },
     {
       slug: 'task-manager-app',
@@ -86,6 +87,7 @@ async function seed() {
       },
       technologies: ['React', 'TypeScript', 'Tailwind CSS'],
       projectStatus: 'completed' as const,
+      githubUrl: undefined,
     },
     {
       slug: 'weather-dashboard',
@@ -96,7 +98,8 @@ async function seed() {
         en: { title: 'Weather Dashboard', description: 'Dashboard to display weather forecasts' },
       },
       technologies: ['Astro', 'TypeScript'],
-      projectStatus: 'planned' as const,
+      projectStatus: 'in-progress' as const,
+      githubUrl: undefined,
     },
   ];
 
@@ -129,7 +132,7 @@ async function seed() {
     db.insert(schema.projects).values({
       contentId: content.id,
       projectStatus: project.projectStatus,
-      repoUrl: project.repoUrl,
+      githubUrl: project.githubUrl,
     }).run();
 
     const projectRow = db.select().from(schema.projects).all().pop()!;

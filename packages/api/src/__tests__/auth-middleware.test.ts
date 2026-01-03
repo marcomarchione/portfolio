@@ -18,17 +18,17 @@ function createProtectedApp() {
   return new Elysia()
     .use(errorHandler)
     .use(createAuthMiddleware(TEST_SECRET))
-    .get('/protected', ({ admin }) => ({ message: `Hello ${admin.sub}` }));
+    .get('/protected', ({ admin }: any) => ({ message: `Hello ${admin.sub}` }));
 }
 
 /**
  * Generates a test token with the given payload.
  */
 async function generateTestToken(payload: Record<string, unknown>): Promise<string> {
-  const app = new Elysia().use(jwt({ name: 'jwt', secret: TEST_SECRET }));
+  const app: any = new Elysia().use(jwt({ name: 'jwt', secret: TEST_SECRET }));
 
   let token = '';
-  app.get('/gen', async ({ jwt }) => {
+  app.get('/gen', async ({ jwt }: any) => {
     token = await jwt.sign(payload);
     return 'ok';
   });

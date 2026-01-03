@@ -5,7 +5,7 @@
  * and image processing service.
  */
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { mkdir, rm, writeFile, readFile, exists } from 'fs/promises';
+import { mkdir, rm, writeFile, readFile, access } from 'fs/promises';
 import { join } from 'path';
 import {
   validateFileType,

@@ -19,6 +19,7 @@ import {
   getTranslation,
 } from '../../db/queries';
 import type { Language, MaterialCategory } from '../../db/schema';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Formats a material for API response.
@@ -57,11 +58,13 @@ function formatMaterialResponse(material: NonNullable<ReturnType<typeof getMater
 export const publicMaterialsRoutes = new Elysia({ name: 'public-materials', prefix: '/materials' })
   .get(
     '/',
-    async ({ query, db }) => {
+    async (ctx: any) => {
+      const db = ctx.db as DrizzleDB;
+      const query = ctx.query;
       const lang = (query.lang ?? 'it') as Language;
-      const limit = query.limit ?? 20;
-      const offset = query.offset ?? 0;
-      const featured = query.featured;
+      const limit = Number(query.limit ?? 20);
+      const offset = Number(query.offset ?? 0);
+      const featured = query.featured === 'true' ? true : query.featured === 'false' ? false : query.featured;
       const category = query.category as MaterialCategory | undefined;
 
       const options = {
@@ -119,9 +122,10 @@ export const publicMaterialsRoutes = new Elysia({ name: 'public-materials', pref
   )
   .get(
     '/:slug',
-    async ({ params, query, db }) => {
-      const lang = (query.lang ?? 'it') as Language;
-      const material = getMaterialWithTranslation(db, params.slug, lang);
+    async (ctx: any) => {
+      const db = ctx.db as DrizzleDB;
+      const lang = (ctx.query.lang ?? 'it') as Language;
+      const material = getMaterialWithTranslation(db, ctx.params.slug, lang);
 
       if (!material || material.status !== 'published') {
         throw new NotFoundError('Material not found');

@@ -28,10 +28,10 @@ export interface TokenPair {
   refreshToken: string;
 }
 
-/** JWT plugin context type */
+/** JWT plugin context type - uses any for compatibility with Elysia's actual JWT type */
 export interface JwtContext {
   jwt: {
-    sign: (payload: Record<string, unknown>) => Promise<string>;
+    sign: (payload: unknown) => Promise<string>;
     verify: (token: string) => Promise<TokenPayload | false>;
   };
 }
@@ -71,7 +71,7 @@ function parseExpiryToSeconds(expiry: string): number {
  * @param secret - JWT secret (optional, defaults to config.JWT_SECRET)
  * @returns Elysia plugin with jwt decorator
  */
-export function createJwtPlugin(secret?: string) {
+export function createJwtPlugin(secret?: string): any {
   return new Elysia({ name: 'jwt-plugin' }).use(
     jwt({
       name: 'jwt',

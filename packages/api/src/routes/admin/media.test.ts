@@ -38,7 +38,7 @@ const TEST_UPLOADS_PATH = './test-uploads';
 describe('Admin Media Routes', () => {
   let sqlite: Database;
   let db: ReturnType<typeof drizzle>;
-  let testApp: Elysia;
+  let testApp: any;
   let accessToken: string;
 
   beforeAll(async () => {

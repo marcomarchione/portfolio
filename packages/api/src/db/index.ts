@@ -5,8 +5,11 @@
  * Applies recommended SQLite pragmas for performance and data integrity.
  */
 import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
+import { drizzle, type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import * as schema from './schema';
+
+/** Type alias for the Drizzle database instance */
+export type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Default database file path */
 const DATABASE_PATH = process.env.DATABASE_PATH ?? './data.db';

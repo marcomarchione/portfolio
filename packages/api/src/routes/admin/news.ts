@@ -31,6 +31,7 @@ import {
 } from '../../db/queries';
 import type { ContentStatus, Language } from '../../db/schema';
 import type { ContentSortField, SortOrder } from '../../db/queries/content';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Formats a news item for admin API response.
@@ -66,13 +67,14 @@ function formatAdminNewsResponse(
 /**
  * Admin news routes plugin.
  */
-export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' })
+export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/news' })
   .use(authMiddleware)
   .get(
     '/',
-    async ({ query, db }) => {
-      const limit = query.limit ?? 20;
-      const offset = query.offset ?? 0;
+    async ({ query, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
+      const limit = Number(query.limit ?? 20);
+      const offset = Number(query.offset ?? 0);
       const status = query.status as ContentStatus | undefined;
       const search = query.search;
       const sortBy = query.sortBy as ContentSortField | undefined;
@@ -112,7 +114,8 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
   )
   .get(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const newsItem = getNewsWithAllTranslations(db, id);
 
@@ -133,7 +136,8 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
   )
   .post(
     '/',
-    async ({ body, db, set }) => {
+    async ({ body, db: rawDb, set }) => {
+      const db = rawDb as DrizzleDB;
       const newsItem = createNews(db, {
         slug: body.slug,
         coverImage: body.coverImage,
@@ -157,7 +161,8 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
   )
   .put(
     '/:id',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const newsItem = updateNews(db, id, {
@@ -187,7 +192,8 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
   )
   .put(
     '/:id/translations/:lang',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const lang = params.lang as Language;
 
@@ -229,7 +235,8 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
   )
   .delete(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const archived = archiveContent(db, id);
@@ -256,7 +263,8 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
   )
   .post(
     '/:id/tags',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       // Get news record
@@ -289,7 +297,8 @@ export const adminNewsRoutes = new Elysia({ name: 'admin-news', prefix: '/news' 
   )
   .delete(
     '/:id/tags/:tagId',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const tagId = parseInt(params.tagId, 10);
 

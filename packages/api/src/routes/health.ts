@@ -7,6 +7,7 @@
 import { Elysia, t } from 'elysia';
 import { sql } from 'drizzle-orm';
 import type { HealthResponse } from '../types/responses';
+import type { DrizzleDB } from '../db';
 
 /**
  * Health check response schema for OpenAPI documentation.
@@ -35,7 +36,9 @@ const HealthQuerySchema = t.Object({
  */
 export const healthRoutes = new Elysia({ name: 'health-routes' }).get(
   '/health',
-  async ({ query, db }): Promise<HealthResponse> => {
+  async (ctx: any): Promise<HealthResponse> => {
+    const db = ctx.db as DrizzleDB;
+    const query = ctx.query;
     const response: HealthResponse = {
       status: 'ok',
       timestamp: new Date().toISOString(),

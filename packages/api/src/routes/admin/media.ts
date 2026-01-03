@@ -44,6 +44,7 @@ import {
 } from '../../services/media';
 import { config } from '../../config';
 import type { Media, MediaVariants } from '../../db/schema';
+import type { DrizzleDB } from '../../db';
 
 /**
  * Formats a media record for API response.
@@ -90,11 +91,12 @@ function formatMediaResponse(media: Media) {
 /**
  * Admin media routes plugin.
  */
-export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/media' })
+export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '/media' })
   .use(authMiddleware)
   .post(
     '/',
-    async ({ body, db, set }) => {
+    async ({ body, db: rawDb, set }) => {
+      const db = rawDb as DrizzleDB;
       // Get file from multipart form data
       const file = (body as { file?: File }).file;
 
@@ -176,9 +178,10 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
   )
   .get(
     '/',
-    async ({ query, db }) => {
-      const limit = query.limit ?? 20;
-      const offset = query.offset ?? 0;
+    async ({ query, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
+      const limit = Number(query.limit ?? 20);
+      const offset = Number(query.offset ?? 0);
       const mimeType = query.mimeType;
 
       const options = {
@@ -205,9 +208,10 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
   )
   .get(
     '/trash',
-    async ({ query, db }) => {
-      const limit = query.limit ?? 20;
-      const offset = query.offset ?? 0;
+    async ({ query, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
+      const limit = Number(query.limit ?? 20);
+      const offset = Number(query.offset ?? 0);
       const mimeType = query.mimeType;
 
       const options = {
@@ -234,7 +238,8 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
   )
   .get(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
       const media = getMediaById(db, id);
 
@@ -255,7 +260,8 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
   )
   .put(
     '/:id',
-    async ({ params, body, db }) => {
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const media = updateMediaAltText(db, id, body.altText ?? null);
@@ -278,7 +284,8 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
   )
   .post(
     '/:id/restore',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const media = restoreMedia(db, id);
@@ -303,7 +310,8 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
   )
   .delete(
     '/:id',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       const media = softDeleteMedia(db, id);
@@ -330,7 +338,8 @@ export const adminMediaRoutes = new Elysia({ name: 'admin-media', prefix: '/medi
   )
   .delete(
     '/:id/permanent',
-    async ({ params, db }) => {
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
       // Get media including deleted to verify it exists and is in trash

@@ -35,7 +35,7 @@ const TEST_JWT_SECRET = 'test-secret-that-is-at-least-32-characters-long';
 describe('Admin Media Trash Routes', () => {
   let sqlite: Database;
   let db: ReturnType<typeof drizzle>;
-  let testApp: Elysia;
+  let testApp: any;
   let accessToken: string;
 
   beforeAll(async () => {

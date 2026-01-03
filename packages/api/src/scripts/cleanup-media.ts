@@ -15,6 +15,7 @@ import { Database } from 'bun:sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import * as schema from '../db/schema';
 import { cleanupExpiredMedia, getCleanupCount } from '../services/media/cleanup';
+import type { DrizzleDB } from '../db';
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -55,7 +56,7 @@ try {
   process.exit(1);
 }
 
-const db = drizzle(sqlite);
+const db = drizzle(sqlite, { schema }) as unknown as DrizzleDB;
 
 // Run cleanup or dry-run
 try {

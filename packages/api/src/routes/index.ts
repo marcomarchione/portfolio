@@ -35,7 +35,7 @@ import { adminRoutes } from './admin';
  * - /api/v1/admin/technologies - CRUD for technologies
  * - /api/v1/admin/tags - CRUD for tags
  */
-export const apiRoutes = new Elysia({ name: 'api-routes', prefix: '/api/v1' })
+export const apiRoutes: any = new Elysia({ name: 'api-routes', prefix: '/api/v1' })
   .use(healthRoutes)
   .use(authRoutes)
   .use(publicRoutes)

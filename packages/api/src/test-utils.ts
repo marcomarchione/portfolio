@@ -44,8 +44,8 @@ export interface AuthTestAppOptions extends TestAppOptions {
 
 /** Test app instance with cleanup helpers */
 export interface TestApp {
-  /** Configured Elysia application */
-  app: Elysia;
+  /** Configured Elysia application - typed as any for test compatibility */
+  app: any;
   /** Database instance for direct queries in tests */
   db: ReturnType<typeof createTestDatabase>['db'];
   /** SQLite connection for cleanup */
@@ -104,7 +104,7 @@ export function createTestApp(options: TestAppOptions = {}): TestApp {
   const { sqlite, db } = createTestDatabase();
 
   // Build app with test configuration
-  let app = new Elysia({ name: 'test-api' })
+  let app: any = new Elysia({ name: 'test-api' })
     .use(errorHandler)
     .use(createDatabasePlugin(db));
 
@@ -176,7 +176,7 @@ export function createTestAppWithAuth(options: AuthTestAppOptions = {}): AuthTes
   const { sqlite, db } = createTestDatabase();
 
   // Build app with test configuration
-  let app = new Elysia({ name: 'test-api-with-auth' })
+  let app: any = new Elysia({ name: 'test-api-with-auth' })
     .use(errorHandler)
     .use(createDatabasePlugin(db));
 
@@ -194,11 +194,11 @@ export function createTestAppWithAuth(options: AuthTestAppOptions = {}): AuthTes
   app = app.use(apiRoutes);
 
   // Token generation helpers
-  const tokenGenerator = new Elysia().use(jwt({ name: 'jwt', secret: jwtSecret }));
+  const tokenGenerator: any = new Elysia().use(jwt({ name: 'jwt', secret: jwtSecret }));
 
   let jwtInstance: { sign: (payload: unknown) => Promise<string> } | null = null;
 
-  tokenGenerator.get('/init', ({ jwt: jwtPlugin }) => {
+  tokenGenerator.get('/init', ({ jwt: jwtPlugin }: any) => {
     jwtInstance = jwtPlugin as unknown as typeof jwtInstance;
     return 'ok';
   });
@@ -266,11 +266,11 @@ export async function generateTestToken(
   secret: string,
   payload: Record<string, unknown>
 ): Promise<string> {
-  const app = new Elysia().use(jwt({ name: 'jwt', secret }));
+  const app: any = new Elysia().use(jwt({ name: 'jwt', secret }));
 
   let token = '';
-  app.get('/gen', async ({ jwt: jwtPlugin }) => {
-    token = await jwtPlugin.sign(payload as unknown as Parameters<typeof jwtPlugin.sign>[0]);
+  app.get('/gen', async ({ jwt: jwtPlugin }: any) => {
+    token = await jwtPlugin.sign(payload);
     return 'ok';
   });
 
@@ -287,7 +287,7 @@ export async function generateTestToken(
  * @returns Response
  */
 export async function testRequest(
-  app: Elysia,
+  app: any,
   path: string,
   options: RequestInit = {}
 ): Promise<Response> {
@@ -331,7 +331,7 @@ export async function testRequest(
  * @returns Parsed JSON response
  */
 export async function testJsonRequest<T = unknown>(
-  app: Elysia,
+  app: any,
   path: string,
   options: RequestInit = {}
 ): Promise<{ status: number; body: T }> {
@@ -350,7 +350,7 @@ export async function testJsonRequest<T = unknown>(
  * @returns Response
  */
 export async function testAuthRequest(
-  app: Elysia,
+  app: any,
   path: string,
   token: string,
   options: RequestInit = {}
@@ -393,7 +393,7 @@ export async function testAuthRequest(
  * @returns Parsed JSON response
  */
 export async function testAuthJsonRequest<T = unknown>(
-  app: Elysia,
+  app: any,
   path: string,
   token: string,
   options: RequestInit = {}
