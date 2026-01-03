@@ -73,6 +73,49 @@ bun run prod:down
 | admin | 5173 | Admin Panel |
 | web | 4321 | Public Website |
 
+## Database Setup
+
+```bash
+# Push schema (first time only)
+bun run db:push:docker
+
+# Seed with sample data
+bun run db:seed
+```
+
+This creates sample data: 8 technologies, 4 projects, 3 materials, 4 news, 4 tags.
+
+## Admin Setup
+
+The system uses a single admin user. To configure:
+
+1. **Generate a password hash:**
+
+```bash
+bun -e "console.log(await Bun.password.hash('your-password', { algorithm: 'bcrypt', cost: 10 }))"
+```
+
+2. **Set the hash in environment:**
+
+For Docker (recommended), edit `docker-compose.dev.yml`:
+```yaml
+environment:
+  - ADMIN_PASSWORD_HASH=$2b$10$your-generated-hash
+```
+
+For local development, create `packages/api/.env`:
+```env
+ADMIN_PASSWORD_HASH=$2b$10$your-generated-hash
+```
+
+3. **Login credentials:**
+   - Username: `admin`
+   - Password: the password you used to generate the hash
+
+4. **Access the admin panel:**
+   - Open http://localhost:5173
+   - Login with the credentials above
+
 ## Environment Variables
 
 ### API (`packages/api/.env`)
@@ -84,11 +127,6 @@ DATABASE_PATH=./data.db
 CORS_ORIGINS=http://localhost:5173,http://localhost:4321
 JWT_SECRET=your-secret-at-least-32-characters-long
 ADMIN_PASSWORD_HASH=$2b$10$your-bcrypt-hash
-```
-
-Generate password hash:
-```bash
-bun -e "console.log(await Bun.password.hash('your-password', { algorithm: 'bcrypt', cost: 10 }))"
 ```
 
 ### Admin (`packages/admin/.env.development`)
@@ -117,8 +155,9 @@ PUBLIC_API_URL=http://localhost:3000
 | `bun run prod:logs` | View production logs |
 | `bun run test` | Run API tests |
 | `bun run typecheck` | TypeScript check all packages |
-| `bun run db:push` | Push schema to database |
-| `bun run db:studio` | Open Drizzle Studio |
+| `bun run db:push:docker` | Push schema to database |
+| `bun run db:seed` | Seed sample data |
+| `bun run db:studio:docker` | Open Drizzle Studio |
 | `bun run dev:local` | Run locally (without Docker) |
 
 ## API Endpoints

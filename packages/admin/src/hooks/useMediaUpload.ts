@@ -7,6 +7,7 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mediaKeys } from '@/lib/query/keys';
 import { getAccessToken } from '@/lib/auth/storage';
+import { BASE_URL, API_PREFIX } from '@/lib/api/client';
 import type { UploadQueueItem, MediaItem } from '@/types/media';
 
 /** Allowed MIME types for upload */
@@ -112,7 +113,7 @@ export function useMediaUpload() {
             reject(new Error('Network error during upload'));
           });
 
-          xhr.open('POST', '/api/v1/admin/media');
+          xhr.open('POST', `${BASE_URL}${API_PREFIX}/admin/media`);
           if (token) {
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
           }
@@ -127,12 +128,26 @@ export function useMediaUpload() {
 
   /**
    * Processes the upload queue.
+   * Accepts optional items to process to avoid stale closure issues.
    */
-  const processQueue = useCallback(async () => {
+  const processQueue = useCallback(async (itemsToProcess?: UploadQueueItem[]) => {
     setIsUploading(true);
 
     try {
-      const pendingItems = uploadQueue.filter((item) => item.status === 'pending');
+      // Use provided items or get from current queue
+      // This avoids stale closure issues when called from addFiles
+      let pendingItems: UploadQueueItem[];
+      if (itemsToProcess) {
+        pendingItems = itemsToProcess.filter((item) => item.status === 'pending');
+      } else {
+        // Get fresh state using a synchronous read pattern
+        let currentQueue: UploadQueueItem[] = [];
+        setUploadQueue((prev) => {
+          currentQueue = prev;
+          return prev;
+        });
+        pendingItems = currentQueue.filter((item) => item.status === 'pending');
+      }
 
       for (const item of pendingItems) {
         try {
@@ -167,7 +182,7 @@ export function useMediaUpload() {
     } finally {
       setIsUploading(false);
     }
-  }, [uploadQueue, uploadFile, queryClient]);
+  }, [uploadFile, queryClient]);
 
   /**
    * Adds files to the upload queue and starts processing.
@@ -188,10 +203,11 @@ export function useMediaUpload() {
       setUploadQueue((prev) => [...prev, ...newItems]);
 
       // Start processing if not already uploading
+      // Pass the new items directly to avoid stale closure issues
       if (!isUploading) {
-        // Use setTimeout to allow state to update first
+        // Use setTimeout to allow state to update first, but pass items directly
         setTimeout(() => {
-          processQueue();
+          processQueue(newItems);
         }, 0);
       }
     },

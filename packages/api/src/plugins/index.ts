@@ -26,3 +26,4 @@
 
 export { databasePlugin, createDatabasePlugin, type DatabaseInstance } from './database';
 export { swaggerPlugin, createSwaggerPlugin } from './swagger';
+export { staticPlugin } from './static';

@@ -16,7 +16,7 @@ services:
       - DATABASE_PATH=/app/packages/api/data/data.db
       - CORS_ORIGINS=http://localhost:5173,http://localhost:4321
       - JWT_SECRET=development-secret-that-is-at-least-32-characters-long
-      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:-$$2b$$10$$development-hash-for-testing-only}
+      - ADMIN_PASSWORD_HASH=$$2b$$10$$O48OroMeFReJfvFv7CSKKOH7Mbh/kPLpbX6z1Cot9nFXQLs1kcN3e
     volumes:
       - ./packages/shared:/app/packages/shared
       - ./packages/api:/app/packages/api
@@ -36,6 +36,7 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_URL=http://localhost:3000
+      - VITE_API_PROXY_TARGET=http://api:3000
     volumes:
       - ./packages/shared:/app/packages/shared
       - ./packages/admin:/app/packages/admin

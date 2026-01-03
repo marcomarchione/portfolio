@@ -1,13 +1,14 @@
 /**
  * Media Page
  *
- * Full-featured media library for file management including upload,
- * browse, filter, bulk actions, and trash management.
+ * Professional media library with table view, upload queue, and detail modal.
+ * Matches the design language of other content management pages.
  */
 import { useState, useCallback, useRef } from 'react';
+import { Upload, Loader2 } from 'lucide-react';
 import { Page } from '@/components/common/Page';
 import { Pagination } from '@/components/common/Pagination';
-import { MediaGrid } from '@/components/media/MediaGrid';
+import { MediaTable } from '@/components/media/MediaTable';
 import { MediaToolbar } from '@/components/media/MediaToolbar';
 import { DropZone } from '@/components/media/DropZone';
 import { UploadQueue } from '@/components/media/UploadQueue';
@@ -17,7 +18,6 @@ import { useMediaLibrary } from '@/hooks/useMediaLibrary';
 import { useMediaUpload } from '@/hooks/useMediaUpload';
 import { useTrashMedia } from '@/hooks/useTrashMedia';
 import type { MediaItem } from '@/types/media';
-import { Loader2 } from 'lucide-react';
 
 export default function MediaPage() {
   // Media library state
@@ -45,7 +45,7 @@ export default function MediaPage() {
 
   // Upload functionality
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadQueue, addFiles, removeFromQueue, isUploading } = useMediaUpload();
+  const { uploadQueue, addFiles, removeFromQueue, clearCompleted, isUploading } = useMediaUpload();
 
   // Trash functionality
   const { restoreMedia, permanentDeleteMedia, isRestoring, isPermanentDeleting } = useTrashMedia();
@@ -114,11 +114,27 @@ export default function MediaPage() {
 
   // Subtitle based on current view
   const subtitle = viewMode === 'trash'
-    ? 'Deleted files waiting for permanent removal'
-    : 'Manage images and files';
+    ? `${total} file${total !== 1 ? 's' : ''} in trash`
+    : `${total} file${total !== 1 ? 's' : ''}`;
 
   return (
-    <Page title="Media Library" subtitle={subtitle}>
+    <Page
+      title="Media Library"
+      subtitle={subtitle}
+      actions={
+        viewMode === 'library' && (
+          <button
+            type="button"
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-medium rounded-lg hover:opacity-90 transition-opacity focus-ring disabled:opacity-50"
+          >
+            <Upload className="h-4 w-4" />
+            Upload Files
+          </button>
+        )
+      }
+    >
       <div className="space-y-6">
         {/* Toolbar */}
         <MediaToolbar
@@ -143,14 +159,6 @@ export default function MediaPage() {
           />
         )}
 
-        {/* Upload queue */}
-        {uploadQueue.length > 0 && (
-          <UploadQueue
-            items={uploadQueue}
-            onRemove={removeFromQueue}
-          />
-        )}
-
         {/* Loading state */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
@@ -158,15 +166,15 @@ export default function MediaPage() {
           </div>
         )}
 
-        {/* Media grid */}
+        {/* Media table */}
         {!isLoading && (
           <div className={isFetching ? 'opacity-50 pointer-events-none' : ''}>
-            <MediaGrid
+            <MediaTable
               items={items}
               onItemClick={handleItemClick}
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
-              selectionMode={selectedIds.size > 0}
+              isTrashView={viewMode === 'trash'}
             />
           </div>
         )}
@@ -182,6 +190,13 @@ export default function MediaPage() {
           </div>
         )}
       </div>
+
+      {/* Upload queue (floating) */}
+      <UploadQueue
+        items={uploadQueue}
+        onRemove={removeFromQueue}
+        onClearCompleted={clearCompleted}
+      />
 
       {/* Media detail modal */}
       <MediaDetailModal
@@ -222,6 +237,7 @@ export default function MediaPage() {
         ref={fileInputRef}
         type="file"
         multiple
+        accept="image/*,application/pdf"
         onChange={(e) => {
           const files = Array.from(e.target.files || []);
           if (files.length > 0) {

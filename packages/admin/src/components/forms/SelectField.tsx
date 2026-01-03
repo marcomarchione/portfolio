@@ -3,8 +3,10 @@
  *
  * Fully custom dropdown that matches the glass-card design system.
  * Uses div-based implementation for complete styling control.
+ * Uses React Portal for proper z-index layering.
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, AlertCircle, Check } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -63,24 +65,64 @@ export function SelectField({
 }: SelectFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLUListElement>(null);
   const hasError = Boolean(error);
 
   // Find the currently selected option
   const selectedOption = options.find((opt) => opt.value === value);
 
+  // Calculate popup position
+  const updatePosition = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const popupHeight = Math.min(options.length * 40 + 8, 248); // Approximate height
+      const viewportHeight = window.innerHeight;
+
+      // Check if there's enough space below
+      const spaceBelow = viewportHeight - rect.bottom;
+      const showAbove = spaceBelow < popupHeight && rect.top > popupHeight;
+
+      setPopupPosition({
+        top: showAbove ? rect.top - popupHeight - 4 : rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  }, [options.length]);
+
+  // Update position on scroll/resize when open
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isOpen, updatePosition]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        popupRef.current && !popupRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -127,11 +169,12 @@ export function SelectField({
 
   const toggleOpen = () => {
     if (!disabled) {
-      setIsOpen(!isOpen);
       if (!isOpen) {
+        updatePosition();
         const currentIndex = options.findIndex((opt) => opt.value === value);
         setFocusedIndex(currentIndex >= 0 ? currentIndex : 0);
       }
+      setIsOpen(!isOpen);
     }
   };
 
@@ -154,6 +197,7 @@ export function SelectField({
       <div className="relative">
         {/* Trigger button */}
         <button
+          ref={buttonRef}
           type="button"
           id={id}
           onClick={toggleOpen}
@@ -194,18 +238,19 @@ export function SelectField({
           />
         </button>
 
-        {/* Dropdown menu */}
-        {isOpen && (
+        {/* Dropdown menu via portal */}
+        {isOpen && createPortal(
           <ul
-            ref={listRef}
+            ref={popupRef}
             role="listbox"
             aria-labelledby={id}
-            className="
-              absolute z-50 w-full mt-1 py-1 rounded-lg
-              bg-neutral-900 border border-neutral-700
-              shadow-xl shadow-black/20
-              max-h-60 overflow-auto
-            "
+            className="fixed py-1 rounded-lg bg-neutral-900 border border-neutral-700 shadow-2xl shadow-black/50 max-h-60 overflow-auto"
+            style={{
+              top: popupPosition.top,
+              left: popupPosition.left,
+              width: popupPosition.width,
+              zIndex: 99999,
+            }}
           >
             {options.map((option, index) => {
               const isSelected = option.value === value;
@@ -219,7 +264,7 @@ export function SelectField({
                   onClick={() => handleOptionClick(option.value)}
                   onMouseEnter={() => setFocusedIndex(index)}
                   className={`
-                    px-4 py-2 cursor-pointer flex items-center justify-between
+                    px-4 py-2.5 cursor-pointer flex items-center justify-between
                     transition-colors
                     ${isSelected
                       ? 'bg-primary-500/20 text-primary-300'
@@ -236,7 +281,8 @@ export function SelectField({
                 </li>
               );
             })}
-          </ul>
+          </ul>,
+          document.body
         )}
       </div>
 

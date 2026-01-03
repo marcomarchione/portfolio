@@ -39,10 +39,10 @@ bun run test                          # Run Vitest unit tests
 bun run playwright test               # Run Playwright E2E tests
 bun run playwright test file.spec.ts  # Run single E2E test
 
-# Database (requires local bun install or running inside container)
-bun run db:push      # Push schema to database
-bun run db:studio    # Open Drizzle Studio
-bun run db:generate  # Generate migrations
+# Database
+bun run db:push:docker    # Push schema to database
+bun run db:seed           # Seed sample data
+bun run db:studio:docker  # Open Drizzle Studio
 
 # Type checking (requires local bun install)
 bun run typecheck

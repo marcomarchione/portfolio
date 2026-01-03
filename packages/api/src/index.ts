@@ -7,7 +7,7 @@
 import { Elysia } from 'elysia';
 import { config, isDevelopment } from './config';
 import { errorHandler, corsMiddleware } from './middleware';
-import { databasePlugin, swaggerPlugin } from './plugins';
+import { databasePlugin, swaggerPlugin, staticPlugin } from './plugins';
 import { apiRoutes } from './routes';
 
 /**
@@ -26,6 +26,8 @@ export function createApp() {
     .use(databasePlugin)
     // OpenAPI/Swagger (dev only)
     .use(swaggerPlugin)
+    // Static file serving for uploads
+    .use(staticPlugin)
     // API routes with /api/v1 prefix
     .use(apiRoutes);
 

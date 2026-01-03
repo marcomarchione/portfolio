@@ -7,10 +7,10 @@ import type { ApiErrorResponse } from '@/types/api';
 import { getAccessToken, clearTokens } from '@/lib/auth/storage';
 
 /** Base URL from environment variable or default to relative path for proxy */
-const BASE_URL = import.meta.env.VITE_API_URL || '';
+export const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 /** API version prefix */
-const API_PREFIX = '/api/v1';
+export const API_PREFIX = '/api/v1';
 
 /** Custom event for unauthorized responses */
 export const UNAUTHORIZED_EVENT = 'auth:unauthorized';

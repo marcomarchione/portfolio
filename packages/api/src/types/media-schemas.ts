@@ -5,27 +5,15 @@
  * Used for request/response validation in media API endpoints.
  */
 import { Type, type Static } from '@sinclair/typebox';
+import { PaginationSchema } from './validation';
 
 /**
  * Media query schema for list endpoint.
  * Extends pagination with optional mimeType filter.
+ * Uses PaginationSchema to properly handle string-to-integer conversion for query params.
  */
 export const MediaQuerySchema = Type.Object({
-  limit: Type.Optional(
-    Type.Integer({
-      minimum: 1,
-      maximum: 100,
-      default: 20,
-      description: 'Number of items per page (1-100)',
-    })
-  ),
-  offset: Type.Optional(
-    Type.Integer({
-      minimum: 0,
-      default: 0,
-      description: 'Number of items to skip',
-    })
-  ),
+  ...PaginationSchema.properties,
   mimeType: Type.Optional(
     Type.String({
       description: 'Filter by MIME type (e.g., image/jpeg, application/pdf)',
