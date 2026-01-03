@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useMediaLibrary } from '@/hooks/useMediaLibrary';
 import { useMediaUpload } from '@/hooks/useMediaUpload';
 import { useTrashMedia } from '@/hooks/useTrashMedia';
+import { useDeleteMedia } from '@/hooks/useDeleteMedia';
 import type { MediaItem } from '@/types/media';
 
 export default function MediaPage() {
@@ -42,6 +43,7 @@ export default function MediaPage() {
   // Confirmation dialog state
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmPermanentDelete, setConfirmPermanentDelete] = useState<number | null>(null);
+  const [confirmSingleDelete, setConfirmSingleDelete] = useState<number | null>(null);
 
   // Upload functionality
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +51,9 @@ export default function MediaPage() {
 
   // Trash functionality
   const { restoreMedia, permanentDeleteMedia, isRestoring, isPermanentDeleting } = useTrashMedia();
+
+  // Delete functionality (soft delete)
+  const { deleteMedia, bulkDeleteMedia, isDeleting, isBulkDeleting } = useDeleteMedia();
 
   // Check if all visible items are selected
   const allSelected = items.length > 0 && items.every((item) => selectedIds.has(item.id));
@@ -69,11 +74,18 @@ export default function MediaPage() {
 
   // Handle delete selected (soft delete)
   const handleDeleteSelected = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await bulkDeleteMedia(ids);
     setConfirmDelete(false);
-    // This will be implemented via useBulkDeleteMedia hook
-    // For now, clear selection
     setSelectedIds(new Set());
-  }, []);
+  }, [selectedIds, bulkDeleteMedia]);
+
+  // Handle single item delete (soft delete from modal)
+  const handleSingleDelete = useCallback(async (id: number) => {
+    await deleteMedia(id);
+    setConfirmSingleDelete(null);
+    setDetailMediaId(null);
+  }, [deleteMedia]);
 
   // Handle permanent delete
   const handlePermanentDelete = useCallback(async (id: number) => {
@@ -206,7 +218,9 @@ export default function MediaPage() {
         isTrashView={viewMode === 'trash'}
         onRestore={handleRestore}
         onPermanentDelete={(id) => setConfirmPermanentDelete(id)}
+        onDelete={(id) => setConfirmSingleDelete(id)}
         isRestoring={isRestoring}
+        isDeleting={isDeleting}
       />
 
       {/* Bulk delete confirmation */}
@@ -230,6 +244,18 @@ export default function MediaPage() {
         onCancel={() => setConfirmPermanentDelete(null)}
         variant="danger"
         isLoading={isPermanentDeleting}
+      />
+
+      {/* Single item delete confirmation (soft delete) */}
+      <ConfirmDialog
+        isOpen={confirmSingleDelete !== null}
+        title="Delete Media"
+        message="Are you sure you want to delete this file? It will be moved to trash and can be restored later."
+        confirmLabel="Move to Trash"
+        onConfirm={() => confirmSingleDelete && handleSingleDelete(confirmSingleDelete)}
+        onCancel={() => setConfirmSingleDelete(null)}
+        variant="danger"
+        isLoading={isDeleting}
       />
 
       {/* Hidden file input for upload button */}

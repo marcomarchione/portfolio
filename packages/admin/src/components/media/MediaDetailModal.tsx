@@ -42,8 +42,12 @@ interface MediaDetailModalProps {
   onRestore?: (id: number) => void;
   /** Callback for permanent delete action */
   onPermanentDelete?: (id: number) => void;
+  /** Callback for soft delete action (move to trash) */
+  onDelete?: (id: number) => void;
   /** Whether restore is in progress */
   isRestoring?: boolean;
+  /** Whether delete is in progress */
+  isDeleting?: boolean;
 }
 
 /**
@@ -131,7 +135,9 @@ export function MediaDetailModal({
   isTrashView = false,
   onRestore,
   onPermanentDelete,
+  onDelete,
   isRestoring = false,
+  isDeleting = false,
 }: MediaDetailModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -255,16 +261,28 @@ export function MediaDetailModal({
               </>
             )}
 
-            {/* Download button */}
-            {media && !isTrashView && (
-              <a
-                href={media.url}
-                download={media.filename}
-                className="p-2 rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-white/10 transition-colors"
-                title="Download original"
-              >
-                <Download className="w-5 h-5" />
-              </a>
+            {/* Library view actions */}
+            {!isTrashView && media && (
+              <>
+                <a
+                  href={media.url}
+                  download={media.filename}
+                  className="p-2 rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-white/10 transition-colors"
+                  title="Download original"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => onDelete?.(media.id)}
+                  disabled={isDeleting}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
+                  title="Move to trash"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </>
             )}
 
             <button
