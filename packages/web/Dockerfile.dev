@@ -1,7 +1,7 @@
 # Web (Astro) Development Dockerfile
 # Supports hot reload with Astro dev server
 
-FROM oven/bun:1.1
+FROM oven/bun:1.3
 WORKDIR /app
 
 # Copy workspace files

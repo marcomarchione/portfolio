@@ -1,7 +1,7 @@
 # API Dockerfile
 # Uses Bun runtime for the Elysia backend
 
-FROM oven/bun:1.1 AS base
+FROM oven/bun:1.3 AS base
 WORKDIR /app
 
 # Install dependencies

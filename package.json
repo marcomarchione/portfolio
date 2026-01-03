@@ -7,10 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --filter '*' dev",
-    "dev:api": "bun run --filter @marcomarchione/api dev",
-    "dev:admin": "bun run --filter @marcomarchione/admin dev",
-    "dev:web": "bun run --filter @marcomarchione/web dev",
+    "dev": "docker compose -f docker-compose.dev.yml up",
+    "dev:build": "docker compose -f docker-compose.dev.yml up --build",
+    "dev:api": "docker compose -f docker-compose.dev.yml up api",
+    "dev:admin": "docker compose -f docker-compose.dev.yml up admin",
+    "dev:web": "docker compose -f docker-compose.dev.yml up web",
+    "dev:local": "bun run --filter '*' dev",
     "build": "bun run --filter '*' build",
     "build:api": "bun run --filter @marcomarchione/api build",
     "build:admin": "bun run --filter @marcomarchione/admin build",
@@ -25,12 +27,12 @@
     "db:push": "bun run --filter @marcomarchione/api db:push",
     "db:studio": "bun run --filter @marcomarchione/api db:studio",
     "clean": "rm -rf packages/*/node_modules packages/*/dist node_modules",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "docker:dev": "docker-compose -f docker-compose.dev.yml up",
-    "docker:dev:build": "docker-compose -f docker-compose.dev.yml build"
+    "prod": "docker compose up -d",
+    "prod:build": "docker compose up -d --build",
+    "prod:down": "docker compose down",
+    "prod:logs": "docker compose logs -f",
+    "dev:down": "docker compose -f docker-compose.dev.yml down",
+    "dev:logs": "docker compose -f docker-compose.dev.yml logs -f"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

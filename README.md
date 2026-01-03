@@ -25,118 +25,53 @@ packages/
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) v1.0+
-- [Docker](https://www.docker.com/) (optional)
-
-### Installation
-
-```bash
-# Install all dependencies
-bun install
-
-# Setup database
-bun run db:push
-
-# Copy environment file
-cp packages/api/.env.example packages/api/.env
-# Edit packages/api/.env with your values
-```
+- [Bun](https://bun.sh/) v1.3+
+- [Docker](https://www.docker.com/)
 
 ### Development
 
 ```bash
-# Run all packages
+# Start all services (with hot reload)
 bun run dev
 
-# Or run individually
+# Start with rebuild
+bun run dev:build
+
+# Start individual services
 bun run dev:api    # API on http://localhost:3000
 bun run dev:admin  # Admin on http://localhost:5173
 bun run dev:web    # Web on http://localhost:4321
-```
-
-### Docker Compose
-
-#### Development (hot reload)
-
-```bash
-# Start all services with hot reload
-docker compose -f docker-compose.dev.yml up
-
-# Start in background (detached)
-docker compose -f docker-compose.dev.yml up -d
-
-# Start specific service
-docker compose -f docker-compose.dev.yml up api
-docker compose -f docker-compose.dev.yml up admin
-docker compose -f docker-compose.dev.yml up web
-
-# Rebuild and start (after Dockerfile changes)
-docker compose -f docker-compose.dev.yml up --build
 
 # View logs
-docker compose -f docker-compose.dev.yml logs -f
-docker compose -f docker-compose.dev.yml logs -f api    # Single service
+bun run dev:logs
 
 # Stop all services
-docker compose -f docker-compose.dev.yml down
-
-# Stop and remove volumes (reset data)
-docker compose -f docker-compose.dev.yml down -v
+bun run dev:down
 ```
 
-#### Production
+### Production
 
 ```bash
 # Start all services
-docker compose up -d
+bun run prod
 
-# Rebuild and start
-docker compose up -d --build
+# Start with rebuild
+bun run prod:build
 
 # View logs
-docker compose logs -f
+bun run prod:logs
 
 # Stop all services
-docker compose down
-
-# Stop and remove volumes
-docker compose down -v
+bun run prod:down
 ```
 
-#### Useful Commands
+### Services & Ports
 
-```bash
-# Check running containers
-docker compose ps
-docker compose -f docker-compose.dev.yml ps
-
-# Restart a specific service
-docker compose restart api
-docker compose -f docker-compose.dev.yml restart admin
-
-# Execute command in running container
-docker compose exec api sh
-docker compose -f docker-compose.dev.yml exec api bun run db:studio
-
-# View resource usage
-docker compose stats
-```
-
-#### Services & Ports
-
-| Service | Dev Port | Prod Port | Description |
-|---------|----------|-----------|-------------|
-| api | 3000 | 3000 | Backend REST API |
-| admin | 5173 | 5173 | Admin Panel |
-| web | 4321 | 4321 | Public Website |
-
-#### npm Scripts (shortcuts)
-
-```bash
-# These scripts are aliases for docker compose commands
-bun run docker:dev    # docker compose -f docker-compose.dev.yml up
-bun run docker:up     # docker compose up -d
-```
+| Service | Port | Description |
+|---------|------|-------------|
+| api | 3000 | Backend REST API |
+| admin | 5173 | Admin Panel |
+| web | 4321 | Public Website |
 
 ## Environment Variables
 
@@ -172,14 +107,19 @@ PUBLIC_API_URL=http://localhost:3000
 
 | Command | Description |
 |---------|-------------|
-| `bun run dev` | Start all packages in dev mode |
-| `bun run build` | Build all packages |
+| `bun run dev` | Start all services (Docker) |
+| `bun run dev:build` | Rebuild and start all services |
+| `bun run dev:down` | Stop all dev services |
+| `bun run dev:logs` | View dev logs |
+| `bun run prod` | Start production |
+| `bun run prod:build` | Rebuild and start production |
+| `bun run prod:down` | Stop production |
+| `bun run prod:logs` | View production logs |
 | `bun run test` | Run API tests |
 | `bun run typecheck` | TypeScript check all packages |
 | `bun run db:push` | Push schema to database |
 | `bun run db:studio` | Open Drizzle Studio |
-| `bun run docker:dev` | Run with Docker (dev mode) |
-| `bun run docker:up` | Run with Docker (production) |
+| `bun run dev:local` | Run locally (without Docker) |
 
 ## API Endpoints
 
@@ -212,8 +152,8 @@ API documentation available at `http://localhost:3000/api/docs` (dev mode).
 # Run all tests
 bun run test
 
-# Run with watch
-bun run test:api --watch
+# Run with watch (from packages/api)
+bun test --watch
 ```
 
 ## Versioning

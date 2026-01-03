@@ -9,16 +9,25 @@ Personal portfolio website monorepo with CMS backend, admin panel, and public fr
 ## Commands
 
 ```bash
-# Install dependencies
-bun install
+# Development (Docker - recommended)
+bun run dev              # Start all services with hot reload
+bun run dev:build        # Build and start all services
+bun run dev:api          # Start only API
+bun run dev:admin        # Start only Admin panel
+bun run dev:web          # Start only Web
+bun run dev:down         # Stop all dev services
+bun run dev:logs         # View all dev logs
 
-# Development (all packages)
-bun run dev
+# URLs when running:
+# - API:   http://localhost:3000 (Swagger: http://localhost:3000/api/docs)
+# - Admin: http://localhost:5173
+# - Web:   http://localhost:4321
 
-# Development (individual)
-bun run dev:api    # http://localhost:3000
-bun run dev:admin  # http://localhost:5173
-bun run dev:web    # http://localhost:4321
+# Production (Docker)
+bun run prod             # Start production in background
+bun run prod:build       # Build and start production
+bun run prod:down        # Stop production
+bun run prod:logs        # View production logs
 
 # Testing - API (from packages/api directory)
 bun run test                          # Run all API tests
@@ -30,19 +39,17 @@ bun run test                          # Run Vitest unit tests
 bun run playwright test               # Run Playwright E2E tests
 bun run playwright test file.spec.ts  # Run single E2E test
 
-# Database
+# Database (requires local bun install or running inside container)
 bun run db:push      # Push schema to database
 bun run db:studio    # Open Drizzle Studio
 bun run db:generate  # Generate migrations
 
-# Type checking
+# Type checking (requires local bun install)
 bun run typecheck
 
-# Docker
-docker compose -f docker-compose.dev.yml up      # Development with hot reload
-docker compose -f docker-compose.dev.yml up -d   # Detached mode
-docker compose up -d                              # Production
-docker compose logs -f api                        # View service logs
+# Local development (without Docker - requires bun install first)
+bun install           # Install dependencies locally
+bun run dev:local     # Run all packages locally
 ```
 
 ## Architecture

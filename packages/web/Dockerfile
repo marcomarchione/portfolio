@@ -2,7 +2,7 @@
 # Multi-stage build: Bun for building, nginx for serving static site
 
 # Build stage
-FROM oven/bun:1.1 AS builder
+FROM oven/bun:1.3 AS builder
 WORKDIR /app
 
 # Copy workspace files
