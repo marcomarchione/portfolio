@@ -232,6 +232,7 @@ export default function MediaPage() {
         onConfirm={handleDeleteSelected}
         onCancel={() => setConfirmDelete(false)}
         variant="danger"
+        isLoading={isBulkDeleting}
       />
 
       {/* Permanent delete confirmation */}
