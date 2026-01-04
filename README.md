@@ -38,7 +38,7 @@ git clone --recurse-submodules git@github.com:marcomarchione/portfolio.git
 git clone git@github.com:marcomarchione/portfolio.git
 ```
 
-> **Note:** The `agent-os/` directory is a private submodule containing development specs and standards. The main codebase works independently without it.
+> **Note:** The `agent-os/` and `.claude/` directories are private submodules containing development specs, standards, and Claude Code configuration. The main codebase works independently without them.
 
 ### Development
 
