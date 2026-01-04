@@ -12,7 +12,7 @@ interface ConfirmDialogProps {
   /** Dialog title */
   title: string;
   /** Dialog message */
-  message: string;
+  message: React.ReactNode;
   /** Confirm button label */
   confirmLabel?: string;
   /** Cancel button label */
@@ -136,7 +136,7 @@ export function ConfirmDialog({
         </div>
 
         {/* Message */}
-        <p className="text-neutral-400 mb-6">{message}</p>
+        <div className="text-neutral-400 mb-6">{message}</div>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3">
