@@ -1,3 +1,6 @@
 [submodule "agent-os"]
 	path = agent-os
 	url = git@github.com:marcomarchione/portfolio-agent-os.git
+[submodule ".claude"]
+	path = .claude
+	url = git@github.com:marcomarchione/portfolio-claude-config.git
