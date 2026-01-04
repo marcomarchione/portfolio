@@ -286,7 +286,7 @@ export function ColorPicker({
               top: popupPosition.top,
               left: popupPosition.left,
               width: 280,
-              zIndex: 99999,
+              zIndex: 200000,
             }}
           >
             <div className="text-xs text-neutral-500 mb-2">Preset Colors</div>

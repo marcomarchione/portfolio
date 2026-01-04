@@ -225,7 +225,7 @@ export function IconPicker({
               left: popupPosition.left,
               width: popupPosition.width,
               maxHeight: 400,
-              zIndex: 99999,
+              zIndex: 200000,
             }}
             onKeyDown={handleKeyDown}
           >
