@@ -77,6 +77,10 @@ export function ItemSelector({
   const popupRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Ref to track current name value for closure-safe access
+  const newItemNameRef = useRef(newItemName);
+  newItemNameRef.current = newItemName;
+
   const queryClient = useQueryClient();
 
   // Fetch items based on type
@@ -429,8 +433,8 @@ export function ItemSelector({
                   if (iconSlug) {
                     const icon = getIconBySlug(iconSlug);
                     if (icon) {
-                      // Only auto-fill name if empty or unchanged
-                      if (!newItemName.trim()) {
+                      // Only auto-fill name if empty (use ref for current value)
+                      if (!newItemNameRef.current.trim()) {
                         setNewItemName(icon.title);
                       }
                       // Auto-fill color with brand color
