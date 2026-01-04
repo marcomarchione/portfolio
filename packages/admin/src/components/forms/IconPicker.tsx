@@ -228,6 +228,7 @@ export function IconPicker({
               zIndex: 200000,
             }}
             onKeyDown={handleKeyDown}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             {/* Search input */}
             <div className="p-3 border-b border-neutral-700">

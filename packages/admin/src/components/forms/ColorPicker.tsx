@@ -288,6 +288,7 @@ export function ColorPicker({
               width: 280,
               zIndex: 200000,
             }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="text-xs text-neutral-500 mb-2">Preset Colors</div>
             <div className="grid grid-cols-10 gap-1">
