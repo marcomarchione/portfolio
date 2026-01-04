@@ -226,7 +226,19 @@ export function TechnologiesTable() {
                   <IconPicker
                     label=""
                     value={formData.icon}
-                    onChange={(v) => setFormData((prev) => ({ ...prev, icon: v }))}
+                    onChange={(iconSlug) => {
+                      setFormData((prev) => {
+                        const icon = iconSlug ? getIconBySlug(iconSlug) : null;
+                        return {
+                          ...prev,
+                          icon: iconSlug,
+                          // Auto-fill name if empty
+                          name: prev.name.trim() ? prev.name : (icon?.title ?? prev.name),
+                          // Auto-fill color with brand color
+                          color: icon?.hex ?? prev.color,
+                        };
+                      });
+                    }}
                     placeholder="Select icon"
                   />
                 </td>
@@ -281,7 +293,19 @@ export function TechnologiesTable() {
                       <IconPicker
                         label=""
                         value={formData.icon}
-                        onChange={(v) => setFormData((prev) => ({ ...prev, icon: v }))}
+                        onChange={(iconSlug) => {
+                          setFormData((prev) => {
+                            const icon = iconSlug ? getIconBySlug(iconSlug) : null;
+                            return {
+                              ...prev,
+                              icon: iconSlug,
+                              // Auto-fill name if empty
+                              name: prev.name.trim() ? prev.name : (icon?.title ?? prev.name),
+                              // Auto-fill color with brand color
+                              color: icon?.hex ?? prev.color,
+                            };
+                          });
+                        }}
                         placeholder="Select icon"
                       />
                     </td>
