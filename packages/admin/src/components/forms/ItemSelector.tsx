@@ -423,7 +423,23 @@ export function ItemSelector({
               <IconPicker
                 label="Icon"
                 value={newItemIcon}
-                onChange={setNewItemIcon}
+                onChange={(iconSlug) => {
+                  setNewItemIcon(iconSlug);
+                  // Auto-fill name and color from icon
+                  if (iconSlug) {
+                    const icon = getIconBySlug(iconSlug);
+                    if (icon) {
+                      // Only auto-fill name if empty or unchanged
+                      if (!newItemName.trim()) {
+                        setNewItemName(icon.title);
+                      }
+                      // Auto-fill color with brand color
+                      if (icon.hex) {
+                        setNewItemColor(icon.hex);
+                      }
+                    }
+                  }
+                }}
                 helpText="Select a technology icon from Simple Icons"
               />
 
