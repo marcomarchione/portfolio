@@ -9,9 +9,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Plus, ChevronDown, Loader2, Sparkles, Palette } from 'lucide-react';
+import { X, Plus, ChevronDown, Loader2, Sparkles } from 'lucide-react';
 import { get, post } from '@/lib/api/client';
 import { settingsKeys } from '@/lib/query/keys';
+import { IconPicker } from './IconPicker';
+import { ColorPicker } from './ColorPicker';
+import { getIconBySlug } from '@/lib/icons';
 import type { ApiResponse } from '@/types/api';
 import type { Technology, Tag } from '@marcomarchione/shared';
 
@@ -54,25 +57,6 @@ function generateSlug(name: string): string {
 }
 
 /**
- * Preset colors for quick selection
- */
-const COLOR_PRESETS = [
-  { color: '#61DAFB', name: 'Cyan' },
-  { color: '#3178C6', name: 'Blue' },
-  { color: '#339933', name: 'Green' },
-  { color: '#FF5D01', name: 'Orange' },
-  { color: '#E34F26', name: 'Red' },
-  { color: '#8B5CF6', name: 'Purple' },
-  { color: '#F7DF1E', name: 'Yellow' },
-  { color: '#06B6D4', name: 'Teal' },
-];
-
-/**
- * Suggested emojis for technologies
- */
-const EMOJI_SUGGESTIONS = ['⚛️', '📘', '🚀', '🔧', '💻', '🎨', '📦', '⚡', '🔥', '🌐', '🗃️', '🐳'];
-
-/**
  * ItemSelector component for selecting tags or technologies.
  */
 export function ItemSelector({
@@ -85,8 +69,8 @@ export function ItemSelector({
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newItemName, setNewItemName] = useState('');
-  const [newItemIcon, setNewItemIcon] = useState('');
-  const [newItemColor, setNewItemColor] = useState('#3d7eff');
+  const [newItemIcon, setNewItemIcon] = useState<string | null>(null);
+  const [newItemColor, setNewItemColor] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,8 +105,8 @@ export function ItemSelector({
       // Reset form
       setShowCreateForm(false);
       setNewItemName('');
-      setNewItemIcon('');
-      setNewItemColor('#3d7eff');
+      setNewItemIcon(null);
+      setNewItemColor(null);
       setIsOpen(false);
     },
   });
@@ -218,10 +202,12 @@ export function ItemSelector({
     if (!newItemName.trim()) return;
 
     if (type === 'technology') {
+      // Add # prefix to color if present
+      const colorValue = newItemColor ? (newItemColor.startsWith('#') ? newItemColor : `#${newItemColor}`) : null;
       createMutation.mutate({
         name: newItemName.trim(),
-        icon: newItemIcon.trim() || null,
-        color: newItemColor || null,
+        icon: newItemIcon,
+        color: colorValue,
       });
     } else {
       createMutation.mutate({
@@ -245,6 +231,21 @@ export function ItemSelector({
       return item.icon;
     }
     return null;
+  };
+
+  // Render icon from simple-icons
+  const renderIcon = (iconSlug: string | null) => {
+    if (!iconSlug) return null;
+    const icon = getIconBySlug(iconSlug);
+    if (!icon) return null;
+    return (
+      <div
+        className="w-4 h-4"
+        dangerouslySetInnerHTML={{
+          __html: `<svg role="img" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="${icon.path}"/></svg>`,
+        }}
+      />
+    );
   };
 
   // Open dropdown with position update
@@ -277,7 +278,7 @@ export function ItemSelector({
           {availableItems.length > 0 ? (
             availableItems.map((item) => {
               const color = getItemColor(item) || '#3d7eff';
-              const icon = getItemIcon(item);
+              const iconSlug = getItemIcon(item);
               return (
                 <button
                   key={item.id}
@@ -286,8 +287,8 @@ export function ItemSelector({
                   className="w-full px-4 py-2.5 text-left text-neutral-200 hover:bg-neutral-800 transition-colors flex items-center gap-3 group"
                 >
                   {/* Icon or colored dot */}
-                  {icon ? (
-                    <span className="text-lg leading-none">{icon}</span>
+                  {iconSlug ? (
+                    <span className="text-lg leading-none">{renderIcon(iconSlug)}</span>
                   ) : (
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0 transition-shadow group-hover:shadow-lg"
@@ -367,30 +368,30 @@ export function ItemSelector({
         </div>
 
         {/* Live Preview */}
-        {type === 'technology' && (newItemName || newItemIcon) && (
+        {type === 'technology' && newItemName && (
           <div className="px-6 py-4 border-b border-neutral-700 bg-neutral-800/30">
             <p className="text-xs text-neutral-500 mb-3 uppercase tracking-wider">Preview</p>
             <div className="flex justify-center">
               <span
                 className="inline-flex items-center gap-2 pl-3 pr-4 py-2 rounded-full text-sm font-medium"
                 style={{
-                  background: `linear-gradient(135deg, ${newItemColor}25 0%, ${newItemColor}15 100%)`,
-                  boxShadow: `0 0 20px ${newItemColor}20, inset 0 1px 0 ${newItemColor}30`,
-                  border: `1px solid ${newItemColor}50`,
+                  background: newItemColor ? `linear-gradient(135deg, #${newItemColor}25 0%, #${newItemColor}15 100%)` : 'linear-gradient(135deg, #3d7eff25 0%, #3d7eff15 100%)',
+                  boxShadow: newItemColor ? `0 0 20px #${newItemColor}20, inset 0 1px 0 #${newItemColor}30` : '0 0 20px #3d7eff20, inset 0 1px 0 #3d7eff30',
+                  border: newItemColor ? `1px solid #${newItemColor}50` : '1px solid #3d7eff50',
                 }}
               >
                 {newItemIcon ? (
-                  <span className="text-base leading-none">{newItemIcon}</span>
+                  <span className="text-base leading-none">{renderIcon(newItemIcon)}</span>
                 ) : (
                   <span
                     className="w-2 h-2 rounded-full"
                     style={{
-                      backgroundColor: newItemColor,
-                      boxShadow: `0 0 8px ${newItemColor}80`,
+                      backgroundColor: newItemColor ? `#${newItemColor}` : '#3d7eff',
+                      boxShadow: newItemColor ? `0 0 8px #${newItemColor}80` : '0 0 8px #3d7eff80',
                     }}
                   />
                 )}
-                <span style={{ color: newItemColor }}>
+                <span style={{ color: newItemColor ? `#${newItemColor}` : '#3d7eff' }}>
                   {newItemName || 'Technology Name'}
                 </span>
               </span>
@@ -418,77 +419,22 @@ export function ItemSelector({
 
           {type === 'technology' && (
             <>
-              {/* Icon Input with Suggestions */}
-              <div>
-                <label htmlFor="create-icon" className="block text-sm font-medium text-neutral-300 mb-2">
-                  Icon (emoji)
-                </label>
-                <input
-                  id="create-icon"
-                  type="text"
-                  value={newItemIcon}
-                  onChange={(e) => setNewItemIcon(e.target.value)}
-                  placeholder="Click a suggestion or type an emoji"
-                  className="w-full px-4 py-2.5 rounded-lg bg-neutral-800/50 border border-neutral-700 text-neutral-200 placeholder-neutral-500 focus-ring transition-colors hover:border-neutral-600 mb-2"
-                />
-                <div className="flex flex-wrap gap-1.5">
-                  {EMOJI_SUGGESTIONS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setNewItemIcon(emoji)}
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
-                        newItemIcon === emoji
-                          ? 'bg-primary-500/30 ring-2 ring-primary-500'
-                          : 'bg-neutral-800 hover:bg-neutral-700'
-                      }`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Icon Picker */}
+              <IconPicker
+                label="Icon"
+                value={newItemIcon}
+                onChange={setNewItemIcon}
+                helpText="Select a technology icon from Simple Icons"
+              />
 
-              {/* Color Input with Presets */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  <Palette className="w-4 h-4 inline mr-1.5" />
-                  Color
-                </label>
-                <div className="flex gap-3 mb-3">
-                  <input
-                    type="color"
-                    value={newItemColor}
-                    onChange={(e) => setNewItemColor(e.target.value)}
-                    className="w-12 h-10 rounded-lg border border-neutral-700 cursor-pointer bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={newItemColor}
-                    onChange={(e) => setNewItemColor(e.target.value)}
-                    placeholder="#3d7eff"
-                    className="flex-1 px-4 py-2 rounded-lg bg-neutral-800/50 border border-neutral-700 text-neutral-200 placeholder-neutral-500 focus-ring font-mono text-sm"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {COLOR_PRESETS.map(({ color, name }) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setNewItemColor(color)}
-                      className={`group relative w-8 h-8 rounded-full transition-all hover:scale-110 ${
-                        newItemColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-neutral-900' : ''
-                      }`}
-                      style={{ backgroundColor: color }}
-                      title={name}
-                    >
-                      {newItemColor === color && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white text-xs">✓</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Color Picker */}
+              <ColorPicker
+                label="Color"
+                value={newItemColor}
+                onChange={setNewItemColor}
+                iconSlug={newItemIcon}
+                helpText="Pick a color or use the icon's brand color"
+              />
             </>
           )}
 
@@ -544,7 +490,7 @@ export function ItemSelector({
       <div className="flex flex-wrap gap-2 min-h-[40px]">
         {selectedItems.map((item) => {
           const color = getItemColor(item) || '#3d7eff';
-          const icon = getItemIcon(item);
+          const iconSlug = getItemIcon(item);
           return (
             <span
               key={item.id}
@@ -564,8 +510,8 @@ export function ItemSelector({
               />
 
               {/* Icon or color dot */}
-              {icon ? (
-                <span className="text-base leading-none relative z-10">{icon}</span>
+              {iconSlug ? (
+                <span className="text-base leading-none relative z-10">{renderIcon(iconSlug)}</span>
               ) : (
                 <span
                   className="w-2 h-2 rounded-full relative z-10"

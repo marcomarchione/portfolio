@@ -3,10 +3,14 @@
  *
  * Reusable form components for content editing.
  */
+export { ColorPicker } from './ColorPicker';
+export type { ColorPickerProps } from './ColorPicker';
 export { DateField } from './DateField';
 export type { DateFieldProps } from './DateField';
 export { FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
+export { IconPicker } from './IconPicker';
+export type { IconPickerProps } from './IconPicker';
 export { ItemSelector } from './ItemSelector';
 export { LanguageTabs } from './LanguageTabs';
 export { MarkdownEditor } from './MarkdownEditor';

@@ -4,7 +4,7 @@
  * CRUD endpoints for tags with authentication.
  * All routes require valid JWT access token.
  */
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { createResponse } from '../../types/responses';
 import { NotFoundError, ApiError } from '../../types/errors';
 import { authMiddleware } from '../../middleware/auth';
@@ -19,6 +19,7 @@ import {
   createTag,
   updateTag,
   deleteTag,
+  deleteTagWithCascade,
   isTagReferenced,
 } from '../../db/queries';
 import type { DrizzleDB } from '../../db';
@@ -137,9 +138,10 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
   )
   .delete(
     '/:id',
-    async ({ params, db: rawDb }) => {
+    async ({ params, query, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
+      const force = query.force === 'true';
 
       // Check if tag exists
       const tag = getTagById(db, id);
@@ -147,7 +149,13 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
         throw new NotFoundError('Tag not found');
       }
 
-      // Check if referenced
+      // If force=true, use cascade delete
+      if (force) {
+        deleteTagWithCascade(db, id);
+        return createResponse({ message: 'Tag deleted successfully (with cascade)', id });
+      }
+
+      // Otherwise, check if referenced and fail if so
       if (isTagReferenced(db, id)) {
         throw new ConflictError('Tag is referenced by one or more news items', {
           tagId: id,
@@ -161,11 +169,14 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
     },
     {
       params: AdminIdParamSchema,
+      query: t.Object({
+        force: t.Optional(t.String()),
+      }),
       detail: {
         tags: ['admin', 'tags'],
         summary: 'Delete tag',
         description:
-          'Hard deletes a tag. Returns 409 Conflict if referenced by any news.',
+          'Hard deletes a tag. Returns 409 Conflict if referenced by any news. Use ?force=true to cascade delete.',
       },
     }
   );

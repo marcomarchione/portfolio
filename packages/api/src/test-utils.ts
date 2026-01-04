@@ -13,13 +13,14 @@ import { createAuthMiddleware } from './middleware/auth';
 import { createDatabasePlugin } from './plugins/database';
 import { createSwaggerPlugin } from './plugins/swagger';
 import { apiRoutes } from './routes';
+import { config } from './config';
 import type { Database } from 'bun:sqlite';
 
 /**
  * Default test JWT secret.
- * Must match the development secret from config.ts
+ * Uses the same secret as the config to ensure token verification works.
  */
-export const TEST_JWT_SECRET = 'development-secret-that-is-at-least-32-characters-long';
+export const TEST_JWT_SECRET = config.JWT_SECRET;
 
 /** Default test admin password */
 export const TEST_ADMIN_PASSWORD = 'test-admin-password';

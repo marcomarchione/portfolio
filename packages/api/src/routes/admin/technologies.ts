@@ -4,7 +4,7 @@
  * CRUD endpoints for technologies with authentication.
  * All routes require valid JWT access token.
  */
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { createResponse } from '../../types/responses';
 import { NotFoundError, ApiError } from '../../types/errors';
 import { authMiddleware } from '../../middleware/auth';
@@ -19,6 +19,7 @@ import {
   createTechnology,
   updateTechnology,
   deleteTechnology,
+  deleteTechnologyWithCascade,
   isTechnologyReferenced,
 } from '../../db/queries';
 import type { DrizzleDB } from '../../db';
@@ -140,9 +141,10 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
   )
   .delete(
     '/:id',
-    async ({ params, db: rawDb }) => {
+    async ({ params, query, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
+      const force = query.force === 'true';
 
       // Check if technology exists
       const technology = getTechnologyById(db, id);
@@ -150,7 +152,13 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
         throw new NotFoundError('Technology not found');
       }
 
-      // Check if referenced
+      // If force=true, use cascade delete
+      if (force) {
+        deleteTechnologyWithCascade(db, id);
+        return createResponse({ message: 'Technology deleted successfully (with cascade)', id });
+      }
+
+      // Otherwise, check if referenced and fail if so
       if (isTechnologyReferenced(db, id)) {
         throw new ConflictError('Technology is referenced by one or more projects', {
           technologyId: id,
@@ -164,11 +172,14 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
     },
     {
       params: AdminIdParamSchema,
+      query: t.Object({
+        force: t.Optional(t.String()),
+      }),
       detail: {
         tags: ['admin', 'technologies'],
         summary: 'Delete technology',
         description:
-          'Hard deletes a technology. Returns 409 Conflict if referenced by any projects.',
+          'Hard deletes a technology. Returns 409 Conflict if referenced by any projects. Use ?force=true to cascade delete.',
       },
     }
   );

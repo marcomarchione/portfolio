@@ -148,6 +148,24 @@ export function deleteTechnology(db: DrizzleDB, id: number): boolean {
   return true;
 }
 
+/**
+ * Deletes a technology with cascade, removing all project_technologies references first.
+ *
+ * @param db - Drizzle database instance
+ * @param id - Technology ID
+ * @returns True if deleted
+ */
+export function deleteTechnologyWithCascade(db: DrizzleDB, id: number): boolean {
+  // Delete all project_technologies records for this technology
+  db.delete(schema.projectTechnologies)
+    .where(eq(schema.projectTechnologies.technologyId, id))
+    .run();
+
+  // Delete the technology
+  db.delete(schema.technologies).where(eq(schema.technologies.id, id)).run();
+  return true;
+}
+
 // Tags
 
 /**
@@ -255,6 +273,24 @@ export function deleteTag(db: DrizzleDB, id: number): boolean {
     return false;
   }
 
+  db.delete(schema.tags).where(eq(schema.tags.id, id)).run();
+  return true;
+}
+
+/**
+ * Deletes a tag with cascade, removing all news_tags references first.
+ *
+ * @param db - Drizzle database instance
+ * @param id - Tag ID
+ * @returns True if deleted
+ */
+export function deleteTagWithCascade(db: DrizzleDB, id: number): boolean {
+  // Delete all news_tags records for this tag
+  db.delete(schema.newsTags)
+    .where(eq(schema.newsTags.tagId, id))
+    .run();
+
+  // Delete the tag
   db.delete(schema.tags).where(eq(schema.tags.id, id)).run();
   return true;
 }
