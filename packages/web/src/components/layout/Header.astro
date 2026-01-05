@@ -35,7 +35,7 @@ const navItems = [
 ] as const;
 ---
 
-<header transition:persist class="sticky top-0 z-50 h-16 bg-white/10 backdrop-blur-lg border-b border-white/10 [.light_&]:bg-white/80 [.light_&]:border-neutral-200 transition-all duration-500 ease-in-out">
+<header transition:animate="none" class="sticky top-0 z-50 h-16 bg-white/10 backdrop-blur-lg border-b border-white/10 [.light_&]:bg-white/80 [.light_&]:border-neutral-200 transition-all duration-500 ease-in-out">
   <nav class="container mx-auto h-full px-4 relative flex items-center justify-between">
     <!-- Logo -->
     <Logo lang={lang} class="relative z-10" />

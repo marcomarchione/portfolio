@@ -163,7 +163,7 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
   </head>
   <body class="min-h-screen flex flex-col bg-bg-primary text-neutral-100 [.light_&]:bg-neutral-50 [.light_&]:text-neutral-900 transition-all duration-500 ease-in-out">
     {showHeader && <Header lang={lang} currentPath={currentPath} />}
-    <main class="flex-1">
+    <main class="flex-1" transition:animate="fade">
       <slot />
     </main>
     {showFooter && <Footer lang={lang} />}
