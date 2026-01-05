@@ -164,6 +164,19 @@ html {
   font-family: var(--font-body);
   background-color: var(--color-bg-primary);
   color: var(--color-neutral-100);
+  cursor: url('/cursors/cursor-default.svg'), auto;
+}
+
+/* Custom cursor for interactive elements */
+a,
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+select,
+label[for],
+.cursor-pointer {
+  cursor: url('/cursors/cursor-pointer.svg'), pointer;
 }
 
 /* Prevent flash - fade in after theme is ready */
@@ -179,17 +192,13 @@ html.theme-ready body {
   opacity: 1;
 }
 
-/* Smooth theme transitions for all elements when switching themes */
-html.theme-ready,
-html.theme-ready *,
-html.theme-ready *::before,
-html.theme-ready *::after {
-  transition: background-color 500ms ease-in-out,
-              border-color 500ms ease-in-out,
-              color 500ms ease-in-out,
-              fill 500ms ease-in-out,
-              stroke 500ms ease-in-out,
-              opacity 150ms ease-in !important;
+/* Theme transition - only background and text color, 500ms */
+html.theme-ready {
+  transition: background-color 500ms ease-in-out, color 500ms ease-in-out;
+}
+
+html.theme-ready body {
+  transition: background-color 500ms ease-in-out, color 500ms ease-in-out;
 }
 
 /* Dark mode explicit */
@@ -235,31 +244,198 @@ code, pre, kbd, samp {
   font-family: var(--font-mono);
 }
 
-/* View Transitions - smooth page navigation */
-@view-transition {
-  navigation: auto;
+/* SPA navigation - main content fade transition */
+main {
+  transition: opacity 100ms ease-out;
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 200ms;
-  animation-timing-function: ease-in-out;
+/* ============================================
+   Landing Page Animations
+   ============================================ */
+
+/* Floating animation keyframes for gradient orbs */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(10px, -15px) scale(1.02);
+  }
+  50% {
+    transform: translate(-5px, 10px) scale(0.98);
+  }
+  75% {
+    transform: translate(-10px, -5px) scale(1.01);
+  }
 }
 
-::view-transition-old(root) {
-  animation-name: fade-out;
+@keyframes float-medium {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-15px, 10px) scale(1.03);
+  }
+  66% {
+    transform: translate(10px, -10px) scale(0.97);
+  }
 }
 
-::view-transition-new(root) {
-  animation-name: fade-in;
+@keyframes float-fast {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(5px, -8px);
+  }
 }
 
-@keyframes fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+/* Page content animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Gradient orb base styles */
+.gradient-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+  will-change: transform;
+  opacity: 0.6;
+}
+
+/* Light mode adjustments for gradient orbs */
+.light .gradient-orb {
+  opacity: 0.3;
+  filter: blur(100px);
+}
+
+/* Animation classes - only active when motion is allowed */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-float-slow {
+    animation: float-slow 10s ease-in-out infinite;
+  }
+
+  .animate-float-medium {
+    animation: float-medium 8s ease-in-out infinite;
+  }
+
+  .animate-float-fast {
+    animation: float-fast 6s ease-in-out infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out forwards;
+  }
+
+  /* Staggered animation delays */
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animate-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animate-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .animate-delay-600 {
+    animation-delay: 600ms;
+  }
+
+  /* Initial hidden state for animated elements */
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .animate-on-scroll.animate-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced motion: show content immediately without animation */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-float-medium,
+  .animate-float-fast,
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-on-scroll {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Technology item hover glow effect */
+.tech-item-glow {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.tech-item-glow:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(61, 126, 255, 0.3), 0 0 40px rgba(139, 92, 246, 0.2);
+}
+
+.light .tech-item-glow:hover {
+  box-shadow: 0 0 20px rgba(61, 126, 255, 0.2), 0 0 40px rgba(139, 92, 246, 0.1);
+}
+
+/* Reduced motion for hover effects too */
+@media (prefers-reduced-motion: reduce) {
+  .tech-item-glow:hover {
+    transform: none;
+  }
 }

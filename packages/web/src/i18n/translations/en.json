@@ -50,5 +50,14 @@
     "newsDescription": "Articles, updates, and news from the development world.",
     "privacyTitle": "Privacy Policy | Marco Marchione",
     "cookieTitle": "Cookie Policy | Marco Marchione"
+  },
+  "landing": {
+    "about": {
+      "title": "About Me",
+      "text": "I am a software developer passionate about technology and innovation. My experience spans full-stack web development to building scalable software solutions. I am dedicated to creating elegant and performant applications that solve real-world problems."
+    },
+    "skills": {
+      "title": "Technologies & Skills"
+    }
   }
 }

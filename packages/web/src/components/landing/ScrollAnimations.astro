@@ -1,0 +1,63 @@
+---
+/**
+ * ScrollAnimations Component
+ *
+ * Client-side script that uses IntersectionObserver to trigger
+ * scroll-based animations. Respects prefers-reduced-motion.
+ *
+ * @example
+ * <!-- Add to page layout -->
+ * <ScrollAnimations />
+ */
+---
+
+<script>
+  // Initialize scroll animations when DOM is ready
+  function initScrollAnimations() {
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    if (prefersReducedMotion) {
+      // Show all elements immediately if reduced motion is preferred
+      document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+        el.classList.add('animate-visible');
+      });
+      return;
+    }
+
+    // Create IntersectionObserver for scroll animations
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-visible');
+            // Optionally stop observing after animation
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.1,
+      }
+    );
+
+    // Observe all elements with animate-on-scroll class
+    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+      observer.observe(el);
+    });
+  }
+
+  // Run on initial load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initScrollAnimations);
+  } else {
+    initScrollAnimations();
+  }
+
+  // Re-run after SPA navigation (for custom SPA navigation)
+  document.addEventListener('astro:page-load', initScrollAnimations);
+</script>

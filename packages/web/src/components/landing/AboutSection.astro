@@ -1,0 +1,38 @@
+---
+/**
+ * AboutSection Component
+ *
+ * About section with translated title and placeholder text.
+ * Wrapped in GlassCard for visual consistency.
+ * Uses scroll-triggered fade-in animation.
+ *
+ * @example
+ * <AboutSection lang="en" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import SectionHeading from '../ui/SectionHeading.astro';
+import GlassCard from '../cards/GlassCard.astro';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+---
+
+<section id="about" class="py-16 md:py-24 px-4">
+  <div class="container mx-auto">
+    <div class="max-w-3xl mx-auto animate-on-scroll">
+      <GlassCard>
+        <SectionHeading level={3} class="mb-6 text-white [.light_&]:text-neutral-900">
+          {t(lang, 'landing.about.title')}
+        </SectionHeading>
+        <p class="text-neutral-300 [.light_&]:text-neutral-700 leading-relaxed">
+          {t(lang, 'landing.about.text')}
+        </p>
+      </GlassCard>
+    </div>
+  </div>
+</section>

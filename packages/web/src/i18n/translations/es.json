@@ -50,5 +50,14 @@
     "newsDescription": "Articulos, actualizaciones y novedades del mundo del desarrollo.",
     "privacyTitle": "Politica de Privacidad | Marco Marchione",
     "cookieTitle": "Politica de Cookies | Marco Marchione"
+  },
+  "landing": {
+    "about": {
+      "title": "Sobre Mi",
+      "text": "Soy un desarrollador de software apasionado por la tecnologia y la innovacion. Mi experiencia abarca desde el desarrollo web full-stack hasta la creacion de soluciones de software escalables. Me dedico a construir aplicaciones elegantes y de alto rendimiento que resuelven problemas reales."
+    },
+    "skills": {
+      "title": "Tecnologias y Habilidades"
+    }
   }
 }

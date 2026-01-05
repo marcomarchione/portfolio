@@ -95,8 +95,150 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
         // Apply on initial load
         applyTheme();
 
-        // Re-apply after View Transitions navigation
-        document.addEventListener('astro:page-load', applyTheme);
+      })();
+
+      // CUSTOM SPA NAVIGATION - preserves header/footer, only swaps main
+      (function() {
+        // Intercept all internal link clicks
+        document.addEventListener('click', function(e) {
+          var link = e.target.closest('a');
+          if (!link) return;
+
+          var href = link.getAttribute('href');
+          if (!href) return;
+
+          // Only handle internal links
+          if (href.startsWith('http') && !href.startsWith(window.location.origin)) return;
+          if (href.startsWith('#')) return;
+          if (link.hasAttribute('download')) return;
+          if (link.target === '_blank') return;
+
+          // Prevent default navigation
+          e.preventDefault();
+
+          // Navigate using custom SPA
+          navigateTo(href);
+        });
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', function() {
+          navigateTo(window.location.pathname, true);
+        });
+
+        // Expose globally for React components
+        window.spaNavigate = navigateTo;
+
+        // Track current language
+        var currentLang = window.location.pathname.match(/^\/([a-z]{2})(\/|$)/)?.[1] || 'it';
+
+        async function navigateTo(url, isPopState) {
+          try {
+            // Fetch new page
+            var response = await fetch(url);
+            var html = await response.text();
+
+            // Parse the HTML
+            var parser = new DOMParser();
+            var newDoc = parser.parseFromString(html, 'text/html');
+
+            // Check if language changed
+            var newLang = url.match(/^\/([a-z]{2})(\/|$)/)?.[1] || 'it';
+            var langChanged = newLang !== currentLang;
+
+            // Get new main content
+            var newMain = newDoc.querySelector('main');
+            var currentMain = document.querySelector('main');
+
+            if (newMain && currentMain) {
+              // Fade out current content
+              currentMain.style.opacity = '0';
+              currentMain.style.transition = 'opacity 100ms ease-out';
+
+              await new Promise(function(r) { setTimeout(r, 100); });
+
+              // Replace content
+              currentMain.innerHTML = newMain.innerHTML;
+
+              // Fade in new content
+              currentMain.style.opacity = '1';
+            }
+
+            // If language changed, update header navigation
+            if (langChanged) {
+              var newHeader = newDoc.querySelector('#main-header');
+              var currentHeader = document.querySelector('#main-header');
+              if (newHeader && currentHeader) {
+                // Update navigation links (href and text)
+                var newNavLinks = newHeader.querySelectorAll('[data-nav-link]');
+                var currentNavLinks = currentHeader.querySelectorAll('[data-nav-link]');
+                newNavLinks.forEach(function(newLink, i) {
+                  if (currentNavLinks[i]) {
+                    currentNavLinks[i].setAttribute('href', newLink.getAttribute('href'));
+                    currentNavLinks[i].textContent = newLink.textContent;
+                  }
+                });
+
+                // Update logo link
+                var newLogo = newHeader.querySelector('a[href^="/"]');
+                var currentLogo = currentHeader.querySelector('a[href^="/"]');
+                if (newLogo && currentLogo) {
+                  currentLogo.setAttribute('href', newLogo.getAttribute('href'));
+                }
+              }
+
+              // Update footer links too
+              var newFooter = newDoc.querySelector('#main-footer');
+              var currentFooter = document.querySelector('#main-footer');
+              if (newFooter && currentFooter) {
+                currentFooter.innerHTML = newFooter.innerHTML;
+              }
+
+              currentLang = newLang;
+            }
+
+            // Update title
+            document.title = newDoc.title;
+
+            // Update URL (unless popstate)
+            if (!isPopState) {
+              history.pushState({}, '', url);
+            }
+
+            // Update active nav links
+            updateNavLinks();
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+
+          } catch (err) {
+            // Fallback to normal navigation on error
+            console.error('SPA navigation failed:', err);
+            window.location.href = url;
+          }
+        }
+
+        function updateNavLinks() {
+          var currentPath = window.location.pathname;
+          var navLinks = document.querySelectorAll('[data-nav-link]');
+
+          navLinks.forEach(function(link) {
+            var href = link.getAttribute('href') || '';
+            var isHome = link.hasAttribute('data-nav-home');
+            var isActive = currentPath.startsWith(href) && (isHome ? currentPath === href : true);
+
+            // Update classes
+            link.classList.remove('text-primary-400', '[.light_&]:text-primary-600',
+              'text-neutral-300', 'hover:text-white', '[.light_&]:text-neutral-600', '[.light_&]:hover:text-neutral-900');
+
+            if (isActive) {
+              link.classList.add('text-primary-400', '[.light_&]:text-primary-600');
+              link.setAttribute('aria-current', 'page');
+            } else {
+              link.classList.add('text-neutral-300', 'hover:text-white', '[.light_&]:text-neutral-600', '[.light_&]:hover:text-neutral-900');
+              link.removeAttribute('aria-current');
+            }
+          });
+        }
       })();
     </script>
     <meta charset="UTF-8" />
@@ -158,12 +300,11 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
       crossorigin="anonymous"
     />
 
-    <!-- View Transitions for smooth page navigation -->
-    <ViewTransitions />
+    <!-- Custom SPA navigation without View Transitions -->
   </head>
-  <body class="min-h-screen flex flex-col bg-bg-primary text-neutral-100 [.light_&]:bg-neutral-50 [.light_&]:text-neutral-900 transition-all duration-500 ease-in-out">
+  <body class="min-h-screen flex flex-col bg-bg-primary text-neutral-100 [.light_&]:bg-neutral-50 [.light_&]:text-neutral-900">
     {showHeader && <Header lang={lang} currentPath={currentPath} />}
-    <main class="flex-1" transition:animate="fade">
+    <main class="flex-1">
       <slot />
     </main>
     {showFooter && <Footer lang={lang} />}

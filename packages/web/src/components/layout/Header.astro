@@ -35,7 +35,7 @@ const navItems = [
 ] as const;
 ---
 
-<header transition:animate="none" class="sticky top-0 z-50 h-16 bg-white/10 backdrop-blur-lg border-b border-white/10 [.light_&]:bg-white/80 [.light_&]:border-neutral-200 transition-all duration-500 ease-in-out">
+<header id="main-header" class="sticky top-0 z-50 h-16 bg-white/10 backdrop-blur-lg border-b border-white/10 [.light_&]:bg-white/80 [.light_&]:border-neutral-200">
   <nav class="container mx-auto h-full px-4 relative flex items-center justify-between">
     <!-- Logo -->
     <Logo lang={lang} class="relative z-10" />
@@ -45,10 +45,13 @@ const navItems = [
       {navItems.map((item) => {
         const href = getLocalizedPath(lang, item.route);
         const isActive = currentPath.startsWith(href) && (item.route === 'home' ? currentPath === href : true);
+        const isHome = item.route === 'home';
 
         return (
           <a
             href={href}
+            data-nav-link
+            data-nav-home={isHome ? 'true' : undefined}
             class={`text-sm font-medium transition-colors ${
               isActive
                 ? 'text-primary-400 [.light_&]:text-primary-600'
@@ -100,3 +103,33 @@ const navItems = [
     </div>
   </nav>
 </header>
+
+<script>
+  function updateActiveNavLinks() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('[data-nav-link]');
+
+    const activeClasses = ['text-primary-400', '[.light_&]:text-primary-600'];
+    const inactiveClasses = ['text-neutral-300', 'hover:text-white', '[.light_&]:text-neutral-600', '[.light_&]:hover:text-neutral-900'];
+
+    navLinks.forEach((link) => {
+      const href = link.getAttribute('href') || '';
+      const isHome = link.hasAttribute('data-nav-home');
+      const isActive = currentPath.startsWith(href) && (isHome ? currentPath === href : true);
+
+      // Update classes
+      if (isActive) {
+        link.classList.remove(...inactiveClasses);
+        link.classList.add(...activeClasses);
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.classList.remove(...activeClasses);
+        link.classList.add(...inactiveClasses);
+        link.removeAttribute('aria-current');
+      }
+    });
+  }
+
+  // Update on View Transitions navigation
+  document.addEventListener('astro:page-load', updateActiveNavLinks);
+</script>

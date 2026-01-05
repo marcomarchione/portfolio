@@ -50,5 +50,14 @@
     "newsDescription": "Artikel, Updates und Neuigkeiten aus der Entwicklerwelt.",
     "privacyTitle": "Datenschutzerklarung | Marco Marchione",
     "cookieTitle": "Cookie-Richtlinie | Marco Marchione"
+  },
+  "landing": {
+    "about": {
+      "title": "Uber Mich",
+      "text": "Ich bin ein Softwareentwickler mit Leidenschaft fur Technologie und Innovation. Meine Erfahrung reicht von Full-Stack-Webentwicklung bis zur Erstellung skalierbarer Softwarelosungen. Ich widme mich dem Aufbau eleganter und leistungsfahiger Anwendungen, die reale Probleme losen."
+    },
+    "skills": {
+      "title": "Technologien und Fahigkeiten"
+    }
   }
 }

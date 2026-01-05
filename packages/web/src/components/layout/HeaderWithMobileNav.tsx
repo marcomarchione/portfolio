@@ -13,7 +13,7 @@
  *   client:idle
  * />
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import type { Language } from '@marcomarchione/shared';
 import { MobileNav, type NavItem, type MobileNavTranslations } from './MobileNav';
@@ -33,11 +33,29 @@ export interface HeaderWithMobileNavProps {
 
 export function HeaderWithMobileNav({
   lang,
-  currentPath,
-  navItems,
+  currentPath: initialPath,
+  navItems: initialNavItems,
   translations,
 }: HeaderWithMobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentPath, setCurrentPath] = useState(initialPath);
+
+  // Listen for View Transitions navigation to update current path
+  useEffect(() => {
+    const handlePageLoad = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    document.addEventListener('astro:page-load', handlePageLoad);
+    return () => document.removeEventListener('astro:page-load', handlePageLoad);
+  }, []);
+
+  // Recalculate active state based on current path
+  const navItems = initialNavItems.map((item, index) => {
+    const isHome = index === 0; // First item is always home
+    const isActive = currentPath.startsWith(item.href) && (isHome ? currentPath === item.href : true);
+    return { ...item, isActive };
+  });
 
   return (
     <>

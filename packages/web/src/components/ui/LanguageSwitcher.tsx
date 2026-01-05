@@ -34,13 +34,31 @@ const LANGUAGE_NAMES: Record<Language, string> = {
 };
 
 export function LanguageSwitcher({
-  currentLang,
-  currentPath,
+  currentLang: initialLang,
+  currentPath: initialPath,
   ariaLabel = 'Switch language',
 }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentPath, setCurrentPath] = useState(initialPath);
+  const [currentLang, setCurrentLang] = useState(initialLang);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Listen for View Transitions navigation to update current path and lang
+  useEffect(() => {
+    const handlePageLoad = () => {
+      const pathname = window.location.pathname;
+      setCurrentPath(pathname);
+      // Extract language from pathname (e.g., /it/projects -> it)
+      const langMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
+      if (langMatch) {
+        setCurrentLang(langMatch[1] as Language);
+      }
+    };
+
+    document.addEventListener('astro:page-load', handlePageLoad);
+    return () => document.removeEventListener('astro:page-load', handlePageLoad);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -70,14 +88,25 @@ export function LanguageSwitcher({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen]);
 
-  const handleLanguageSelect = (lang: Language) => {
-    if (lang === currentLang) {
+  const handleLanguageSelect = (newLang: Language) => {
+    if (newLang === currentLang) {
       setIsOpen(false);
       return;
     }
 
-    const newPath = switchLanguage(currentPath, lang);
-    window.location.href = newPath;
+    // Always use current URL path, not stored state
+    const actualPath = window.location.pathname;
+    const newPath = switchLanguage(actualPath, newLang);
+    setIsOpen(false);
+
+    // Use SPA navigation if available, otherwise fallback to full page load
+    if (typeof (window as any).spaNavigate === 'function') {
+      (window as any).spaNavigate(newPath);
+      setCurrentPath(newPath);
+      setCurrentLang(newLang);
+    } else {
+      window.location.href = newPath;
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent, lang: Language) => {

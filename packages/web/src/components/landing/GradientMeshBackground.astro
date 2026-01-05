@@ -1,0 +1,61 @@
+---
+/**
+ * GradientMeshBackground Component
+ *
+ * Full-page gradient mesh background with floating animated orbs.
+ * Uses CSS-only animations for lightweight performance.
+ * Supports dark/light theme with reduced opacity in light mode.
+ *
+ * @example
+ * <GradientMeshBackground />
+ */
+---
+
+<div class="gradient-mesh-background" aria-hidden="true">
+  <!-- Primary orb - Agent Blue -->
+  <div
+    class="gradient-orb animate-float-slow"
+    style="
+      width: 600px;
+      height: 600px;
+      top: -10%;
+      left: -5%;
+      background: radial-gradient(circle, rgba(61, 126, 255, 0.4) 0%, rgba(61, 126, 255, 0) 70%);
+    "
+  />
+
+  <!-- Secondary orb - Neural Violet -->
+  <div
+    class="gradient-orb animate-float-medium"
+    style="
+      width: 500px;
+      height: 500px;
+      top: 40%;
+      right: -10%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, rgba(139, 92, 246, 0) 70%);
+    "
+  />
+
+  <!-- Tertiary orb - Mixed gradient -->
+  <div
+    class="gradient-orb animate-float-slow"
+    style="
+      width: 450px;
+      height: 450px;
+      bottom: 5%;
+      left: 20%;
+      background: radial-gradient(circle, rgba(61, 126, 255, 0.3) 0%, rgba(139, 92, 246, 0.2) 50%, transparent 70%);
+      animation-delay: -3s;
+    "
+  />
+</div>
+
+<style>
+  .gradient-mesh-background {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+  }
+</style>

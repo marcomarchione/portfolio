@@ -1,0 +1,41 @@
+---
+/**
+ * HeroSection Component
+ *
+ * Full-height hero section with name, positioning text, and social links.
+ * Uses DisplayHeading with GradientText for the name.
+ * The "Agent Software Developer" subtitle is always in English.
+ *
+ * @example
+ * <HeroSection />
+ */
+import DisplayHeading from '../ui/DisplayHeading.astro';
+import GradientText from '../ui/GradientText.astro';
+import SocialLinks from './SocialLinks.astro';
+---
+
+<section
+  id="hero"
+  class="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 relative"
+>
+  <div class="text-center space-y-6">
+    <!-- Name with gradient effect -->
+    <div class="animate-fade-in-up" style="opacity: 0;">
+      <DisplayHeading level={1} class="text-center">
+        <GradientText>Marco Marchione</GradientText>
+      </DisplayHeading>
+    </div>
+
+    <!-- Positioning text - always English -->
+    <div class="animate-fade-in-up animate-delay-200" style="opacity: 0;">
+      <p class="text-xl md:text-2xl text-neutral-400 [.light_&]:text-neutral-600 font-body">
+        Agent Software Developer
+      </p>
+    </div>
+
+    <!-- Social links -->
+    <div class="animate-fade-in-up animate-delay-400 pt-4" style="opacity: 0;">
+      <SocialLinks />
+    </div>
+  </div>
+</section>
