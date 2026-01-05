@@ -1,0 +1,91 @@
+---
+/**
+ * ProjectCard Component
+ *
+ * Card component for displaying project previews.
+ * Includes image, title, description, and technology tags.
+ *
+ * @example
+ * <ProjectCard
+ *   title="My Project"
+ *   description="A description of the project."
+ *   imageSrc="/images/project.jpg"
+ *   imageAlt="Project screenshot"
+ *   href="/projects/my-project/"
+ *   technologies={['React', 'TypeScript', 'Node.js']}
+ *   lang="en"
+ * />
+ */
+import type { Language } from '@marcomarchione/shared';
+
+export interface Props {
+  /** Project title */
+  title: string;
+  /** Project description */
+  description: string;
+  /** Image source URL */
+  imageSrc: string;
+  /** Image alt text for accessibility */
+  imageAlt: string;
+  /** Link to project detail page */
+  href: string;
+  /** Technology tags */
+  technologies: string[];
+  /** Current language code (reserved for future i18n features) */
+  lang: Language;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const {
+  title,
+  description,
+  imageSrc,
+  imageAlt,
+  href,
+  technologies,
+  lang: _lang,
+  class: className = '',
+} = Astro.props;
+
+const cardStyles = 'bg-neutral-800/50 border border-neutral-700/50 rounded-xl overflow-hidden group-hover:border-primary-500/50 group-hover:scale-[1.02] transition-all duration-300 [.light_&]:bg-neutral-100 [.light_&]:border-neutral-200 [.light_&]:group-hover:border-primary-500/50';
+---
+
+<a href={href} class={`block group ${className}`.trim()}>
+  <article class={cardStyles}>
+    <!-- Image -->
+    <div class="aspect-video overflow-hidden">
+      <img
+        src={imageSrc}
+        alt={imageAlt}
+        loading="lazy"
+        decoding="async"
+        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+      />
+    </div>
+
+    <!-- Content -->
+    <div class="p-4 md:p-6">
+      <!-- Title -->
+      <h3 class="font-heading font-medium text-xl md:text-2xl mb-2 text-white [.light_&]:text-neutral-900">
+        {title}
+      </h3>
+
+      <!-- Description -->
+      <p class="text-neutral-300 leading-relaxed line-clamp-3 mb-4 [.light_&]:text-neutral-600">
+        {description}
+      </p>
+
+      <!-- Technology Tags -->
+      {technologies.length > 0 && (
+        <div class="flex flex-wrap gap-2">
+          {technologies.map((tech) => (
+            <span class="bg-primary-500/20 text-primary-300 px-2 py-1 rounded text-xs font-medium [.light_&]:bg-primary-100 [.light_&]:text-primary-700">
+              {tech}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  </article>
+</a>

@@ -1,0 +1,83 @@
+---
+/**
+ * MaterialCard Component
+ *
+ * Card component for displaying downloadable materials.
+ * Includes category badge, title, description, and download button.
+ *
+ * @example
+ * <MaterialCard
+ *   title="React Cheatsheet"
+ *   description="A comprehensive cheatsheet for React developers."
+ *   category="Cheatsheet"
+ *   downloadHref="/downloads/react-cheatsheet.pdf"
+ *   lang="en"
+ * />
+ */
+import type { Language } from '@marcomarchione/shared';
+import { t } from '../../i18n/utils';
+import Button from '../ui/Button.astro';
+
+export interface Props {
+  /** Material title */
+  title: string;
+  /** Material description */
+  description: string;
+  /** Material category */
+  category: string;
+  /** Download URL */
+  downloadHref: string;
+  /** Current language code */
+  lang: Language;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const {
+  title,
+  description,
+  category,
+  downloadHref,
+  lang,
+  class: className = '',
+} = Astro.props;
+
+const cardStyles = 'bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-4 md:p-6 group hover:border-primary-500/50 hover:scale-[1.02] transition-all duration-300 [.light_&]:bg-neutral-100 [.light_&]:border-neutral-200 [.light_&]:hover:border-primary-500/50';
+
+// Category color mapping
+const getCategoryColor = (cat: string) => {
+  const lowerCat = cat.toLowerCase();
+  if (lowerCat.includes('cheatsheet') || lowerCat.includes('guide')) {
+    return 'bg-accent-500/20 text-accent-300 [.light_&]:bg-accent-100 [.light_&]:text-accent-700';
+  }
+  if (lowerCat.includes('template') || lowerCat.includes('starter')) {
+    return 'bg-success-500/20 text-success-300 [.light_&]:bg-success-100 [.light_&]:text-success-700';
+  }
+  if (lowerCat.includes('tutorial') || lowerCat.includes('course')) {
+    return 'bg-warning-500/20 text-warning-300 [.light_&]:bg-warning-100 [.light_&]:text-warning-700';
+  }
+  return 'bg-primary-500/20 text-primary-300 [.light_&]:bg-primary-100 [.light_&]:text-primary-700';
+};
+---
+
+<article class={`${cardStyles} ${className}`.trim()}>
+  <!-- Category Badge -->
+  <span class={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-3 ${getCategoryColor(category)}`}>
+    {category}
+  </span>
+
+  <!-- Title -->
+  <h3 class="font-heading font-medium text-xl md:text-2xl mb-2 text-white [.light_&]:text-neutral-900">
+    {title}
+  </h3>
+
+  <!-- Description -->
+  <p class="text-neutral-300 leading-relaxed line-clamp-3 mb-4 [.light_&]:text-neutral-600">
+    {description}
+  </p>
+
+  <!-- Download Button -->
+  <Button variant="primary" href={downloadHref} size="md">
+    {t(lang, 'common.download')}
+  </Button>
+</article>

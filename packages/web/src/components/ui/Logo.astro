@@ -1,0 +1,33 @@
+---
+/**
+ * Logo Component
+ *
+ * Site logo linking to home page.
+ * Displays "MM" monogram with Space Grotesk font.
+ *
+ * @example
+ * <Logo lang="it" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import { getLocalizedPath } from '../../i18n/config';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { lang, class: className = '' } = Astro.props;
+
+const homeHref = getLocalizedPath(lang, 'home');
+
+const baseStyles = 'font-heading font-bold text-xl tracking-tight text-white hover:text-primary-400 transition-colors';
+const lightStyles = '[.light_&]:text-neutral-900 [.light_&]:hover:text-primary-600';
+
+const combinedStyles = `${baseStyles} ${lightStyles} ${className}`.trim();
+---
+
+<a href={homeHref} class={combinedStyles} aria-label="Marco Marchione - Home">
+  <span class="bg-gradient-to-r from-primary-400 to-accent-400 [.light_&]:from-primary-600 [.light_&]:to-accent-600 bg-clip-text text-transparent">MM</span>
+</a>

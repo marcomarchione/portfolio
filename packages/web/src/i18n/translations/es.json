@@ -5,7 +5,9 @@
     "materials": "Materiales",
     "news": "Noticias",
     "contact": "Contacto",
-    "about": "Sobre mi"
+    "about": "Sobre mi",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Cerrar menu"
   },
   "footer": {
     "copyright": "Todos los derechos reservados.",
@@ -29,6 +31,13 @@
     "published": "Publicado el",
     "updated": "Actualizado el",
     "readingTime": "{minutes} min de lectura"
+  },
+  "theme": {
+    "switchToLight": "Cambiar a modo claro",
+    "switchToDark": "Cambiar a modo oscuro"
+  },
+  "language": {
+    "switchTo": "Cambiar idioma"
   },
   "meta": {
     "siteTitle": "Marco Marchione - Full Stack Developer",

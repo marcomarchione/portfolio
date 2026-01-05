@@ -6,7 +6,10 @@
  * All pages should use this layout for consistent structure.
  */
 import { LANGUAGES, DEFAULT_LANGUAGE, type Language } from '@marcomarchione/shared';
+import { ViewTransitions } from 'astro:transitions';
 import '../styles/global.css';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
 
 export interface Props {
   /** Current language code */
@@ -19,6 +22,10 @@ export interface Props {
   canonicalUrl?: string;
   /** Open Graph image URL */
   ogImage?: string;
+  /** Whether to show the header (default: true) */
+  showHeader?: boolean;
+  /** Whether to show the footer (default: true) */
+  showFooter?: boolean;
 }
 
 const {
@@ -27,6 +34,8 @@ const {
   description = 'Full Stack Developer Portfolio',
   canonicalUrl,
   ogImage = '/og-default.png',
+  showHeader = true,
+  showFooter = true,
 } = Astro.props;
 
 // Derive the current path without language prefix for hreflang generation
@@ -45,8 +54,51 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
 ---
 
 <!doctype html>
-<html lang={lang} dir="ltr" class="dark">
+<html lang={lang} dir="ltr">
   <head>
+    <!-- Theme detection - must be first to prevent flash -->
+    <script is:inline>
+      (function() {
+        function applyTheme() {
+          var html = document.documentElement;
+          var theme = localStorage.getItem('theme');
+
+          // Remove existing theme classes
+          html.classList.remove('light', 'dark');
+
+          if (theme === 'light') {
+            html.classList.add('light');
+          } else if (theme === 'dark') {
+            html.classList.add('dark');
+          } else {
+            // System preference, default to dark
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            html.classList.add(prefersDark ? 'dark' : 'light');
+          }
+
+          // Mark theme as ready
+          if (!html.classList.contains('theme-ready')) {
+            if (document.fonts && document.fonts.ready) {
+              document.fonts.ready.then(function() {
+                requestAnimationFrame(function() {
+                  html.classList.add('theme-ready');
+                });
+              });
+            } else {
+              setTimeout(function() {
+                html.classList.add('theme-ready');
+              }, 50);
+            }
+          }
+        }
+
+        // Apply on initial load
+        applyTheme();
+
+        // Re-apply after View Transitions navigation
+        document.addEventListener('astro:page-load', applyTheme);
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
@@ -106,48 +158,14 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
       crossorigin="anonymous"
     />
 
-    <!--
-      Theme Detection Script
-
-      This inline script runs before page render to prevent flash of wrong theme.
-      It checks localStorage first, then falls back to system preference.
-
-      Theme API:
-      - localStorage key: 'theme'
-      - Values: 'dark' | 'light' | undefined (system preference)
-      - Default: 'dark' (if no preference set)
-
-      To implement a theme toggle component:
-      1. Read: localStorage.getItem('theme')
-      2. Write: localStorage.setItem('theme', 'dark' | 'light')
-      3. Toggle class: document.documentElement.classList.toggle('dark')
-      4. For system preference: localStorage.removeItem('theme')
-    -->
-    <script is:inline>
-      (function() {
-        const theme = localStorage.getItem('theme');
-
-        if (theme === 'light') {
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
-        } else if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
-          document.documentElement.classList.remove('light');
-        } else {
-          // Check system preference, default to dark
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (!prefersDark) {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-          } else {
-            document.documentElement.classList.add('dark');
-            document.documentElement.classList.remove('light');
-          }
-        }
-      })();
-    </script>
+    <!-- View Transitions for smooth page navigation -->
+    <ViewTransitions />
   </head>
-  <body>
-    <slot />
+  <body class="min-h-screen flex flex-col bg-bg-primary text-neutral-100 [.light_&]:bg-neutral-50 [.light_&]:text-neutral-900 transition-all duration-500 ease-in-out">
+    {showHeader && <Header lang={lang} currentPath={currentPath} />}
+    <main class="flex-1">
+      <slot />
+    </main>
+    {showFooter && <Footer lang={lang} />}
   </body>
 </html>

@@ -166,6 +166,39 @@ html {
   color: var(--color-neutral-100);
 }
 
+/* Prevent flash - fade in after theme is ready */
+html:not(.dark):not(.light) {
+  background-color: var(--color-bg-primary);
+}
+
+html:not(.theme-ready) body {
+  opacity: 0;
+}
+
+html.theme-ready body {
+  opacity: 1;
+}
+
+/* Smooth theme transitions for all elements when switching themes */
+html.theme-ready,
+html.theme-ready *,
+html.theme-ready *::before,
+html.theme-ready *::after {
+  transition: background-color 500ms ease-in-out,
+              border-color 500ms ease-in-out,
+              color 500ms ease-in-out,
+              fill 500ms ease-in-out,
+              stroke 500ms ease-in-out,
+              opacity 150ms ease-in !important;
+}
+
+/* Dark mode explicit */
+html.dark {
+  color-scheme: dark;
+  background-color: var(--color-bg-primary);
+  color: var(--color-neutral-100);
+}
+
 /* Light Mode Override */
 html.light {
   color-scheme: light;
@@ -200,4 +233,33 @@ h1, h2, h3, h4, h5, h6 {
 /* Code elements use JetBrains Mono */
 code, pre, kbd, samp {
   font-family: var(--font-mono);
+}
+
+/* View Transitions - smooth page navigation */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-in-out;
+}
+
+::view-transition-old(root) {
+  animation-name: fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: fade-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

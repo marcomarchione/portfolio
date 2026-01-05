@@ -1,0 +1,27 @@
+---
+/**
+ * GradientText Component
+ *
+ * Text with gradient fill from Agent Blue to Neural Violet.
+ * Used for emphasis and visual accent.
+ *
+ * @example
+ * <GradientText>Highlighted Text</GradientText>
+ * <h1>Welcome to <GradientText>My Portfolio</GradientText></h1>
+ */
+
+export interface Props {
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+
+const baseStyles = 'bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent';
+
+const combinedStyles = `${baseStyles} ${className}`.trim();
+---
+
+<span class={combinedStyles}>
+  <slot />
+</span>

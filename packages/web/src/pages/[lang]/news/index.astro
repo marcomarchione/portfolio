@@ -36,16 +36,16 @@ function formatDate(dateString: string | null): string {
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
-  <main class="min-h-screen bg-bg-primary text-neutral-100">
+  <section class="min-h-screen">
     <div class="container mx-auto px-4 py-16">
-      <h1 class="font-heading text-4xl font-bold mb-8">{t(lang, 'nav.news')}</h1>
+      <h1 class="font-heading text-4xl font-bold mb-8 text-white [.light_&]:text-neutral-900">{t(lang, 'nav.news')}</h1>
 
       {news.length === 0 ? (
-        <p class="text-neutral-400">{t(lang, 'common.noResults')}</p>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">{t(lang, 'common.noResults')}</p>
       ) : (
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {news.map((article) => (
-            <article class="bg-bg-secondary rounded-lg overflow-hidden border border-neutral-800 hover:border-primary-500 transition-colors">
+            <article class="bg-bg-secondary [.light_&]:bg-white rounded-lg overflow-hidden border border-neutral-800 [.light_&]:border-neutral-200 hover:border-primary-500 [.light_&]:hover:border-primary-400 transition-all duration-300">
               {article.coverImage && (
                 <img
                   src={article.coverImage}
@@ -68,17 +68,17 @@ function formatDate(dateString: string | null): string {
                   )}
                 </div>
 
-                <h2 class="font-heading text-xl font-semibold mb-2">
+                <h2 class="font-heading text-xl font-semibold mb-2 text-white [.light_&]:text-neutral-900">
                   <a
                     href={`/${lang}/news/${article.slug}/`}
-                    class="hover:text-primary-500 transition-colors"
+                    class="hover:text-primary-400 [.light_&]:hover:text-primary-600 transition-colors"
                   >
                     {article.translation?.title ?? article.slug}
                   </a>
                 </h2>
 
                 {article.translation?.description && (
-                  <p class="text-neutral-400 text-sm line-clamp-3">
+                  <p class="text-neutral-400 [.light_&]:text-neutral-600 text-sm line-clamp-3">
                     {article.translation.description}
                   </p>
                 )}
@@ -86,7 +86,7 @@ function formatDate(dateString: string | null): string {
                 {article.tags && article.tags.length > 0 && (
                   <div class="flex flex-wrap gap-2 mt-4">
                     {article.tags.slice(0, 3).map((tag) => (
-                      <span class="text-xs px-2 py-1 bg-neutral-800 rounded">
+                      <span class="text-xs px-2 py-1 bg-neutral-800 [.light_&]:bg-neutral-100 [.light_&]:text-neutral-700 rounded">
                         {tag.name}
                       </span>
                     ))}
@@ -98,5 +98,5 @@ function formatDate(dateString: string | null): string {
         </div>
       )}
     </div>
-  </main>
+  </section>
 </BaseLayout>

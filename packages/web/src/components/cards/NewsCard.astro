@@ -1,0 +1,108 @@
+---
+/**
+ * NewsCard Component
+ *
+ * Card component for displaying news article previews.
+ * Includes optional cover image, title, excerpt, date, and reading time.
+ *
+ * @example
+ * <NewsCard
+ *   title="New Feature Release"
+ *   excerpt="We're excited to announce a new feature..."
+ *   href="/news/new-feature-release/"
+ *   publishedAt={new Date('2024-01-15')}
+ *   readingTimeMinutes={5}
+ *   lang="en"
+ *   imageSrc="/images/news/feature.jpg"
+ *   imageAlt="Feature announcement"
+ * />
+ */
+import type { Language } from '@marcomarchione/shared';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Article title */
+  title: string;
+  /** Article excerpt */
+  excerpt: string;
+  /** Link to full article */
+  href: string;
+  /** Publication date */
+  publishedAt: Date;
+  /** Estimated reading time in minutes */
+  readingTimeMinutes: number;
+  /** Current language code */
+  lang: Language;
+  /** Optional cover image URL */
+  imageSrc?: string;
+  /** Optional image alt text */
+  imageAlt?: string;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const {
+  title,
+  excerpt,
+  href,
+  publishedAt,
+  readingTimeMinutes,
+  lang,
+  imageSrc,
+  imageAlt = '',
+  class: className = '',
+} = Astro.props;
+
+const cardStyles = 'bg-neutral-800/50 border border-neutral-700/50 rounded-xl overflow-hidden group-hover:border-primary-500/50 group-hover:shadow-lg group-hover:shadow-primary-500/10 transition-all duration-300 [.light_&]:bg-neutral-100 [.light_&]:border-neutral-200 [.light_&]:group-hover:border-primary-500/50 [.light_&]:group-hover:shadow-neutral-300';
+
+// Format date using Intl.DateTimeFormat for locale-aware formatting
+const formattedDate = new Intl.DateTimeFormat(lang, {
+  dateStyle: 'medium',
+}).format(publishedAt);
+---
+
+<a href={href} class={`block group ${className}`.trim()}>
+  <article class={cardStyles}>
+    <!-- Optional Cover Image -->
+    {imageSrc && (
+      <div class="aspect-video overflow-hidden">
+        <img
+          src={imageSrc}
+          alt={imageAlt}
+          loading="lazy"
+          decoding="async"
+          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+    )}
+
+    <!-- Content -->
+    <div class="p-4 md:p-6">
+      <!-- Metadata Row: Date + Reading Time -->
+      <div class="flex items-center gap-3 mb-3 text-sm text-neutral-500 [.light_&]:text-neutral-500">
+        <time datetime={publishedAt.toISOString()}>
+          {formattedDate}
+        </time>
+        <span class="text-neutral-600" aria-hidden="true">|</span>
+        <span class="bg-neutral-700/50 px-2 py-0.5 rounded text-xs [.light_&]:bg-neutral-200">
+          {t(lang, 'common.readingTime', { minutes: readingTimeMinutes })}
+        </span>
+      </div>
+
+      <!-- Title -->
+      <h3 class="font-heading font-medium text-xl md:text-2xl mb-2 text-white group-hover:text-primary-400 transition-colors [.light_&]:text-neutral-900 [.light_&]:group-hover:text-primary-600">
+        {title}
+      </h3>
+
+      <!-- Excerpt -->
+      <p class="text-neutral-300 leading-relaxed line-clamp-2 mb-4 [.light_&]:text-neutral-600">
+        {excerpt}
+      </p>
+
+      <!-- Read More Link -->
+      <span class="text-primary-400 text-sm font-medium group-hover:underline underline-offset-4 [.light_&]:text-primary-600">
+        {t(lang, 'common.readMore')} &rarr;
+      </span>
+    </div>
+  </article>
+</a>

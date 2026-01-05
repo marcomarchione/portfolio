@@ -21,11 +21,11 @@ const { lang } = Astro.params as { lang: Language };
   title="Marco Marchione"
   description="Full Stack Developer Portfolio"
 >
-  <main class="min-h-screen bg-neutral-950 text-white">
+  <section class="min-h-screen">
     <div class="container mx-auto px-4 py-16">
-      <h1 class="text-4xl font-bold mb-4">Marco Marchione</h1>
-      <p class="text-neutral-400">Portfolio coming soon...</p>
+      <h1 class="text-4xl font-bold mb-4 text-white [.light_&]:text-neutral-900">Marco Marchione</h1>
+      <p class="text-neutral-400 [.light_&]:text-neutral-600">Portfolio coming soon...</p>
       <p class="text-neutral-500 mt-2">Current language: {lang}</p>
     </div>
-  </main>
+  </section>
 </BaseLayout>

@@ -1,0 +1,28 @@
+---
+/**
+ * BodyText Component
+ *
+ * Wrapper component for consistent paragraph styling.
+ * Uses Inter font with optimized line height for readability.
+ *
+ * @example
+ * <BodyText>This is a paragraph of text with consistent styling.</BodyText>
+ * <BodyText class="text-lg">Larger body text for emphasis.</BodyText>
+ */
+
+export interface Props {
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+
+const baseStyles = 'text-base leading-relaxed text-neutral-300 dark:text-neutral-300';
+const lightStyles = '[.light_&]:text-neutral-700';
+
+const combinedStyles = `${baseStyles} ${lightStyles} ${className}`.trim();
+---
+
+<p class={combinedStyles}>
+  <slot />
+</p>

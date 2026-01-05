@@ -1,0 +1,27 @@
+---
+/**
+ * CodeBlock Component
+ *
+ * Preformatted code block with JetBrains Mono font.
+ * Supports horizontal scrolling for long lines.
+ *
+ * @example
+ * <CodeBlock>
+ *   <code>const greeting = 'Hello, World!';</code>
+ * </CodeBlock>
+ */
+
+export interface Props {
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+
+const baseStyles = 'bg-neutral-900 rounded-lg p-4 overflow-x-auto font-mono text-sm';
+const lightStyles = '[.light_&]:bg-neutral-100 [.light_&]:text-neutral-900';
+
+const combinedStyles = `${baseStyles} ${lightStyles} ${className}`.trim();
+---
+
+<pre class={combinedStyles}><slot /></pre>

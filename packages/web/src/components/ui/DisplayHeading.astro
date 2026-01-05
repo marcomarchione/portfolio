@@ -1,0 +1,36 @@
+---
+/**
+ * DisplayHeading Component
+ *
+ * Large heading component for hero sections and major page titles.
+ * Uses Space Grotesk font with bold weights.
+ *
+ * @example
+ * <DisplayHeading level={1}>Welcome to My Portfolio</DisplayHeading>
+ * <DisplayHeading level={2} class="text-center">Featured Projects</DisplayHeading>
+ */
+
+export interface Props {
+  /** Heading level: 1 for H1, 2 for H2 */
+  level: 1 | 2;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { level, class: className = '' } = Astro.props;
+
+const Tag = `h${level}` as 'h1' | 'h2';
+
+const baseStyles = 'font-heading tracking-tight';
+
+const levelStyles = {
+  1: 'text-4xl md:text-5xl lg:text-6xl font-bold',
+  2: 'text-3xl md:text-4xl lg:text-5xl font-semibold',
+};
+
+const combinedStyles = `${baseStyles} ${levelStyles[level]} ${className}`.trim();
+---
+
+<Tag class={combinedStyles}>
+  <slot />
+</Tag>

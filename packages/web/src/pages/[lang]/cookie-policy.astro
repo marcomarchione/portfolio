@@ -21,72 +21,72 @@ const title = t(lang, 'meta.cookieTitle');
 ---
 
 <BaseLayout lang={lang} title={title}>
-  <main class="min-h-screen bg-bg-primary text-neutral-100">
+  <section class="min-h-screen">
     <div class="container mx-auto px-4 py-16 max-w-3xl">
-      <h1 class="font-heading text-4xl font-bold mb-8">
+      <h1 class="font-heading text-4xl font-bold mb-8 text-white [.light_&]:text-neutral-900">
         {t(lang, 'footer.cookiePolicy')}
       </h1>
 
-      <div class="prose prose-invert prose-neutral max-w-none">
-        <p class="text-neutral-400">
+      <div class="prose prose-invert [.light_&]:prose-neutral max-w-none">
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           Cookie policy content coming soon...
         </p>
 
         <!-- Placeholder structure for cookie policy -->
-        <h2>1. What are Cookies?</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">1. What are Cookies?</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Cookie explanation will be added here]
         </p>
 
-        <h2>2. Types of Cookies We Use</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">2. Types of Cookies We Use</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Cookie types will be listed here]
         </p>
 
-        <h3>2.1 Necessary Cookies</h3>
-        <p class="text-neutral-400">
+        <h3 class="text-white [.light_&]:text-neutral-900">2.1 Necessary Cookies</h3>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Necessary cookies information]
         </p>
 
-        <h3>2.2 Functional Cookies</h3>
-        <p class="text-neutral-400">
+        <h3 class="text-white [.light_&]:text-neutral-900">2.2 Functional Cookies</h3>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Functional cookies information]
         </p>
 
-        <h3>2.3 Analytics Cookies</h3>
-        <p class="text-neutral-400">
+        <h3 class="text-white [.light_&]:text-neutral-900">2.3 Analytics Cookies</h3>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Analytics cookies information]
         </p>
 
-        <h2>3. Managing Your Cookie Preferences</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">3. Managing Your Cookie Preferences</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Cookie management instructions will be added here]
         </p>
 
-        <h2>4. Third-Party Cookies</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">4. Third-Party Cookies</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Third-party cookie information will be added here]
         </p>
 
-        <h2>5. Updates to This Policy</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">5. Updates to This Policy</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Policy update information will be added here]
         </p>
 
-        <h2>6. Contact</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">6. Contact</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Contact information will be added here]
         </p>
       </div>
 
-      <footer class="mt-12 pt-8 border-t border-neutral-800">
+      <footer class="mt-12 pt-8 border-t border-neutral-800 [.light_&]:border-neutral-200">
         <a
           href={`/${lang}/`}
-          class="text-primary-500 hover:text-primary-400 transition-colors"
+          class="text-primary-400 hover:text-primary-300 [.light_&]:text-primary-600 [.light_&]:hover:text-primary-700 transition-colors"
         >
           &larr; {t(lang, 'nav.home')}
         </a>
       </footer>
     </div>
-  </main>
+  </section>
 </BaseLayout>

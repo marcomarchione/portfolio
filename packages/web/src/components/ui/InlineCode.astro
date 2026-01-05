@@ -1,0 +1,25 @@
+---
+/**
+ * InlineCode Component
+ *
+ * Inline code snippet with JetBrains Mono font and subtle background.
+ * For use within paragraphs and other text content.
+ *
+ * @example
+ * <p>Use the <InlineCode>npm install</InlineCode> command to install dependencies.</p>
+ */
+
+export interface Props {
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+
+const baseStyles = 'bg-neutral-800 px-1.5 py-0.5 rounded text-sm font-mono';
+const lightStyles = '[.light_&]:bg-neutral-200 [.light_&]:text-neutral-800';
+
+const combinedStyles = `${baseStyles} ${lightStyles} ${className}`.trim();
+---
+
+<code class={combinedStyles}><slot /></code>

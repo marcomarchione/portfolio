@@ -21,57 +21,57 @@ const title = t(lang, 'meta.privacyTitle');
 ---
 
 <BaseLayout lang={lang} title={title}>
-  <main class="min-h-screen bg-bg-primary text-neutral-100">
+  <section class="min-h-screen">
     <div class="container mx-auto px-4 py-16 max-w-3xl">
-      <h1 class="font-heading text-4xl font-bold mb-8">
+      <h1 class="font-heading text-4xl font-bold mb-8 text-white [.light_&]:text-neutral-900">
         {t(lang, 'footer.privacyPolicy')}
       </h1>
 
-      <div class="prose prose-invert prose-neutral max-w-none">
-        <p class="text-neutral-400">
+      <div class="prose prose-invert [.light_&]:prose-neutral max-w-none">
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           Privacy policy content coming soon...
         </p>
 
         <!-- Placeholder structure for privacy policy -->
-        <h2>1. Data Controller</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">1. Data Controller</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Data controller information will be added here]
         </p>
 
-        <h2>2. Data Collection</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">2. Data Collection</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Information about data collection will be added here]
         </p>
 
-        <h2>3. Purpose of Data Processing</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">3. Purpose of Data Processing</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Purpose information will be added here]
         </p>
 
-        <h2>4. Data Retention</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">4. Data Retention</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Data retention policy will be added here]
         </p>
 
-        <h2>5. Your Rights</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">5. Your Rights</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [User rights under GDPR will be added here]
         </p>
 
-        <h2>6. Contact</h2>
-        <p class="text-neutral-400">
+        <h2 class="text-white [.light_&]:text-neutral-900">6. Contact</h2>
+        <p class="text-neutral-400 [.light_&]:text-neutral-600">
           [Contact information will be added here]
         </p>
       </div>
 
-      <footer class="mt-12 pt-8 border-t border-neutral-800">
+      <footer class="mt-12 pt-8 border-t border-neutral-800 [.light_&]:border-neutral-200">
         <a
           href={`/${lang}/`}
-          class="text-primary-500 hover:text-primary-400 transition-colors"
+          class="text-primary-400 hover:text-primary-300 [.light_&]:text-primary-600 [.light_&]:hover:text-primary-700 transition-colors"
         >
           &larr; {t(lang, 'nav.home')}
         </a>
       </footer>
     </div>
-  </main>
+  </section>
 </BaseLayout>

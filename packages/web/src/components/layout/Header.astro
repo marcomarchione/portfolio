@@ -1,0 +1,102 @@
+---
+/**
+ * Header Component
+ *
+ * Sticky navigation header with glass morphism effect.
+ * Contains logo, navigation links, theme toggle, and language switcher.
+ * Responsive: shows hamburger menu on mobile.
+ *
+ * @example
+ * <Header lang="it" currentPath="/it/projects/" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import { getLocalizedPath } from '../../i18n/config';
+import { t } from '../../i18n/utils';
+import Logo from '../ui/Logo.astro';
+import ThemeToggle from '../ui/ThemeToggle';
+import LanguageSwitcher from '../ui/LanguageSwitcher';
+import HeaderWithMobileNav from './HeaderWithMobileNav';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+  /** Current page path for language switching */
+  currentPath: string;
+}
+
+const { lang, currentPath } = Astro.props;
+
+/** Navigation items configuration */
+const navItems = [
+  { key: 'home' as const, route: 'home' as const },
+  { key: 'projects' as const, route: 'projects' as const },
+  { key: 'materials' as const, route: 'materials' as const },
+  { key: 'news' as const, route: 'news' as const },
+] as const;
+---
+
+<header transition:persist class="sticky top-0 z-50 h-16 bg-white/10 backdrop-blur-lg border-b border-white/10 [.light_&]:bg-white/80 [.light_&]:border-neutral-200 transition-all duration-500 ease-in-out">
+  <nav class="container mx-auto h-full px-4 relative flex items-center justify-between">
+    <!-- Logo -->
+    <Logo lang={lang} class="relative z-10" />
+
+    <!-- Desktop Navigation - Absolutely Centered -->
+    <div class="hidden md:flex items-center justify-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      {navItems.map((item) => {
+        const href = getLocalizedPath(lang, item.route);
+        const isActive = currentPath.startsWith(href) && (item.route === 'home' ? currentPath === href : true);
+
+        return (
+          <a
+            href={href}
+            class={`text-sm font-medium transition-colors ${
+              isActive
+                ? 'text-primary-400 [.light_&]:text-primary-600'
+                : 'text-neutral-300 hover:text-white [.light_&]:text-neutral-600 [.light_&]:hover:text-neutral-900'
+            }`}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            {t(lang, `nav.${item.key}`)}
+          </a>
+        );
+      })}
+    </div>
+
+    <!-- Desktop Actions: Theme Toggle + Language Switcher -->
+    <div class="hidden md:flex items-center gap-2 relative z-10">
+      <ThemeToggle
+        ariaLabelLight={t(lang, 'theme.switchToLight')}
+        ariaLabelDark={t(lang, 'theme.switchToDark')}
+        client:load
+      />
+      <LanguageSwitcher
+        currentLang={lang}
+        currentPath={currentPath}
+        ariaLabel={t(lang, 'language.switchTo')}
+        client:load
+      />
+    </div>
+
+    <!-- Mobile: Hamburger Menu -->
+    <div class="md:hidden relative z-10">
+      <HeaderWithMobileNav
+        lang={lang}
+        currentPath={currentPath}
+        navItems={navItems.map((item) => ({
+          label: t(lang, `nav.${item.key}`),
+          href: getLocalizedPath(lang, item.route),
+          isActive: currentPath.startsWith(getLocalizedPath(lang, item.route)) &&
+                    (item.route === 'home' ? currentPath === getLocalizedPath(lang, item.route) : true),
+        }))}
+        translations={{
+          openMenu: t(lang, 'nav.openMenu'),
+          closeMenu: t(lang, 'nav.closeMenu'),
+          switchToLight: t(lang, 'theme.switchToLight'),
+          switchToDark: t(lang, 'theme.switchToDark'),
+          switchLanguage: t(lang, 'language.switchTo'),
+        }}
+        client:load
+      />
+    </div>
+  </nav>
+</header>
