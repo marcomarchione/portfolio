@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal portfolio website monorepo with CMS backend, admin panel, and public frontend. Uses Bun workspaces.
 
+## Skills
+
+This project has custom skills that **you must use** during your work. Skills contain specific instructions to maintain code consistency and quality.
+
+See `.claude/skills/README.md` for details. Skills are activated automatically based on the task context.
+
 ## Commands
 
 ```bash
