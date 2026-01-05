@@ -39,6 +39,9 @@ coverage/
 # Playwright
 packages/admin/playwright-report/
 packages/admin/test-results/
+packages/web/playwright-report/
+packages/web/test-results/
+test-results/
 
 # Bun
 bun.lockb
