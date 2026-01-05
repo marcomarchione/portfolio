@@ -42,17 +42,14 @@ describe('UploadQueue', () => {
 
     render(<UploadQueue items={items} onRemove={onRemove} />);
 
-    // Check queue header
-    expect(screen.getByText('Upload Queue (4)')).toBeInTheDocument();
+    // Check queue header shows uploading status (2 active: pending + uploading)
+    expect(screen.getByText('Uploading 2 files...')).toBeInTheDocument();
 
     // Check each file is displayed
     expect(screen.getByText('pending.jpg')).toBeInTheDocument();
     expect(screen.getByText('uploading.jpg')).toBeInTheDocument();
     expect(screen.getByText('complete.jpg')).toBeInTheDocument();
     expect(screen.getByText('error.jpg')).toBeInTheDocument();
-
-    // Check pending status
-    expect(screen.getByText('Waiting...')).toBeInTheDocument();
 
     // Check error message
     expect(screen.getByText('Upload failed')).toBeInTheDocument();

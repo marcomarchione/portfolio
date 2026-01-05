@@ -42,7 +42,9 @@ test.describe('DateField Custom Calendar Tests', () => {
     const monthHeader = calendarDialog.locator('span.font-medium');
     const headerText = await monthHeader.textContent();
     console.log('Calendar header:', headerText);
-    expect(headerText).toContain('2025');
+    // Header should contain current year
+    const currentYear = new Date().getFullYear().toString();
+    expect(headerText).toContain(currentYear);
 
     // Verify day buttons exist
     const dayButtons = calendarDialog.locator('button:not([aria-label])');

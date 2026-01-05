@@ -113,7 +113,7 @@ describe('MediaDetailModal', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Image Variants')).toBeInTheDocument();
+      expect(screen.getByText('Variants')).toBeInTheDocument();
     });
 
     // Check variants are displayed
@@ -123,8 +123,9 @@ describe('MediaDetailModal', () => {
     expect(screen.getByText('Thumbnail')).toBeInTheDocument();
 
     // Check copy buttons exist
+    // 1 in URL section + 4 in VariantsPanel (Original + Large + Medium + Thumbnail)
     const copyButtons = screen.getAllByRole('button', { name: /Copy.*URL/i });
-    expect(copyButtons.length).toBe(4); // Original + 3 variants
+    expect(copyButtons.length).toBe(5);
   });
 
   it('shows alt text field for images', async () => {
