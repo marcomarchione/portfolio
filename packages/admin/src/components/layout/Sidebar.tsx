@@ -59,7 +59,7 @@ export function Sidebar({ onNavClick }: SidebarProps) {
       {/* Footer */}
       <div className="p-4 border-t border-white/10">
         <p className="text-xs text-neutral-600 text-center">
-          Version 1.0.0
+          v{__APP_VERSION__}
         </p>
       </div>
     </aside>
