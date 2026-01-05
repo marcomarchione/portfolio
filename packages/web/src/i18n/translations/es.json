@@ -1,0 +1,45 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "projects": "Proyectos",
+    "materials": "Materiales",
+    "news": "Noticias",
+    "contact": "Contacto",
+    "about": "Sobre mi"
+  },
+  "footer": {
+    "copyright": "Todos los derechos reservados.",
+    "madeWith": "Hecho con",
+    "privacyPolicy": "Politica de Privacidad",
+    "cookiePolicy": "Politica de Cookies"
+  },
+  "common": {
+    "readMore": "Leer mas",
+    "viewProject": "Ver proyecto",
+    "download": "Descargar",
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "noResults": "No se encontraron resultados",
+    "backToList": "Volver a la lista",
+    "share": "Compartir",
+    "featured": "Destacado",
+    "all": "Todos",
+    "categories": "Categorias",
+    "tags": "Etiquetas",
+    "published": "Publicado el",
+    "updated": "Actualizado el",
+    "readingTime": "{minutes} min de lectura"
+  },
+  "meta": {
+    "siteTitle": "Marco Marchione - Full Stack Developer",
+    "siteDescription": "Portfolio de Marco Marchione, Full Stack Developer especializado en desarrollo web moderno.",
+    "projectsTitle": "Proyectos | Marco Marchione",
+    "projectsDescription": "Explora mis proyectos de desarrollo de software y web.",
+    "materialsTitle": "Materiales | Marco Marchione",
+    "materialsDescription": "Recursos, guias y materiales utiles para desarrolladores.",
+    "newsTitle": "Noticias | Marco Marchione",
+    "newsDescription": "Articulos, actualizaciones y novedades del mundo del desarrollo.",
+    "privacyTitle": "Politica de Privacidad | Marco Marchione",
+    "cookieTitle": "Politica de Cookies | Marco Marchione"
+  }
+}

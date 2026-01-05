@@ -1,0 +1,105 @@
+---
+/**
+ * Material Detail Page
+ *
+ * Displays a single material with full details and download option.
+ */
+import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { t } from '../../../i18n';
+import { getMaterial, getMaterialSlugs } from '../../../lib/api';
+
+export async function getStaticPaths() {
+  const slugs = await getMaterialSlugs();
+
+  return LANGUAGES.flatMap((lang) =>
+    slugs.map((slug) => ({
+      params: { lang, slug },
+    }))
+  );
+}
+
+const { lang, slug } = Astro.params as { lang: Language; slug: string };
+
+// Fetch material from API
+const material = await getMaterial(slug, lang);
+
+// 404 if material not found
+if (!material) {
+  return Astro.redirect('/404');
+}
+
+const title = material.translation?.metaTitle ?? material.translation?.title ?? slug;
+const description = material.translation?.metaDescription ?? material.translation?.description ?? '';
+---
+
+<BaseLayout lang={lang} title={title} description={description}>
+  <main class="min-h-screen bg-bg-primary text-neutral-100">
+    <div class="container mx-auto px-4 py-16">
+      <nav class="mb-8">
+        <a
+          href={`/${lang}/materials/`}
+          class="text-primary-500 hover:text-primary-400 transition-colors"
+        >
+          &larr; {t(lang, 'common.backToList')}
+        </a>
+      </nav>
+
+      <article>
+        <header class="mb-8">
+          <span class="text-accent-500 font-medium uppercase tracking-wide text-sm">
+            {material.category}
+          </span>
+
+          <h1 class="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">
+            {material.translation?.title ?? slug}
+          </h1>
+
+          {material.translation?.description && (
+            <p class="text-xl text-neutral-400 mb-6">
+              {material.translation.description}
+            </p>
+          )}
+
+          {material.fileSize && (
+            <p class="text-neutral-500 text-sm">
+              {(material.fileSize / 1024 / 1024).toFixed(2)} MB
+            </p>
+          )}
+        </header>
+
+        {material.translation?.body && (
+          <div class="prose prose-invert prose-neutral max-w-none mb-12">
+            <Fragment set:html={material.translation.body} />
+          </div>
+        )}
+
+        <footer class="mt-12 pt-8 border-t border-neutral-800">
+          <a
+            href={material.downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {t(lang, 'common.download')}
+          </a>
+        </footer>
+      </article>
+    </div>
+  </main>
+</BaseLayout>

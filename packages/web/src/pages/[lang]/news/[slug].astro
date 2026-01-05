@@ -1,0 +1,139 @@
+---
+/**
+ * News Article Detail Page
+ *
+ * Displays a single news article with full content.
+ */
+import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { t } from '../../../i18n';
+import { getNewsItem, getNewsSlugs } from '../../../lib/api';
+
+export async function getStaticPaths() {
+  const slugs = await getNewsSlugs();
+
+  return LANGUAGES.flatMap((lang) =>
+    slugs.map((slug) => ({
+      params: { lang, slug },
+    }))
+  );
+}
+
+const { lang, slug } = Astro.params as { lang: Language; slug: string };
+
+// Fetch news article from API
+const article = await getNewsItem(slug, lang);
+
+// 404 if article not found
+if (!article) {
+  return Astro.redirect('/404');
+}
+
+const title = article.translation?.metaTitle ?? article.translation?.title ?? slug;
+const description = article.translation?.metaDescription ?? article.translation?.description ?? '';
+const ogImage = article.coverImage ?? undefined;
+
+// Helper to format date
+function formatDate(dateString: string | null): string {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString(lang, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+---
+
+<BaseLayout lang={lang} title={title} description={description} ogImage={ogImage}>
+  <main class="min-h-screen bg-bg-primary text-neutral-100">
+    <div class="container mx-auto px-4 py-16">
+      <nav class="mb-8">
+        <a
+          href={`/${lang}/news/`}
+          class="text-primary-500 hover:text-primary-400 transition-colors"
+        >
+          &larr; {t(lang, 'common.backToList')}
+        </a>
+      </nav>
+
+      <article class="max-w-3xl mx-auto">
+        {article.coverImage && (
+          <img
+            src={article.coverImage}
+            alt={article.translation?.title ?? slug}
+            class="w-full h-64 md:h-96 object-cover rounded-lg mb-8"
+          />
+        )}
+
+        <header class="mb-8">
+          <h1 class="font-heading text-4xl md:text-5xl font-bold mb-4">
+            {article.translation?.title ?? slug}
+          </h1>
+
+          <div class="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
+            {article.publishedAt && (
+              <time datetime={article.publishedAt}>
+                {t(lang, 'common.published')} {formatDate(article.publishedAt)}
+              </time>
+            )}
+
+            {article.readingTime && (
+              <span>
+                {t(lang, 'common.readingTime', { minutes: String(article.readingTime) })}
+              </span>
+            )}
+          </div>
+
+          {article.tags && article.tags.length > 0 && (
+            <div class="flex flex-wrap gap-2 mt-4">
+              {article.tags.map((tag) => (
+                <span class="text-xs px-3 py-1 bg-accent-500/10 text-accent-400 rounded-full">
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </header>
+
+        {article.translation?.description && (
+          <p class="text-xl text-neutral-400 mb-8 border-l-4 border-primary-500 pl-4">
+            {article.translation.description}
+          </p>
+        )}
+
+        {article.translation?.body && (
+          <div class="prose prose-invert prose-neutral max-w-none">
+            <Fragment set:html={article.translation.body} />
+          </div>
+        )}
+
+        <footer class="mt-12 pt-8 border-t border-neutral-800">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-neutral-800 text-neutral-300 rounded-lg hover:bg-neutral-700 transition-colors text-sm"
+            onclick="navigator.share ? navigator.share({ title: document.title, url: window.location.href }) : navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'))"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            {t(lang, 'common.share')}
+          </button>
+        </footer>
+      </article>
+    </div>
+  </main>
+</BaseLayout>

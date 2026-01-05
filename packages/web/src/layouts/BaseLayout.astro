@@ -1,0 +1,153 @@
+---
+/**
+ * BaseLayout Component
+ *
+ * Main layout component with i18n support, SEO meta tags, and theme handling.
+ * All pages should use this layout for consistent structure.
+ */
+import { LANGUAGES, DEFAULT_LANGUAGE, type Language } from '@marcomarchione/shared';
+import '../styles/global.css';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+  /** Page title */
+  title: string;
+  /** Meta description for SEO */
+  description?: string;
+  /** Canonical URL for the page */
+  canonicalUrl?: string;
+  /** Open Graph image URL */
+  ogImage?: string;
+}
+
+const {
+  lang,
+  title,
+  description = 'Full Stack Developer Portfolio',
+  canonicalUrl,
+  ogImage = '/og-default.png',
+} = Astro.props;
+
+// Derive the current path without language prefix for hreflang generation
+const currentPath = Astro.url.pathname;
+const pathWithoutLang = currentPath.replace(new RegExp(`^/${lang}/?`), '/');
+
+// Build the canonical URL if not provided
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') || '';
+const canonical = canonicalUrl || `${siteUrl}${currentPath}`;
+
+// Build Open Graph URL
+const ogUrl = canonical;
+
+// Build OG image URL
+const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
+---
+
+<!doctype html>
+<html lang={lang} dir="ltr" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+
+    <!-- Canonical URL -->
+    {canonical && <link rel="canonical" href={canonical} />}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- hreflang Tags for SEO -->
+    {LANGUAGES.map((langCode) => (
+      <link
+        rel="alternate"
+        hreflang={langCode}
+        href={`${siteUrl}/${langCode}${pathWithoutLang}`}
+      />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={`${siteUrl}/${DEFAULT_LANGUAGE}${pathWithoutLang}`} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={ogUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:locale" content={lang} />
+    {LANGUAGES.filter((l) => l !== lang).map((altLang) => (
+      <meta property="og:locale:alternate" content={altLang} />
+    ))}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={ogUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <!-- Font Preloading -->
+    <link
+      rel="preload"
+      href="/src/styles/fonts/space-grotesk-500.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href="/src/styles/fonts/inter-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+
+    <!--
+      Theme Detection Script
+
+      This inline script runs before page render to prevent flash of wrong theme.
+      It checks localStorage first, then falls back to system preference.
+
+      Theme API:
+      - localStorage key: 'theme'
+      - Values: 'dark' | 'light' | undefined (system preference)
+      - Default: 'dark' (if no preference set)
+
+      To implement a theme toggle component:
+      1. Read: localStorage.getItem('theme')
+      2. Write: localStorage.setItem('theme', 'dark' | 'light')
+      3. Toggle class: document.documentElement.classList.toggle('dark')
+      4. For system preference: localStorage.removeItem('theme')
+    -->
+    <script is:inline>
+      (function() {
+        const theme = localStorage.getItem('theme');
+
+        if (theme === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        } else if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        } else {
+          // Check system preference, default to dark
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (!prefersDark) {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          } else {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

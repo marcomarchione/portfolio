@@ -1,0 +1,77 @@
+---
+/**
+ * Privacy Policy Page
+ *
+ * Legal page with privacy policy content.
+ * Placeholder content - actual legal text to be added.
+ */
+import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n';
+
+export function getStaticPaths() {
+  return LANGUAGES.map((lang) => ({
+    params: { lang },
+  }));
+}
+
+const { lang } = Astro.params as { lang: Language };
+
+const title = t(lang, 'meta.privacyTitle');
+---
+
+<BaseLayout lang={lang} title={title}>
+  <main class="min-h-screen bg-bg-primary text-neutral-100">
+    <div class="container mx-auto px-4 py-16 max-w-3xl">
+      <h1 class="font-heading text-4xl font-bold mb-8">
+        {t(lang, 'footer.privacyPolicy')}
+      </h1>
+
+      <div class="prose prose-invert prose-neutral max-w-none">
+        <p class="text-neutral-400">
+          Privacy policy content coming soon...
+        </p>
+
+        <!-- Placeholder structure for privacy policy -->
+        <h2>1. Data Controller</h2>
+        <p class="text-neutral-400">
+          [Data controller information will be added here]
+        </p>
+
+        <h2>2. Data Collection</h2>
+        <p class="text-neutral-400">
+          [Information about data collection will be added here]
+        </p>
+
+        <h2>3. Purpose of Data Processing</h2>
+        <p class="text-neutral-400">
+          [Purpose information will be added here]
+        </p>
+
+        <h2>4. Data Retention</h2>
+        <p class="text-neutral-400">
+          [Data retention policy will be added here]
+        </p>
+
+        <h2>5. Your Rights</h2>
+        <p class="text-neutral-400">
+          [User rights under GDPR will be added here]
+        </p>
+
+        <h2>6. Contact</h2>
+        <p class="text-neutral-400">
+          [Contact information will be added here]
+        </p>
+      </div>
+
+      <footer class="mt-12 pt-8 border-t border-neutral-800">
+        <a
+          href={`/${lang}/`}
+          class="text-primary-500 hover:text-primary-400 transition-colors"
+        >
+          &larr; {t(lang, 'nav.home')}
+        </a>
+      </footer>
+    </div>
+  </main>
+</BaseLayout>

@@ -1,0 +1,66 @@
+---
+/**
+ * Materials Listing Page
+ *
+ * Displays all published materials with translations for the current language.
+ */
+import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { t } from '../../../i18n';
+import { getMaterials } from '../../../lib/api';
+
+export function getStaticPaths() {
+  return LANGUAGES.map((lang) => ({
+    params: { lang },
+  }));
+}
+
+const { lang } = Astro.params as { lang: Language };
+
+// Fetch materials from API
+const materialsResponse = await getMaterials(lang).catch(() => null);
+const materials = materialsResponse?.data ?? [];
+
+const title = t(lang, 'meta.materialsTitle');
+const description = t(lang, 'meta.materialsDescription');
+---
+
+<BaseLayout lang={lang} title={title} description={description}>
+  <main class="min-h-screen bg-bg-primary text-neutral-100">
+    <div class="container mx-auto px-4 py-16">
+      <h1 class="font-heading text-4xl font-bold mb-8">{t(lang, 'nav.materials')}</h1>
+
+      {materials.length === 0 ? (
+        <p class="text-neutral-400">{t(lang, 'common.noResults')}</p>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {materials.map((material) => (
+            <article class="bg-bg-secondary rounded-lg p-6 border border-neutral-800 hover:border-primary-500 transition-colors">
+              <span class="text-xs text-accent-500 font-medium uppercase tracking-wide">
+                {material.category}
+              </span>
+              <h2 class="font-heading text-xl font-semibold mt-2 mb-2">
+                <a
+                  href={`/${lang}/materials/${material.slug}/`}
+                  class="hover:text-primary-500 transition-colors"
+                >
+                  {material.translation?.title ?? material.slug}
+                </a>
+              </h2>
+              {material.translation?.description && (
+                <p class="text-neutral-400 text-sm line-clamp-3">
+                  {material.translation.description}
+                </p>
+              )}
+              {material.fileSize && (
+                <p class="text-neutral-500 text-xs mt-3">
+                  {(material.fileSize / 1024 / 1024).toFixed(2)} MB
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  </main>
+</BaseLayout>

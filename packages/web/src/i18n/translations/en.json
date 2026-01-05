@@ -1,0 +1,45 @@
+{
+  "nav": {
+    "home": "Home",
+    "projects": "Projects",
+    "materials": "Materials",
+    "news": "News",
+    "contact": "Contact",
+    "about": "About"
+  },
+  "footer": {
+    "copyright": "All rights reserved.",
+    "madeWith": "Made with",
+    "privacyPolicy": "Privacy Policy",
+    "cookiePolicy": "Cookie Policy"
+  },
+  "common": {
+    "readMore": "Read more",
+    "viewProject": "View project",
+    "download": "Download",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "noResults": "No results found",
+    "backToList": "Back to list",
+    "share": "Share",
+    "featured": "Featured",
+    "all": "All",
+    "categories": "Categories",
+    "tags": "Tags",
+    "published": "Published on",
+    "updated": "Updated on",
+    "readingTime": "{minutes} min read"
+  },
+  "meta": {
+    "siteTitle": "Marco Marchione - Full Stack Developer",
+    "siteDescription": "Portfolio of Marco Marchione, Full Stack Developer specializing in modern web development.",
+    "projectsTitle": "Projects | Marco Marchione",
+    "projectsDescription": "Explore my software and web development projects.",
+    "materialsTitle": "Materials | Marco Marchione",
+    "materialsDescription": "Resources, guides, and useful materials for developers.",
+    "newsTitle": "News | Marco Marchione",
+    "newsDescription": "Articles, updates, and news from the development world.",
+    "privacyTitle": "Privacy Policy | Marco Marchione",
+    "cookieTitle": "Cookie Policy | Marco Marchione"
+  }
+}

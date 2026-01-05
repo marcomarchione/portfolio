@@ -1,0 +1,92 @@
+---
+/**
+ * Cookie Policy Page
+ *
+ * Legal page with cookie policy content.
+ * Placeholder content - actual legal text to be added.
+ */
+import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n';
+
+export function getStaticPaths() {
+  return LANGUAGES.map((lang) => ({
+    params: { lang },
+  }));
+}
+
+const { lang } = Astro.params as { lang: Language };
+
+const title = t(lang, 'meta.cookieTitle');
+---
+
+<BaseLayout lang={lang} title={title}>
+  <main class="min-h-screen bg-bg-primary text-neutral-100">
+    <div class="container mx-auto px-4 py-16 max-w-3xl">
+      <h1 class="font-heading text-4xl font-bold mb-8">
+        {t(lang, 'footer.cookiePolicy')}
+      </h1>
+
+      <div class="prose prose-invert prose-neutral max-w-none">
+        <p class="text-neutral-400">
+          Cookie policy content coming soon...
+        </p>
+
+        <!-- Placeholder structure for cookie policy -->
+        <h2>1. What are Cookies?</h2>
+        <p class="text-neutral-400">
+          [Cookie explanation will be added here]
+        </p>
+
+        <h2>2. Types of Cookies We Use</h2>
+        <p class="text-neutral-400">
+          [Cookie types will be listed here]
+        </p>
+
+        <h3>2.1 Necessary Cookies</h3>
+        <p class="text-neutral-400">
+          [Necessary cookies information]
+        </p>
+
+        <h3>2.2 Functional Cookies</h3>
+        <p class="text-neutral-400">
+          [Functional cookies information]
+        </p>
+
+        <h3>2.3 Analytics Cookies</h3>
+        <p class="text-neutral-400">
+          [Analytics cookies information]
+        </p>
+
+        <h2>3. Managing Your Cookie Preferences</h2>
+        <p class="text-neutral-400">
+          [Cookie management instructions will be added here]
+        </p>
+
+        <h2>4. Third-Party Cookies</h2>
+        <p class="text-neutral-400">
+          [Third-party cookie information will be added here]
+        </p>
+
+        <h2>5. Updates to This Policy</h2>
+        <p class="text-neutral-400">
+          [Policy update information will be added here]
+        </p>
+
+        <h2>6. Contact</h2>
+        <p class="text-neutral-400">
+          [Contact information will be added here]
+        </p>
+      </div>
+
+      <footer class="mt-12 pt-8 border-t border-neutral-800">
+        <a
+          href={`/${lang}/`}
+          class="text-primary-500 hover:text-primary-400 transition-colors"
+        >
+          &larr; {t(lang, 'nav.home')}
+        </a>
+      </footer>
+    </div>
+  </main>
+</BaseLayout>

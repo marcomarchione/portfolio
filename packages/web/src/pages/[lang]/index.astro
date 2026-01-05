@@ -1,0 +1,31 @@
+---
+/**
+ * Home Page
+ *
+ * Localized home page for each supported language.
+ */
+import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return LANGUAGES.map((lang) => ({
+    params: { lang },
+  }));
+}
+
+const { lang } = Astro.params as { lang: Language };
+---
+
+<BaseLayout
+  lang={lang}
+  title="Marco Marchione"
+  description="Full Stack Developer Portfolio"
+>
+  <main class="min-h-screen bg-neutral-950 text-white">
+    <div class="container mx-auto px-4 py-16">
+      <h1 class="text-4xl font-bold mb-4">Marco Marchione</h1>
+      <p class="text-neutral-400">Portfolio coming soon...</p>
+      <p class="text-neutral-500 mt-2">Current language: {lang}</p>
+    </div>
+  </main>
+</BaseLayout>

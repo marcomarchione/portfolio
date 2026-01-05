@@ -1,0 +1,114 @@
+---
+/**
+ * Project Detail Page
+ *
+ * Displays a single project with full details and translations.
+ */
+import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { t } from '../../../i18n';
+import { getProject, getProjectSlugs } from '../../../lib/api';
+
+export async function getStaticPaths() {
+  const slugs = await getProjectSlugs();
+
+  return LANGUAGES.flatMap((lang) =>
+    slugs.map((slug) => ({
+      params: { lang, slug },
+    }))
+  );
+}
+
+const { lang, slug } = Astro.params as { lang: Language; slug: string };
+
+// Fetch project from API
+const project = await getProject(slug, lang);
+
+// 404 if project not found
+if (!project) {
+  return Astro.redirect('/404');
+}
+
+const title = project.translation?.metaTitle ?? project.translation?.title ?? slug;
+const description = project.translation?.metaDescription ?? project.translation?.description ?? '';
+---
+
+<BaseLayout lang={lang} title={title} description={description}>
+  <main class="min-h-screen bg-bg-primary text-neutral-100">
+    <div class="container mx-auto px-4 py-16">
+      <nav class="mb-8">
+        <a
+          href={`/${lang}/projects/`}
+          class="text-primary-500 hover:text-primary-400 transition-colors"
+        >
+          &larr; {t(lang, 'common.backToList')}
+        </a>
+      </nav>
+
+      <article>
+        <header class="mb-8">
+          <h1 class="font-heading text-4xl md:text-5xl font-bold mb-4">
+            {project.translation?.title ?? slug}
+          </h1>
+
+          {project.translation?.description && (
+            <p class="text-xl text-neutral-400 mb-6">
+              {project.translation.description}
+            </p>
+          )}
+
+          <div class="flex flex-wrap gap-4 text-sm text-neutral-500">
+            {project.projectStatus && (
+              <span class="px-3 py-1 bg-bg-secondary rounded-full">
+                {project.projectStatus}
+              </span>
+            )}
+
+            {project.technologies && project.technologies.length > 0 && (
+              <div class="flex flex-wrap gap-2">
+                {project.technologies.map((tech) => (
+                  <span
+                    class="px-3 py-1 bg-accent-500/10 text-accent-400 rounded-full"
+                    style={tech.color ? `background-color: ${tech.color}20; color: ${tech.color}` : undefined}
+                  >
+                    {tech.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {project.translation?.body && (
+          <div class="prose prose-invert prose-neutral max-w-none">
+            <Fragment set:html={project.translation.body} />
+          </div>
+        )}
+
+        <footer class="mt-12 pt-8 border-t border-neutral-800 flex flex-wrap gap-4">
+          {project.demoUrl && (
+            <a
+              href={project.demoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
+            >
+              {t(lang, 'common.viewProject')}
+            </a>
+          )}
+
+          {project.githubUrl && (
+            <a
+              href={project.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-6 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors font-medium"
+            >
+              GitHub
+            </a>
+          )}
+        </footer>
+      </article>
+    </div>
+  </main>
+</BaseLayout>
