@@ -35,7 +35,7 @@ const navItems = [
 ] as const;
 ---
 
-<header id="main-header" class="sticky top-0 z-50 h-16 bg-white/10 backdrop-blur-lg border-b border-white/10 [.light_&]:bg-white/80 [.light_&]:border-neutral-200">
+<header id="main-header" class="sticky top-0 z-50 h-16 bg-white/10 backdrop-blur-lg border-b border-white/10 [.light_&]:bg-[#EBE4D8] [.light_&]:border-[#E5DED4]">
   <nav class="container mx-auto h-full px-4 relative flex items-center justify-between">
     <!-- Logo -->
     <Logo lang={lang} class="relative z-10" />
@@ -54,7 +54,7 @@ const navItems = [
             data-nav-home={isHome ? 'true' : undefined}
             class={`text-sm font-medium transition-colors ${
               isActive
-                ? 'text-primary-400 [.light_&]:text-primary-600'
+                ? 'text-primary-400 [.light_&]:text-cream-600'
                 : 'text-neutral-300 hover:text-white [.light_&]:text-neutral-600 [.light_&]:hover:text-neutral-900'
             }`}
             aria-current={isActive ? 'page' : undefined}
@@ -109,7 +109,7 @@ const navItems = [
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('[data-nav-link]');
 
-    const activeClasses = ['text-primary-400', '[.light_&]:text-primary-600'];
+    const activeClasses = ['text-primary-400', '[.light_&]:text-cream-600'];
     const inactiveClasses = ['text-neutral-300', 'hover:text-white', '[.light_&]:text-neutral-600', '[.light_&]:hover:text-neutral-900'];
 
     navLinks.forEach((link) => {

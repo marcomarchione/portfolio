@@ -132,6 +132,13 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
         var currentLang = window.location.pathname.match(/^\/([a-z]{2})(\/|$)/)?.[1] || 'it';
 
         async function navigateTo(url, isPopState) {
+          // Skip if already on the same page
+          var currentUrl = window.location.pathname;
+          var targetUrl = url.split('?')[0].split('#')[0];
+          if (currentUrl === targetUrl && !isPopState) {
+            return;
+          }
+
           try {
             // Fetch new page
             var response = await fetch(url);
@@ -227,11 +234,11 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
             var isActive = currentPath.startsWith(href) && (isHome ? currentPath === href : true);
 
             // Update classes
-            link.classList.remove('text-primary-400', '[.light_&]:text-primary-600',
+            link.classList.remove('text-primary-400', '[.light_&]:text-cream-600',
               'text-neutral-300', 'hover:text-white', '[.light_&]:text-neutral-600', '[.light_&]:hover:text-neutral-900');
 
             if (isActive) {
-              link.classList.add('text-primary-400', '[.light_&]:text-primary-600');
+              link.classList.add('text-primary-400', '[.light_&]:text-cream-600');
               link.setAttribute('aria-current', 'page');
             } else {
               link.classList.add('text-neutral-300', 'hover:text-white', '[.light_&]:text-neutral-600', '[.light_&]:hover:text-neutral-900');
@@ -302,7 +309,7 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
 
     <!-- Custom SPA navigation without View Transitions -->
   </head>
-  <body class="min-h-screen flex flex-col bg-bg-primary text-neutral-100 [.light_&]:bg-neutral-50 [.light_&]:text-neutral-900">
+  <body class="min-h-screen flex flex-col bg-bg-primary text-neutral-100 [.light_&]:bg-[#F5EFE6] [.light_&]:text-neutral-900">
     {showHeader && <Header lang={lang} currentPath={currentPath} />}
     <main class="flex-1">
       <slot />

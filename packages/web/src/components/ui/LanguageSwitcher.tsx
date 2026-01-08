@@ -122,7 +122,7 @@ export function LanguageSwitcher({
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-3 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors [.light_&]:text-neutral-600 [.light_&]:hover:text-neutral-900 [.light_&]:hover:bg-neutral-200 min-w-[60px] h-9 justify-center"
+        className="flex items-center gap-1 px-3 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors [.light_&]:text-neutral-600 [.light_&]:hover:text-cream-600 [.light_&]:hover:bg-cream-200 min-w-[60px] h-9 justify-center"
         aria-label={ariaLabel}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -149,8 +149,8 @@ export function LanguageSwitcher({
               onKeyDown={(e) => handleKeyDown(e, lang)}
               className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-center justify-between ${
                 lang === currentLang
-                  ? 'bg-primary-500/20 text-primary-300 [.light_&]:bg-primary-100 [.light_&]:text-primary-700'
-                  : 'text-neutral-300 hover:bg-white/5 hover:text-white [.light_&]:text-neutral-700 [.light_&]:hover:bg-neutral-100 [.light_&]:hover:text-neutral-900'
+                  ? 'bg-primary-500/20 text-primary-300 [.light_&]:bg-cream-200 [.light_&]:text-cream-600'
+                  : 'text-neutral-300 hover:bg-white/5 hover:text-white [.light_&]:text-neutral-700 [.light_&]:hover:bg-cream-300 [.light_&]:hover:text-neutral-900'
               }`}
             >
               <span>{LANGUAGE_NAMES[lang]}</span>

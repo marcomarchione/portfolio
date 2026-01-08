@@ -17,7 +17,7 @@ export interface Props {
 
 const { class: className = '' } = Astro.props;
 
-const baseStyles = 'bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent';
+const baseStyles = 'bg-[linear-gradient(135deg,var(--color-primary-400),var(--color-primary-500),var(--color-accent-400),var(--color-accent-500),var(--color-primary-400))] [.light_&]:bg-[linear-gradient(135deg,var(--color-cream-500),var(--color-cream-600),var(--color-terra-500),var(--color-terra-600),var(--color-cream-500))] bg-clip-text text-transparent animate-gradient-wave';
 
 const combinedStyles = `${baseStyles} ${className}`.trim();
 ---

@@ -11,11 +11,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { t } from '../../i18n/utils';
 
 // Landing page components
-import GradientMeshBackground from '../../components/landing/GradientMeshBackground.astro';
 import HeroSection from '../../components/landing/HeroSection.astro';
 import AboutSection from '../../components/landing/AboutSection.astro';
 import SkillsSection from '../../components/landing/SkillsSection.astro';
-import ScrollAnimations from '../../components/landing/ScrollAnimations.astro';
 
 export function getStaticPaths() {
   return LANGUAGES.map((lang) => ({
@@ -31,9 +29,6 @@ const description = t(lang, 'meta.siteDescription');
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
-  <!-- Full-page gradient mesh background -->
-  <GradientMeshBackground />
-
   <!-- Hero Section - Full viewport height -->
   <HeroSection />
 
@@ -42,7 +37,4 @@ const description = t(lang, 'meta.siteDescription');
 
   <!-- Skills/Technologies Section -->
   <SkillsSection lang={lang} />
-
-  <!-- Scroll animation handler -->
-  <ScrollAnimations />
 </BaseLayout>

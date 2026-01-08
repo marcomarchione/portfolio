@@ -55,7 +55,7 @@ export function ThemeToggle({
     return (
       <button
         type="button"
-        className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors [.light_&]:text-neutral-600 [.light_&]:hover:text-neutral-900 [.light_&]:hover:bg-neutral-200 w-9 h-9 flex items-center justify-center"
+        className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors [.light_&]:text-neutral-600 [.light_&]:hover:text-cream-600 [.light_&]:hover:bg-cream-200 w-9 h-9 flex items-center justify-center"
         aria-label={ariaLabelLight}
       >
         {/* Sun shown in dark mode, Moon shown in light mode */}
@@ -69,7 +69,7 @@ export function ThemeToggle({
     <button
       type="button"
       onClick={toggleTheme}
-      className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors [.light_&]:text-neutral-600 [.light_&]:hover:text-neutral-900 [.light_&]:hover:bg-neutral-200 w-9 h-9 flex items-center justify-center"
+      className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors [.light_&]:text-neutral-600 [.light_&]:hover:text-cream-600 [.light_&]:hover:bg-cream-200 w-9 h-9 flex items-center justify-center"
       aria-label={isDark ? ariaLabelLight : ariaLabelDark}
     >
       {isDark ? (
