@@ -59,6 +59,7 @@ services:
     volumes:
       - ./packages/shared:/app/packages/shared
       - ./packages/web:/app/packages/web
+      - /app/node_modules
       - /app/packages/web/node_modules
     depends_on:
       - api
