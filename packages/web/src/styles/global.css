@@ -179,6 +179,17 @@ label[for],
   cursor: url('/cursors/cursor-pointer.svg'), pointer;
 }
 
+/* Custom cursor for text selection */
+p,
+h1, h2, h3, h4, h5, h6,
+span,
+li,
+td, th,
+blockquote,
+.cursor-text {
+  cursor: url('/cursors/cursor-text.svg') 6 12, text;
+}
+
 /* Prevent flash - fade in after theme is ready */
 html:not(.dark):not(.light) {
   background-color: var(--color-bg-primary);
