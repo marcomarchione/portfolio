@@ -1,0 +1,65 @@
+---
+/**
+ * PhilosophySection Component
+ *
+ * Section displaying 4 philosophy cards in a grid layout.
+ * Contains: How I Work, My Philosophy, What Drives Me, Let's Collaborate.
+ * Uses scroll-triggered staggered animations.
+ *
+ * @example
+ * <PhilosophySection lang="en" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import SectionHeading from '../ui/SectionHeading.astro';
+import PhilosophyCard from './PhilosophyCard.astro';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+
+const cards = [
+  {
+    icon: 'workflow' as const,
+    titleKey: 'landing.philosophy.howIWork.title',
+    descriptionKey: 'landing.philosophy.howIWork.description'
+  },
+  {
+    icon: 'philosophy' as const,
+    titleKey: 'landing.philosophy.myPhilosophy.title',
+    descriptionKey: 'landing.philosophy.myPhilosophy.description'
+  },
+  {
+    icon: 'motivation' as const,
+    titleKey: 'landing.philosophy.whatDrivesMe.title',
+    descriptionKey: 'landing.philosophy.whatDrivesMe.description'
+  },
+  {
+    icon: 'collaboration' as const,
+    titleKey: 'landing.philosophy.collaboration.title',
+    descriptionKey: 'landing.philosophy.collaboration.description'
+  }
+];
+---
+
+<section id="philosophy" class="pt-6 pb-12 md:pt-8 md:pb-16 px-4">
+  <div class="container mx-auto">
+    <SectionHeading level={2} class="text-center mb-6 text-white [.light_&]:text-neutral-900 text-xl md:text-2xl">
+      {t(lang, 'landing.philosophy.title')}
+    </SectionHeading>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+      {cards.map((card, index) => (
+        <PhilosophyCard
+          icon={card.icon}
+          title={t(lang, card.titleKey)}
+          description={t(lang, card.descriptionKey)}
+          delay={index * 100}
+        />
+      ))}
+    </div>
+  </div>
+</section>

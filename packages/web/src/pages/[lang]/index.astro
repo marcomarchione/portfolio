@@ -3,7 +3,7 @@
  * Landing Page
  *
  * Main landing page for the portfolio website.
- * Features hero section, about section, and skills grid.
+ * Features hero, about, philosophy, skills, experience, and comparison sections.
  * All content is static with i18n support.
  */
 import { LANGUAGES, type Language } from '@marcomarchione/shared';
@@ -13,7 +13,10 @@ import { t } from '../../i18n/utils';
 // Landing page components
 import HeroSection from '../../components/landing/HeroSection.astro';
 import AboutSection from '../../components/landing/AboutSection.astro';
-import SkillsSection from '../../components/landing/SkillsSection.astro';
+import PhilosophySection from '../../components/landing/PhilosophySection.astro';
+import SkillsGrid from '../../components/landing/SkillsGrid.astro';
+import ExperienceTimeline from '../../components/landing/ExperienceTimeline.astro';
+import DeveloperComparisonChart from '../../components/landing/DeveloperComparisonChart.astro';
 
 export function getStaticPaths() {
   return LANGUAGES.map((lang) => ({
@@ -26,15 +29,27 @@ const { lang } = Astro.params as { lang: Language };
 // Page meta
 const title = t(lang, 'meta.siteTitle');
 const description = t(lang, 'meta.siteDescription');
+
+// API URL for fetching technologies
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
   <!-- Hero Section - Full viewport height -->
-  <HeroSection />
+  <HeroSection lang={lang} />
 
   <!-- About Section -->
   <AboutSection lang={lang} />
 
-  <!-- Skills/Technologies Section -->
-  <SkillsSection lang={lang} />
+  <!-- Philosophy Section - 4 cards -->
+  <PhilosophySection lang={lang} />
+
+  <!-- Skills Section - Technology grid -->
+  <SkillsGrid lang={lang} apiUrl={apiUrl} />
+
+  <!-- Experience Timeline -->
+  <ExperienceTimeline lang={lang} />
+
+  <!-- Developer Comparison Chart -->
+  <DeveloperComparisonChart lang={lang} />
 </BaseLayout>

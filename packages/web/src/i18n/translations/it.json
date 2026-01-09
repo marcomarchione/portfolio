@@ -16,6 +16,7 @@
     "cookiePolicy": "Cookie Policy"
   },
   "common": {
+    "discoverMore": "Scopri di piu",
     "readMore": "Leggi di piu",
     "viewProject": "Visualizza progetto",
     "download": "Scarica",
@@ -54,10 +55,75 @@
   "landing": {
     "about": {
       "title": "Chi Sono",
-      "text": "Sono uno sviluppatore software appassionato di tecnologia e innovazione. La mia esperienza spazia dallo sviluppo web full-stack alla creazione di soluzioni software scalabili. Mi dedico a costruire applicazioni eleganti e performanti che risolvono problemi reali."
+      "text": "Sviluppatore software con una passione viscerale per il problem solving. Sono stato tra i primi ad integrare Claude Code e AI agents nel mio workflow quotidiano, combinando competenze tradizionali con l'intelligenza artificiale per ottenere risultati concreti in termini di velocita e qualita. Credo nel codice pulito, nelle soluzioni eleganti e in un'esperienza utente che faccia la differenza. Quando non scrivo codice, mi trovi a esplorare nuove tecnologie, gaming o in palestra."
     },
     "skills": {
       "title": "Tecnologie e Competenze"
+    },
+    "philosophy": {
+      "title": "Il Mio Approccio",
+      "howIWork": {
+        "title": "Come Lavoro",
+        "description": "Metodologia agile con focus su qualita del codice, test automatizzati e continuous integration. Ogni progetto inizia con una pianificazione accurata e termina con documentazione completa."
+      },
+      "myPhilosophy": {
+        "title": "La Mia Filosofia",
+        "description": "Credo nel codice pulito, nelle soluzioni semplici e nella collaborazione. La tecnologia deve essere al servizio delle persone, non il contrario."
+      },
+      "whatDrivesMe": {
+        "title": "Cosa Mi Motiva?",
+        "description": "La sfida di risolvere problemi complessi con eleganza. Ogni progetto e un'opportunita per imparare qualcosa di nuovo e migliorare le mie competenze."
+      },
+      "collaboration": {
+        "title": "Collaboriamo",
+        "description": "Sono sempre aperto a nuove collaborazioni e progetti stimolanti. Se hai un'idea o un progetto, parliamone insieme."
+      }
+    },
+    "experience": {
+      "title": "Esperienza",
+      "items": {
+        "current": {
+          "date": "Lug 2025 - Presente",
+          "role": "Agent Software Developer",
+          "company": "THUX CODE",
+          "description": "Sviluppo software potenziato da Claude Code e AI agents. Collaboro con i clienti per trasformare requisiti complessi in soluzioni innovative, sfruttando l'intelligenza artificiale per accelerare delivery e qualita del codice."
+        },
+        "previous1": {
+          "date": "Gen 2023 - Lug 2025",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Gestione autonoma di progetti cliente end-to-end. Analisi requisiti, sviluppo features, code review e rilasci in produzione. Crescita verso ruoli di maggiore responsabilita nel team."
+        },
+        "previous2": {
+          "date": "Lug 2022 - Gen 2023",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Inserimento nel team di sviluppo enterprise. Affiancamento su progetti cliente reali, apprendimento delle best practices aziendali e costruzione delle fondamenta tecniche."
+        }
+      }
+    },
+    "comparison": {
+      "title": "Perche Agent Development?",
+      "subtitle": "Confronto tra sviluppo tradizionale e sviluppo assistito da AI agents per evidenziare i vantaggi in termini di produttivita e qualita.",
+      "traditional": "Sviluppatore Tradizionale",
+      "agent": "Agent Software Developer",
+      "metrics": {
+        "codeSpeed": {
+          "label": "Velocita di Scrittura Codice"
+        },
+        "debugging": {
+          "label": "Efficienza nel Debugging"
+        },
+        "documentation": {
+          "label": "Qualita della Documentazione"
+        },
+        "testing": {
+          "label": "Copertura dei Test"
+        },
+        "refactoring": {
+          "label": "Velocita di Refactoring"
+        }
+      }
     }
   },
   "projects": {

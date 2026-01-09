@@ -144,17 +144,19 @@ const bodyHtml = project.translation?.body
             )}
           </div>
 
-          <!-- Technology Tags -->
+          <!-- Technology Tags - Dark container for icon visibility -->
           {project.technologies && project.technologies.length > 0 && (
-            <div class="flex flex-wrap gap-2 mt-6 pt-6 border-t border-white/10 [.light_&]:border-neutral-200">
-              {project.technologies.map((tech: Technology) => (
-                <span
-                  class="px-3 py-1.5 bg-primary-500/10 text-primary-400 rounded-lg text-sm font-medium border border-primary-500/20 [.light_&]:bg-terra-100 [.light_&]:text-terra-700 [.light_&]:border-terra-200"
-                  style={tech.color ? `background-color: ${tech.color}15; color: ${tech.color}; border-color: ${tech.color}30` : undefined}
-                >
-                  {tech.name}
-                </span>
-              ))}
+            <div class="mt-6 pt-6 border-t border-white/10 [.light_&]:border-neutral-200">
+              <div class="inline-flex flex-wrap gap-2 bg-neutral-900/90 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+                {project.technologies.map((tech: Technology) => (
+                  <span
+                    class="px-3 py-1.5 bg-white/10 rounded-lg text-sm font-medium border border-white/20"
+                    style={tech.color ? `background-color: ${tech.color}20; color: ${tech.color}; border-color: ${tech.color}40` : 'color: #3d7eff;'}
+                  >
+                    {tech.name}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </header>

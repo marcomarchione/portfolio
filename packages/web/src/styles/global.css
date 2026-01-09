@@ -551,3 +551,75 @@ main {
     transform: none;
   }
 }
+
+/* ============================================
+   Timeline Animations
+   ============================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Timeline animations - override generic animate-on-scroll */
+  .timeline-slide-left.animate-on-scroll {
+    opacity: 0;
+    transform: translateX(-30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition-delay: var(--animation-delay, 0ms);
+  }
+
+  .timeline-slide-right.animate-on-scroll {
+    opacity: 0;
+    transform: translateX(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition-delay: var(--animation-delay, 0ms);
+  }
+
+  .timeline-slide-left.animate-on-scroll.animate-visible,
+  .timeline-slide-right.animate-on-scroll.animate-visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-slide-left,
+  .timeline-slide-right {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ============================================
+   Comparison Chart Animations
+   ============================================ */
+
+.comparison-bar {
+  width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .comparison-bar {
+    transition: width 1s ease-out;
+    transition-delay: calc(var(--bar-delay, 0ms) + 300ms);
+  }
+
+  .animate-visible .comparison-bar {
+    width: var(--bar-width, 0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comparison-bar {
+    width: var(--bar-width, 0%);
+  }
+}
+
+/* ============================================
+   Skills Grid Styles
+   ============================================ */
+
+.skill-item {
+  transition: transform 0.2s ease-out, border-color 0.2s ease-out, background-color 0.2s ease-out;
+}
+
+.skill-item:hover {
+  transform: translateY(-2px);
+}

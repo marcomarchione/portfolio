@@ -16,6 +16,7 @@
     "cookiePolicy": "Cookie-Richtlinie"
   },
   "common": {
+    "discoverMore": "Mehr erfahren",
     "readMore": "Mehr lesen",
     "viewProject": "Projekt ansehen",
     "download": "Herunterladen",
@@ -54,10 +55,75 @@
   "landing": {
     "about": {
       "title": "Uber Mich",
-      "text": "Ich bin ein Softwareentwickler mit Leidenschaft fur Technologie und Innovation. Meine Erfahrung reicht von Full-Stack-Webentwicklung bis zur Erstellung skalierbarer Softwarelosungen. Ich widme mich dem Aufbau eleganter und leistungsfahiger Anwendungen, die reale Probleme losen."
+      "text": "Softwareentwickler mit einer tiefen Leidenschaft fur Problemlosung. Ich war einer der Ersten, der Claude Code und KI-Agenten in meinen taglichen Workflow integriert hat, und kombiniere traditionelle Fahigkeiten mit kunstlicher Intelligenz, um konkrete Ergebnisse in Geschwindigkeit und Qualitat zu erzielen. Ich glaube an sauberen Code, elegante Losungen und Benutzererfahrungen, die einen Unterschied machen. Wenn ich nicht programmiere, findet man mich beim Erkunden neuer Technologien, Gaming oder im Fitnessstudio."
     },
     "skills": {
       "title": "Technologien und Fahigkeiten"
+    },
+    "philosophy": {
+      "title": "Mein Ansatz",
+      "howIWork": {
+        "title": "Wie Ich Arbeite",
+        "description": "Agile Methodik mit Fokus auf Codequalitat, automatisierte Tests und kontinuierliche Integration. Jedes Projekt beginnt mit sorgfaltiger Planung und endet mit umfassender Dokumentation."
+      },
+      "myPhilosophy": {
+        "title": "Meine Philosophie",
+        "description": "Ich glaube an sauberen Code, einfache Losungen und Zusammenarbeit. Technologie sollte den Menschen dienen, nicht umgekehrt."
+      },
+      "whatDrivesMe": {
+        "title": "Was Mich Antreibt?",
+        "description": "Die Herausforderung, komplexe Probleme mit Eleganz zu losen. Jedes Projekt ist eine Gelegenheit, etwas Neues zu lernen und meine Fahigkeiten zu verbessern."
+      },
+      "collaboration": {
+        "title": "Lass Uns Zusammenarbeiten",
+        "description": "Ich bin immer offen fur neue Zusammenarbeiten und spannende Projekte. Wenn du eine Idee oder ein Projekt hast, lass uns daruber sprechen."
+      }
+    },
+    "experience": {
+      "title": "Erfahrung",
+      "items": {
+        "current": {
+          "date": "Jul 2025 - Heute",
+          "role": "Agent Software Developer",
+          "company": "THUX CODE",
+          "description": "KI-gestutzte Softwareentwicklung mit Claude Code und AI-Agenten. Ich arbeite mit Kunden zusammen, um komplexe Anforderungen in innovative Losungen umzuwandeln und nutze kunstliche Intelligenz zur Beschleunigung von Lieferung und Codequalitat."
+        },
+        "previous1": {
+          "date": "Jan 2023 - Jul 2025",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Autonomes Management von End-to-End-Kundenprojekten. Anforderungsanalyse, Feature-Entwicklung, Code-Review und Produktions-Deployments. Wachstum zu Rollen mit grosserer Verantwortung im Team."
+        },
+        "previous2": {
+          "date": "Jul 2022 - Jan 2023",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Integration in das Enterprise-Entwicklungsteam. Praktische Beteiligung an echten Kundenprojekten, Erlernen der Unternehmens-Best-Practices und Aufbau technischer Grundlagen."
+        }
+      }
+    },
+    "comparison": {
+      "title": "Warum Agent Development?",
+      "subtitle": "Vergleich zwischen traditioneller Entwicklung und KI-Agent-gestutzter Entwicklung zur Hervorhebung der Vorteile bei Produktivitat und Qualitat.",
+      "traditional": "Traditioneller Entwickler",
+      "agent": "Agent Software Developer",
+      "metrics": {
+        "codeSpeed": {
+          "label": "Code-Schreibgeschwindigkeit"
+        },
+        "debugging": {
+          "label": "Debugging-Effizienz"
+        },
+        "documentation": {
+          "label": "Dokumentationsqualitat"
+        },
+        "testing": {
+          "label": "Testabdeckung"
+        },
+        "refactoring": {
+          "label": "Refactoring-Geschwindigkeit"
+        }
+      }
     }
   },
   "projects": {

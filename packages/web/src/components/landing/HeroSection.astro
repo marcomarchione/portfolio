@@ -7,11 +7,18 @@
  * The "Agent Software Developer" subtitle is always in English.
  *
  * @example
- * <HeroSection />
+ * <HeroSection lang="en" />
  */
+import type { Language } from '@marcomarchione/shared';
 import DisplayHeading from '../ui/DisplayHeading.astro';
 import GradientText from '../ui/GradientText.astro';
 import SocialLinks from './SocialLinks.astro';
+
+export interface Props {
+  lang?: Language;
+}
+
+const { lang = 'it' } = Astro.props;
 ---
 
 <section
@@ -20,21 +27,21 @@ import SocialLinks from './SocialLinks.astro';
 >
   <div class="text-center space-y-6">
     <!-- Name with gradient effect -->
-    <div class="opacity-0 animate-fade-in-up">
+    <div class="animate-fade-in-up">
       <DisplayHeading level={1} class="text-center">
         <GradientText>Marco Marchione</GradientText>
       </DisplayHeading>
     </div>
 
     <!-- Positioning text - always English -->
-    <div class="opacity-0 animate-fade-in-up animate-delay-200">
+    <div class="animate-fade-in-up animate-delay-200">
       <p class="text-xl md:text-2xl text-neutral-400 [.light_&]:text-neutral-600 font-body">
         Agent Software Developer
       </p>
     </div>
 
     <!-- Social links -->
-    <div class="pt-4 opacity-0 animate-fade-in-up animate-delay-400">
+    <div class="pt-4 animate-fade-in-up animate-delay-400">
       <SocialLinks />
     </div>
   </div>

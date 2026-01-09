@@ -16,6 +16,7 @@
     "cookiePolicy": "Cookie Policy"
   },
   "common": {
+    "discoverMore": "Discover more",
     "readMore": "Read more",
     "viewProject": "View project",
     "download": "Download",
@@ -54,10 +55,75 @@
   "landing": {
     "about": {
       "title": "About Me",
-      "text": "I am a software developer passionate about technology and innovation. My experience spans full-stack web development to building scalable software solutions. I am dedicated to creating elegant and performant applications that solve real-world problems."
+      "text": "Software developer with a deep passion for problem solving. I was among the first to integrate Claude Code and AI agents into my daily workflow, combining traditional skills with artificial intelligence to achieve concrete results in speed and quality. I believe in clean code, elegant solutions, and user experiences that make a difference. When I'm not coding, you'll find me exploring new technologies, gaming, or at the gym."
     },
     "skills": {
       "title": "Technologies & Skills"
+    },
+    "philosophy": {
+      "title": "My Approach",
+      "howIWork": {
+        "title": "How I Work",
+        "description": "Agile methodology focused on code quality, automated testing, and continuous integration. Every project starts with careful planning and ends with comprehensive documentation."
+      },
+      "myPhilosophy": {
+        "title": "My Philosophy",
+        "description": "I believe in clean code, simple solutions, and collaboration. Technology should serve people, not the other way around."
+      },
+      "whatDrivesMe": {
+        "title": "What Drives Me?",
+        "description": "The challenge of solving complex problems with elegance. Every project is an opportunity to learn something new and improve my skills."
+      },
+      "collaboration": {
+        "title": "Let's Collaborate",
+        "description": "I'm always open to new collaborations and exciting projects. If you have an idea or project, let's talk about it together."
+      }
+    },
+    "experience": {
+      "title": "Experience",
+      "items": {
+        "current": {
+          "date": "Jul 2025 - Present",
+          "role": "Agent Software Developer",
+          "company": "THUX CODE",
+          "description": "AI-powered software development with Claude Code and AI agents. I collaborate with clients to transform complex requirements into innovative solutions, leveraging artificial intelligence to accelerate delivery and code quality."
+        },
+        "previous1": {
+          "date": "Jan 2023 - Jul 2025",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Autonomous management of end-to-end client projects. Requirements analysis, feature development, code review and production deployments. Growth towards roles of greater responsibility within the team."
+        },
+        "previous2": {
+          "date": "Jul 2022 - Jan 2023",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Integration into the enterprise development team. Hands-on involvement in real client projects, learning company best practices and building technical foundations."
+        }
+      }
+    },
+    "comparison": {
+      "title": "Why Agent Development?",
+      "subtitle": "Comparison between traditional development and AI agent-assisted development to highlight advantages in productivity and quality.",
+      "traditional": "Traditional Developer",
+      "agent": "Agent Software Developer",
+      "metrics": {
+        "codeSpeed": {
+          "label": "Code Writing Speed"
+        },
+        "debugging": {
+          "label": "Debugging Efficiency"
+        },
+        "documentation": {
+          "label": "Documentation Quality"
+        },
+        "testing": {
+          "label": "Test Coverage"
+        },
+        "refactoring": {
+          "label": "Refactoring Speed"
+        }
+      }
     }
   },
   "projects": {

@@ -16,6 +16,7 @@
     "cookiePolicy": "Politica de Cookies"
   },
   "common": {
+    "discoverMore": "Descubre mas",
     "readMore": "Leer mas",
     "viewProject": "Ver proyecto",
     "download": "Descargar",
@@ -54,10 +55,75 @@
   "landing": {
     "about": {
       "title": "Sobre Mi",
-      "text": "Soy un desarrollador de software apasionado por la tecnologia y la innovacion. Mi experiencia abarca desde el desarrollo web full-stack hasta la creacion de soluciones de software escalables. Me dedico a construir aplicaciones elegantes y de alto rendimiento que resuelven problemas reales."
+      "text": "Desarrollador de software con una profunda pasion por la resolucion de problemas. Fui de los primeros en integrar Claude Code y agentes de IA en mi flujo de trabajo diario, combinando habilidades tradicionales con inteligencia artificial para lograr resultados concretos en velocidad y calidad. Creo en el codigo limpio, las soluciones elegantes y experiencias de usuario que marcan la diferencia. Cuando no estoy programando, me encontraras explorando nuevas tecnologias, jugando videojuegos o en el gimnasio."
     },
     "skills": {
       "title": "Tecnologias y Habilidades"
+    },
+    "philosophy": {
+      "title": "Mi Enfoque",
+      "howIWork": {
+        "title": "Como Trabajo",
+        "description": "Metodologia agil enfocada en la calidad del codigo, pruebas automatizadas e integracion continua. Cada proyecto comienza con una planificacion cuidadosa y termina con documentacion completa."
+      },
+      "myPhilosophy": {
+        "title": "Mi Filosofia",
+        "description": "Creo en el codigo limpio, las soluciones simples y la colaboracion. La tecnologia debe servir a las personas, no al reves."
+      },
+      "whatDrivesMe": {
+        "title": "Que Me Motiva?",
+        "description": "El desafio de resolver problemas complejos con elegancia. Cada proyecto es una oportunidad para aprender algo nuevo y mejorar mis habilidades."
+      },
+      "collaboration": {
+        "title": "Colaboremos",
+        "description": "Siempre estoy abierto a nuevas colaboraciones y proyectos emocionantes. Si tienes una idea o proyecto, hablemos juntos."
+      }
+    },
+    "experience": {
+      "title": "Experiencia",
+      "items": {
+        "current": {
+          "date": "Jul 2025 - Presente",
+          "role": "Agent Software Developer",
+          "company": "THUX CODE",
+          "description": "Desarrollo de software potenciado por Claude Code y agentes de IA. Colaboro con clientes para transformar requisitos complejos en soluciones innovadoras, aprovechando la inteligencia artificial para acelerar la entrega y la calidad del codigo."
+        },
+        "previous1": {
+          "date": "Ene 2023 - Jul 2025",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Gestion autonoma de proyectos cliente de principio a fin. Analisis de requisitos, desarrollo de funcionalidades, revision de codigo y despliegues en produccion. Crecimiento hacia roles de mayor responsabilidad en el equipo."
+        },
+        "previous2": {
+          "date": "Jul 2022 - Ene 2023",
+          "role": "Software Developer",
+          "company": "THUX",
+          "description": "Integracion en el equipo de desarrollo enterprise. Participacion practica en proyectos reales de clientes, aprendizaje de las mejores practicas de la empresa y construccion de bases tecnicas."
+        }
+      }
+    },
+    "comparison": {
+      "title": "Por que Agent Development?",
+      "subtitle": "Comparacion entre desarrollo tradicional y desarrollo asistido por agentes de IA para destacar las ventajas en productividad y calidad.",
+      "traditional": "Desarrollador Tradicional",
+      "agent": "Agent Software Developer",
+      "metrics": {
+        "codeSpeed": {
+          "label": "Velocidad de Escritura de Codigo"
+        },
+        "debugging": {
+          "label": "Eficiencia en Debugging"
+        },
+        "documentation": {
+          "label": "Calidad de Documentacion"
+        },
+        "testing": {
+          "label": "Cobertura de Pruebas"
+        },
+        "refactoring": {
+          "label": "Velocidad de Refactoring"
+        }
+      }
     }
   },
   "projects": {

@@ -10,6 +10,7 @@ import { ViewTransitions } from 'astro:transitions';
 import '../styles/global.css';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
+import ScrollAnimations from '../components/landing/ScrollAnimations.astro';
 
 export interface Props {
   /** Current language code */
@@ -217,6 +218,11 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
             // Scroll to top
             window.scrollTo(0, 0);
 
+            // Dispatch astro:page-load event after DOM updates (next frame)
+            requestAnimationFrame(function() {
+              document.dispatchEvent(new Event('astro:page-load'));
+            });
+
           } catch (err) {
             // Fallback to normal navigation on error
             console.error('SPA navigation failed:', err);
@@ -315,5 +321,6 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
       <slot />
     </main>
     {showFooter && <Footer lang={lang} />}
+    <ScrollAnimations />
   </body>
 </html>

@@ -1,0 +1,74 @@
+---
+/**
+ * ExperienceTimeline Component
+ *
+ * Vertical timeline showing work experience history.
+ * Items alternate left/right on desktop, single column on mobile.
+ * Uses scroll-triggered animations for entrance effects.
+ *
+ * @example
+ * <ExperienceTimeline lang="en" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import SectionHeading from '../ui/SectionHeading.astro';
+import TimelineItem from './TimelineItem.astro';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+
+const experiences = [
+  {
+    dateKey: 'landing.experience.items.current.date',
+    roleKey: 'landing.experience.items.current.role',
+    companyKey: 'landing.experience.items.current.company',
+    descriptionKey: 'landing.experience.items.current.description'
+  },
+  {
+    dateKey: 'landing.experience.items.previous1.date',
+    roleKey: 'landing.experience.items.previous1.role',
+    companyKey: 'landing.experience.items.previous1.company',
+    descriptionKey: 'landing.experience.items.previous1.description'
+  },
+  {
+    dateKey: 'landing.experience.items.previous2.date',
+    roleKey: 'landing.experience.items.previous2.role',
+    companyKey: 'landing.experience.items.previous2.company',
+    descriptionKey: 'landing.experience.items.previous2.description'
+  }
+];
+---
+
+<section id="experience" class="py-16 md:py-24 px-4">
+  <div class="container mx-auto">
+    <SectionHeading level={2} class="text-center mb-12 text-white [.light_&]:text-neutral-900">
+      {t(lang, 'landing.experience.title')}
+    </SectionHeading>
+
+    <div class="max-w-3xl mx-auto relative">
+      <!-- Center line (desktop only) -->
+      <div class="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary-500/50 via-accent-500/50 to-transparent -translate-x-1/2" />
+
+      <!-- Mobile line -->
+      <div class="md:hidden absolute left-[5px] top-0 bottom-0 w-px bg-gradient-to-b from-primary-500/50 via-accent-500/50 to-transparent" />
+
+      <!-- Timeline items -->
+      <div class="md:grid md:grid-cols-2 md:gap-12 space-y-6 md:space-y-0">
+        {experiences.map((exp, index) => (
+          <TimelineItem
+            date={t(lang, exp.dateKey)}
+            role={t(lang, exp.roleKey)}
+            company={t(lang, exp.companyKey)}
+            description={t(lang, exp.descriptionKey)}
+            position={index % 2 === 0 ? 'left' : 'right'}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

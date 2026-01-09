@@ -1,0 +1,95 @@
+---
+/**
+ * DeveloperComparisonChart Component
+ *
+ * Visual comparison between traditional software developer and agent developer.
+ * Shows 5 metrics with animated bar charts.
+ *
+ * @example
+ * <DeveloperComparisonChart lang="en" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import SectionHeading from '../ui/SectionHeading.astro';
+import ComparisonBar from './ComparisonBar.astro';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+
+const metrics = [
+  {
+    labelKey: 'landing.comparison.metrics.codeSpeed.label',
+    traditional: 40,
+    agent: 85
+  },
+  {
+    labelKey: 'landing.comparison.metrics.debugging.label',
+    traditional: 50,
+    agent: 90
+  },
+  {
+    labelKey: 'landing.comparison.metrics.documentation.label',
+    traditional: 45,
+    agent: 95
+  },
+  {
+    labelKey: 'landing.comparison.metrics.testing.label',
+    traditional: 55,
+    agent: 88
+  },
+  {
+    labelKey: 'landing.comparison.metrics.refactoring.label',
+    traditional: 35,
+    agent: 80
+  }
+];
+---
+
+<section id="comparison" class="py-16 md:py-24 px-4">
+  <div class="container mx-auto">
+    <div class="text-center mb-12">
+      <SectionHeading level={2} class="text-white [.light_&]:text-neutral-900 mb-4">
+        {t(lang, 'landing.comparison.title')}
+      </SectionHeading>
+      <p class="text-neutral-400 [.light_&]:text-neutral-600 max-w-2xl mx-auto">
+        {t(lang, 'landing.comparison.subtitle')}
+      </p>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+      <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 md:p-8 [.light_&]:bg-[#EBE4D8] [.light_&]:border-[#E5DED4]">
+        <!-- Legend -->
+        <div class="flex flex-wrap gap-6 mb-8 pb-6 border-b border-white/10 [.light_&]:border-[#E5DED4]">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-gradient-to-r from-neutral-600 to-neutral-500 [.light_&]:from-neutral-400 [.light_&]:to-neutral-300" />
+            <span class="text-sm text-neutral-400 [.light_&]:text-neutral-600">
+              {t(lang, 'landing.comparison.traditional')}
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-gradient-to-r from-primary-500 to-accent-500 [.light_&]:from-terra-500 [.light_&]:to-terra-400" />
+            <span class="text-sm text-primary-400 [.light_&]:text-terra-600 font-medium">
+              {t(lang, 'landing.comparison.agent')}
+            </span>
+          </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="space-y-6">
+          {metrics.map((metric, index) => (
+            <ComparisonBar
+              label={t(lang, metric.labelKey)}
+              traditionalValue={metric.traditional}
+              agentValue={metric.agent}
+              index={index}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
