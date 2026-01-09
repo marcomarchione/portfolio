@@ -59,5 +59,26 @@
     "skills": {
       "title": "Technologien und Fahigkeiten"
     }
+  },
+  "projects": {
+    "filterByTechnology": "Nach Technologie filtern",
+    "filterByStatus": "Nach Status filtern",
+    "sortBy": "Sortieren nach",
+    "status": {
+      "inProgress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "archived": "Archiviert"
+    },
+    "sort": {
+      "newest": "Neueste",
+      "oldest": "Alteste",
+      "title": "Titel"
+    },
+    "pagination": {
+      "page": "Seite",
+      "of": "von",
+      "previous": "Vorherige",
+      "next": "Nachste"
+    }
   }
 }

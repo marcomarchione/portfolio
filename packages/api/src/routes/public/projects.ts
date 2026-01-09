@@ -10,6 +10,7 @@ import { NotFoundError } from '../../types/errors';
 import {
   ProjectQuerySchema,
   SlugParamSchema,
+  type ProjectSortOption,
 } from '../../types/content-schemas';
 import { LangSchema } from '../../types/validation';
 import {
@@ -18,11 +19,28 @@ import {
   countProjects,
   getTranslation,
 } from '../../db/queries';
-import type { Language } from '../../db/schema';
+import type { Language, ProjectStatus } from '../../db/schema';
 import type { DrizzleDB } from '../../db';
+import type { ContentSortField, SortOrder } from '../../db/queries/content';
 
 /**
- * Formats a project for API response.
+ * Maps sortBy query param to internal sort field and order.
+ */
+function mapSortOption(sortBy?: ProjectSortOption): { sortBy: ContentSortField; sortOrder: SortOrder } {
+  switch (sortBy) {
+    case 'newest':
+      return { sortBy: 'createdAt', sortOrder: 'desc' };
+    case 'oldest':
+      return { sortBy: 'createdAt', sortOrder: 'asc' };
+    case 'title':
+      return { sortBy: 'title', sortOrder: 'asc' };
+    default:
+      return { sortBy: 'createdAt', sortOrder: 'desc' };
+  }
+}
+
+/**
+ * Formats a project for API response (single project with full details).
  */
 function formatProjectResponse(project: NonNullable<ReturnType<typeof getProjectWithTranslation>>) {
   return {
@@ -52,6 +70,7 @@ function formatProjectResponse(project: NonNullable<ReturnType<typeof getProject
         }
       : null,
     technologies: project.technologies,
+    galleryImages: project.galleryImages,
   };
 }
 
@@ -69,13 +88,22 @@ export const publicProjectsRoutes = new Elysia({ name: 'public-projects', prefix
       const offset = Number(query.offset ?? 0);
       const featured = query.featured === 'true' ? true : query.featured === 'false' ? false : query.featured;
       const technology = query.technology;
+      const projectStatus = query.projectStatus as ProjectStatus | undefined;
+      const sortOption = query.sortBy as ProjectSortOption | undefined;
+
+      // Map sort option to internal sort parameters
+      const { sortBy, sortOrder } = mapSortOption(sortOption);
 
       const options = {
         limit,
         offset,
         featured,
         technology,
+        projectStatus,
+        sortBy,
+        sortOrder,
         publishedOnly: true,
+        featuredFirst: true, // Always sort featured projects first
       };
 
       const projects = listProjects(db, options);
@@ -121,7 +149,7 @@ export const publicProjectsRoutes = new Elysia({ name: 'public-projects', prefix
         tags: ['projects'],
         summary: 'List published projects',
         description:
-          'Returns a paginated list of published projects with translations for the requested language.',
+          'Returns a paginated list of published projects with translations for the requested language. Supports filtering by technology and project status, with featured projects sorted first.',
       },
     }
   )
@@ -147,7 +175,7 @@ export const publicProjectsRoutes = new Elysia({ name: 'public-projects', prefix
         tags: ['projects'],
         summary: 'Get project by slug',
         description:
-          'Returns a single published project with translation for the requested language.',
+          'Returns a single published project with translation for the requested language. Includes gallery images.',
       },
     }
   );

@@ -59,5 +59,26 @@
     "skills": {
       "title": "Tecnologias y Habilidades"
     }
+  },
+  "projects": {
+    "filterByTechnology": "Filtrar por tecnologia",
+    "filterByStatus": "Filtrar por estado",
+    "sortBy": "Ordenar por",
+    "status": {
+      "inProgress": "En Progreso",
+      "completed": "Completado",
+      "archived": "Archivado"
+    },
+    "sort": {
+      "newest": "Mas recientes",
+      "oldest": "Mas antiguos",
+      "title": "Titulo"
+    },
+    "pagination": {
+      "page": "Pagina",
+      "of": "de",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    }
   }
 }

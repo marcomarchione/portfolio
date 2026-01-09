@@ -20,7 +20,9 @@ COPY packages/web ./packages/web
 # Build the Astro site
 WORKDIR /app/packages/web
 ARG PUBLIC_API_URL=http://localhost:3000
+ARG PUBLIC_BROWSER_API_URL=http://localhost:3000
 ENV PUBLIC_API_URL=$PUBLIC_API_URL
+ENV PUBLIC_BROWSER_API_URL=$PUBLIC_BROWSER_API_URL
 RUN bun run build
 
 # Production stage with nginx

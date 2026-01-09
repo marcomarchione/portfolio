@@ -2,12 +2,23 @@
 /**
  * Projects Listing Page
  *
- * Displays all published projects with translations for the current language.
+ * Displays all published projects with client-side filtering for smooth UX.
+ * Features:
+ * - Technology filter (clickable pills)
+ * - Project status filter
+ * - Sort options (newest, oldest, title)
+ * - Pagination
+ * - Featured projects appear first
+ * - Smooth transitions on filter change (no page reload)
  */
 import { LANGUAGES, type Language } from '@marcomarchione/shared';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { t } from '../../../i18n';
-import { getProjects } from '../../../lib/api';
+import { getProjects, getTechnologies, type ProjectStatus, type ProjectSortOption } from '../../../lib/api';
+import ProjectsFilterable from '../../../components/projects/ProjectsFilterable';
+
+// Disable prerendering for SSR - enables dynamic URL parameter filtering
+export const prerender = false;
 
 export function getStaticPaths() {
   return LANGUAGES.map((lang) => ({
@@ -17,47 +28,78 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Language };
 
-// Fetch projects from API
-const projectsResponse = await getProjects(lang).catch(() => null);
+// Parse URL query parameters for initial server-side rendering
+const url = new URL(Astro.request.url);
+const technologyParam = url.searchParams.get('technology') || '';
+const statusParam = (url.searchParams.get('status') || '') as ProjectStatus | '';
+const sortByParam = (url.searchParams.get('sortBy') || 'newest') as ProjectSortOption;
+const pageParam = parseInt(url.searchParams.get('page') || '1', 10);
+const ITEMS_PER_PAGE = 9;
+const offset = (pageParam - 1) * ITEMS_PER_PAGE;
+
+// Fetch all technologies for filter pills
+const technologies = await getTechnologies().catch(() => []);
+
+// Fetch initial projects from API (for SSR)
+const projectsResponse = await getProjects(lang, {
+  technology: technologyParam || undefined,
+  projectStatus: statusParam || undefined,
+  sortBy: sortByParam,
+  limit: ITEMS_PER_PAGE,
+  offset,
+}).catch(() => null);
+
 const projects = projectsResponse?.data ?? [];
+const pagination = projectsResponse?.pagination ?? null;
 
 const title = t(lang, 'meta.projectsTitle');
 const description = t(lang, 'meta.projectsDescription');
+
+// API base URL for client-side fetching
+// PUBLIC_BROWSER_API_URL is the URL the browser uses to reach the API
+// In dev: http://localhost:3000, in prod: the public API URL
+const apiBaseUrl = (import.meta.env.PUBLIC_BROWSER_API_URL || 'http://localhost:3000') + '/api/v1';
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
-  <section class="min-h-screen">
-    <div class="container mx-auto px-4 py-16">
-      <h1 class="font-heading text-4xl font-bold mb-8 text-white [.light_&]:text-neutral-900">{t(lang, 'nav.projects')}</h1>
+  <section class="min-h-screen py-16">
+    <div class="container mx-auto px-4">
+      <!-- Page Header -->
+      <h1 class="font-heading text-4xl md:text-5xl font-bold mb-8 text-white [.light_&]:text-neutral-900">
+        {t(lang, 'nav.projects')}
+      </h1>
 
-      {projects.length === 0 ? (
-        <p class="text-neutral-400 [.light_&]:text-neutral-600">{t(lang, 'common.noResults')}</p>
-      ) : (
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <article class="bg-bg-secondary [.light_&]:bg-white rounded-lg p-6 border border-neutral-800 [.light_&]:border-neutral-200 hover:border-primary-500 [.light_&]:hover:border-primary-400 transition-all duration-300">
-              <h2 class="font-heading text-xl font-semibold mb-2 text-white [.light_&]:text-neutral-900">
-                <a
-                  href={`/${lang}/projects/${project.slug}/`}
-                  class="hover:text-primary-400 [.light_&]:hover:text-primary-600 transition-colors"
-                >
-                  {project.translation?.title ?? project.slug}
-                </a>
-              </h2>
-              {project.translation?.description && (
-                <p class="text-neutral-400 [.light_&]:text-neutral-600 text-sm line-clamp-3">
-                  {project.translation.description}
-                </p>
-              )}
-              {project.featured && (
-                <span class="inline-block mt-3 text-xs text-accent-500 [.light_&]:text-accent-600 font-medium">
-                  {t(lang, 'common.featured')}
-                </span>
-              )}
-            </article>
-          ))}
-        </div>
-      )}
+      <!-- Filterable Projects Section (React Island) -->
+      <ProjectsFilterable
+        client:load
+        lang={lang}
+        technologies={technologies}
+        initialProjects={projects}
+        initialPagination={pagination}
+        initialTechnology={technologyParam}
+        initialStatus={statusParam}
+        initialSort={sortByParam}
+        initialPage={pageParam}
+        apiBaseUrl={apiBaseUrl}
+        labels={{
+          filterByTechnology: t(lang, 'projects.filterByTechnology'),
+          filterByStatus: t(lang, 'projects.filterByStatus'),
+          sortBy: t(lang, 'projects.sortBy'),
+          all: t(lang, 'common.all'),
+          statusInProgress: t(lang, 'projects.status.inProgress'),
+          statusCompleted: t(lang, 'projects.status.completed'),
+          statusArchived: t(lang, 'projects.status.archived'),
+          sortNewest: t(lang, 'projects.sort.newest'),
+          sortOldest: t(lang, 'projects.sort.oldest'),
+          sortTitle: t(lang, 'projects.sort.title'),
+          featured: t(lang, 'common.featured'),
+          noResults: t(lang, 'common.noResults'),
+          previous: t(lang, 'projects.pagination.previous'),
+          next: t(lang, 'projects.pagination.next'),
+          page: t(lang, 'projects.pagination.page'),
+          of: t(lang, 'projects.pagination.of'),
+        }}
+      />
     </div>
   </section>
 </BaseLayout>

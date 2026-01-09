@@ -14,7 +14,12 @@ type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Options for listing projects */
 export interface ListProjectsOptions extends ListContentOptions {
+  /** Filter by technology name */
   technology?: string;
+  /** Filter by project development status (in-progress, completed, archived) */
+  projectStatus?: ProjectStatus;
+  /** Sort featured projects first (before applying other sort criteria) */
+  featuredFirst?: boolean;
 }
 
 /** Data for creating a project */
@@ -39,6 +44,43 @@ export interface UpdateProjectData {
   projectStatus?: ProjectStatus;
   startDate?: Date | null;
   endDate?: Date | null;
+}
+
+/** Gallery image structure for project detail response */
+export interface GalleryImage {
+  id: number;
+  url: string;
+  alt: string | null;
+  displayOrder: number;
+}
+
+/**
+ * Gets gallery images for a project.
+ *
+ * @param db - Drizzle database instance
+ * @param projectId - Project ID (from projects table, not content_base)
+ * @returns Array of gallery images ordered by displayOrder
+ */
+export function getProjectGalleryImages(db: DrizzleDB, projectId: number): GalleryImage[] {
+  const results = db
+    .select({
+      id: schema.media.id,
+      storageKey: schema.media.storageKey,
+      altText: schema.media.altText,
+      displayOrder: schema.projectMedia.displayOrder,
+    })
+    .from(schema.projectMedia)
+    .innerJoin(schema.media, eq(schema.projectMedia.mediaId, schema.media.id))
+    .where(eq(schema.projectMedia.projectId, projectId))
+    .orderBy(asc(schema.projectMedia.displayOrder))
+    .all();
+
+  return results.map((r) => ({
+    id: r.id,
+    url: `/media/${r.storageKey}`,
+    alt: r.altText,
+    displayOrder: r.displayOrder,
+  }));
 }
 
 /**
@@ -82,11 +124,15 @@ export function getProjectWithTranslation(db: DrizzleDB, slug: string, lang: Lan
     .all()
     .map((r) => r.technology);
 
+  // Get gallery images for project
+  const galleryImages = getProjectGalleryImages(db, result.project.id);
+
   return {
     ...result.content,
     ...result.project,
     translation: result.translation,
     technologies,
+    galleryImages,
   };
 }
 
@@ -126,6 +172,9 @@ export function getProjectWithAllTranslations(db: DrizzleDB, id: number) {
     .all()
     .map((r) => r.technology);
 
+  // Get gallery images for project
+  const galleryImages = getProjectGalleryImages(db, project.id);
+
   // Return with content.id as the primary id (not project.id)
   return {
     ...content,
@@ -133,37 +182,52 @@ export function getProjectWithAllTranslations(db: DrizzleDB, id: number) {
     id: content.id, // Ensure content_base ID is used
     translations,
     technologies,
+    galleryImages,
   };
 }
 
 /**
  * Builds sort clause based on options.
+ * When featuredFirst is true, always prepends `featured DESC` to the sort order.
  */
 function buildSortClause(
   sortBy: ContentSortField = 'updatedAt',
   sortOrder: SortOrder = 'desc',
-  hasItalianTitle: boolean
+  hasItalianTitle: boolean,
+  featuredFirst: boolean = false
 ): SQL[] {
   const orderFn = sortOrder === 'asc' ? asc : desc;
+  const clauses: SQL[] = [];
+
+  // Always sort featured first when requested
+  if (featuredFirst) {
+    clauses.push(desc(schema.contentBase.featured));
+  }
 
   switch (sortBy) {
     case 'title':
       // When sorting by title, we need to have joined Italian translations
       if (hasItalianTitle) {
-        return [orderFn(schema.contentTranslations.title)];
+        clauses.push(orderFn(schema.contentTranslations.title));
+      } else {
+        // Fallback to updatedAt if no title join
+        clauses.push(orderFn(schema.contentBase.updatedAt));
       }
-      // Fallback to updatedAt if no title join
-      return [orderFn(schema.contentBase.updatedAt)];
+      break;
     case 'createdAt':
-      return [orderFn(schema.contentBase.createdAt)];
+      clauses.push(orderFn(schema.contentBase.createdAt));
+      break;
     case 'updatedAt':
     default:
-      return [orderFn(schema.contentBase.updatedAt)];
+      clauses.push(orderFn(schema.contentBase.updatedAt));
+      break;
   }
+
+  return clauses;
 }
 
 /**
- * Lists projects with optional technology filter, search, and sorting.
+ * Lists projects with optional technology filter, project status filter, search, and sorting.
  *
  * @param db - Drizzle database instance
  * @param options - List options
@@ -177,9 +241,11 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
     featured,
     publishedOnly = false,
     technology,
+    projectStatus,
     search,
     sortBy = 'updatedAt',
     sortOrder = 'desc',
+    featuredFirst = false,
   } = options;
 
   const conditions: SQL[] = [eq(schema.contentBase.type, 'project')];
@@ -192,6 +258,11 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
 
   if (featured !== undefined) {
     conditions.push(eq(schema.contentBase.featured, featured));
+  }
+
+  // Filter by project status if provided
+  if (projectStatus) {
+    conditions.push(eq(schema.projects.projectStatus, projectStatus));
   }
 
   // Filter by technology if provided
@@ -244,7 +315,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
         )
       )
       .where(and(...conditions))
-      .orderBy(...buildSortClause(sortBy, sortOrder, true))
+      .orderBy(...buildSortClause(sortBy, sortOrder, true, featuredFirst))
       .limit(limit)
       .offset(offset)
       .all();
@@ -265,7 +336,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
     .from(schema.contentBase)
     .innerJoin(schema.projects, eq(schema.contentBase.id, schema.projects.contentId))
     .where(and(...conditions))
-    .orderBy(...buildSortClause(sortBy, sortOrder, false))
+    .orderBy(...buildSortClause(sortBy, sortOrder, false, featuredFirst))
     .limit(limit)
     .offset(offset)
     .all();
@@ -285,7 +356,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
  * @returns Total count
  */
 export function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
-  const { status, featured, publishedOnly = false, technology, search } = options;
+  const { status, featured, publishedOnly = false, technology, projectStatus, search } = options;
 
   const conditions: SQL[] = [eq(schema.contentBase.type, 'project')];
 
@@ -297,6 +368,11 @@ export function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) 
 
   if (featured !== undefined) {
     conditions.push(eq(schema.contentBase.featured, featured));
+  }
+
+  // Filter by project status if provided
+  if (projectStatus) {
+    conditions.push(eq(schema.projects.projectStatus, projectStatus));
   }
 
   // Filter by technology if provided
@@ -411,6 +487,7 @@ export function createProject(db: DrizzleDB, data: CreateProjectData) {
     id: content.id, // Ensure content_base ID is used
     translations: [],
     technologies: [],
+    galleryImages: [],
   };
 }
 

@@ -62,3 +62,9 @@ export {
 } from './project-technologies';
 
 export { newsTags, type NewsTag, type NewNewsTag } from './news-tags';
+
+export {
+  projectMedia,
+  type ProjectMedia,
+  type NewProjectMedia,
+} from './project-media';

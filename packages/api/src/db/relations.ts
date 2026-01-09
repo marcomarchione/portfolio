@@ -12,8 +12,10 @@ import {
   news,
   technologies,
   tags,
+  media,
   projectTechnologies,
   newsTags,
+  projectMedia,
 } from './schema';
 
 /**
@@ -55,6 +57,7 @@ export const contentTranslationsRelations = relations(contentTranslations, ({ on
  *
  * - One-to-one with content_base
  * - Many-to-many with technologies via project_technologies
+ * - Many-to-many with media via project_media
  */
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   content: one(contentBase, {
@@ -62,6 +65,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [contentBase.id],
   }),
   projectTechnologies: many(projectTechnologies),
+  projectMedia: many(projectMedia),
 }));
 
 /**
@@ -109,6 +113,15 @@ export const tagsRelations = relations(tags, ({ many }) => ({
 }));
 
 /**
+ * Media Relations
+ *
+ * - Many-to-many with projects via project_media
+ */
+export const mediaRelations = relations(media, ({ many }) => ({
+  projectMedia: many(projectMedia),
+}));
+
+/**
  * Project Technologies Junction Relations
  */
 export const projectTechnologiesRelations = relations(projectTechnologies, ({ one }) => ({
@@ -133,5 +146,19 @@ export const newsTagsRelations = relations(newsTags, ({ one }) => ({
   tag: one(tags, {
     fields: [newsTags.tagId],
     references: [tags.id],
+  }),
+}));
+
+/**
+ * Project Media Junction Relations
+ */
+export const projectMediaRelations = relations(projectMedia, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectMedia.projectId],
+    references: [projects.id],
+  }),
+  media: one(media, {
+    fields: [projectMedia.mediaId],
+    references: [media.id],
   }),
 }));

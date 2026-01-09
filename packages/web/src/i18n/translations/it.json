@@ -59,5 +59,26 @@
     "skills": {
       "title": "Tecnologie e Competenze"
     }
+  },
+  "projects": {
+    "filterByTechnology": "Filtra per tecnologia",
+    "filterByStatus": "Filtra per stato",
+    "sortBy": "Ordina per",
+    "status": {
+      "inProgress": "In Corso",
+      "completed": "Completato",
+      "archived": "Archiviato"
+    },
+    "sort": {
+      "newest": "Piu recenti",
+      "oldest": "Meno recenti",
+      "title": "Titolo"
+    },
+    "pagination": {
+      "page": "Pagina",
+      "of": "di",
+      "previous": "Precedente",
+      "next": "Successiva"
+    }
   }
 }

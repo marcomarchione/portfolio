@@ -2,12 +2,24 @@
 /**
  * Project Detail Page
  *
- * Displays a single project with full details and translations.
+ * Displays a single project with full details, glass morphism styling,
+ * and horizontal scrollable image gallery.
+ *
+ * Features:
+ * - Glass morphism card design
+ * - Horizontal scrollable gallery
+ * - Technology tags
+ * - Project status badge
+ * - Links to demo/GitHub
  */
-import { LANGUAGES, type Language } from '@marcomarchione/shared';
+import { LANGUAGES, type Language, type Technology } from '@marcomarchione/shared';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { t } from '../../../i18n';
-import { getProject, getProjectSlugs } from '../../../lib/api';
+import { getProject, getProjectSlugs, type GalleryImage } from '../../../lib/api';
+import { marked } from 'marked';
+
+// Disable prerendering for SSR - enables dynamic project loading
+export const prerender = false;
 
 export async function getStaticPaths() {
   const slugs = await getProjectSlugs();
@@ -31,68 +43,182 @@ if (!project) {
 
 const title = project.translation?.metaTitle ?? project.translation?.title ?? slug;
 const description = project.translation?.metaDescription ?? project.translation?.description ?? '';
+
+// Format dates if available
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return date.toLocaleDateString(lang, { year: 'numeric', month: 'long' });
+};
+
+const startDate = formatDate(project.startDate);
+const endDate = formatDate(project.endDate);
+
+// Get status translation
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return t(lang, 'projects.status.completed');
+    case 'in-progress':
+      return t(lang, 'projects.status.inProgress');
+    case 'archived':
+      return t(lang, 'projects.status.archived');
+    default:
+      return status;
+  }
+};
+
+// Get status styling
+const getStatusClass = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'bg-green-500/20 text-green-400 border-green-500/30 [.light_&]:bg-green-100 [.light_&]:text-green-700 [.light_&]:border-green-200';
+    case 'in-progress':
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 [.light_&]:bg-yellow-100 [.light_&]:text-yellow-700 [.light_&]:border-yellow-200';
+    default:
+      return 'bg-neutral-500/20 text-neutral-400 border-neutral-500/30 [.light_&]:bg-neutral-200 [.light_&]:text-neutral-600 [.light_&]:border-neutral-300';
+  }
+};
+
+// Parse markdown body content
+const bodyHtml = project.translation?.body
+  ? await marked.parse(project.translation.body)
+  : '';
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
-  <main class="min-h-screen bg-bg-primary text-neutral-100">
-    <div class="container mx-auto px-4 py-16">
+  <div class="min-h-screen py-16">
+    <div class="container mx-auto px-4">
+      <!-- Back Navigation -->
       <nav class="mb-8">
         <a
           href={`/${lang}/projects/`}
-          class="text-primary-500 hover:text-primary-400 transition-colors"
+          class="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors [.light_&]:text-terra-600 [.light_&]:hover:text-terra-500"
         >
-          &larr; {t(lang, 'common.backToList')}
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          {t(lang, 'common.backToList')}
         </a>
       </nav>
 
-      <article>
-        <header class="mb-8">
-          <h1 class="font-heading text-4xl md:text-5xl font-bold mb-4">
+      <!-- Main Content Card with Glass Morphism -->
+      <article class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl [.light_&]:bg-white/80 [.light_&]:border-neutral-200">
+        <!-- Header Section -->
+        <header class="p-8 md:p-12 border-b border-white/10 [.light_&]:border-neutral-200">
+          <!-- Featured Badge -->
+          {project.featured && (
+            <span class="inline-block mb-4 px-3 py-1 bg-accent-500/20 text-accent-400 text-xs font-semibold uppercase tracking-wider rounded-full border border-accent-500/30 [.light_&]:bg-accent-100 [.light_&]:text-accent-700 [.light_&]:border-accent-200">
+              {t(lang, 'common.featured')}
+            </span>
+          )}
+
+          <!-- Title -->
+          <h1 class="font-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white [.light_&]:text-neutral-900">
             {project.translation?.title ?? slug}
           </h1>
 
+          <!-- Description -->
           {project.translation?.description && (
-            <p class="text-xl text-neutral-400 mb-6">
+            <p class="text-xl md:text-2xl text-neutral-300 leading-relaxed mb-8 [.light_&]:text-neutral-600">
               {project.translation.description}
             </p>
           )}
 
-          <div class="flex flex-wrap gap-4 text-sm text-neutral-500">
-            {project.projectStatus && (
-              <span class="px-3 py-1 bg-bg-secondary rounded-full">
-                {project.projectStatus}
+          <!-- Meta Information Row -->
+          <div class="flex flex-wrap items-center gap-4">
+            <!-- Status Badge -->
+            <span class={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${getStatusClass(project.projectStatus)}`}>
+              {getStatusLabel(project.projectStatus)}
+            </span>
+
+            <!-- Date Range -->
+            {(startDate || endDate) && (
+              <span class="text-neutral-400 [.light_&]:text-neutral-500 text-sm">
+                {startDate && endDate
+                  ? `${startDate} - ${endDate}`
+                  : startDate
+                    ? `${t(lang, 'common.published')} ${startDate}`
+                    : null}
               </span>
             )}
-
-            {project.technologies && project.technologies.length > 0 && (
-              <div class="flex flex-wrap gap-2">
-                {project.technologies.map((tech) => (
-                  <span
-                    class="px-3 py-1 bg-accent-500/10 text-accent-400 rounded-full"
-                    style={tech.color ? `background-color: ${tech.color}20; color: ${tech.color}` : undefined}
-                  >
-                    {tech.name}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
+
+          <!-- Technology Tags -->
+          {project.technologies && project.technologies.length > 0 && (
+            <div class="flex flex-wrap gap-2 mt-6 pt-6 border-t border-white/10 [.light_&]:border-neutral-200">
+              {project.technologies.map((tech: Technology) => (
+                <span
+                  class="px-3 py-1.5 bg-primary-500/10 text-primary-400 rounded-lg text-sm font-medium border border-primary-500/20 [.light_&]:bg-terra-100 [.light_&]:text-terra-700 [.light_&]:border-terra-200"
+                  style={tech.color ? `background-color: ${tech.color}15; color: ${tech.color}; border-color: ${tech.color}30` : undefined}
+                >
+                  {tech.name}
+                </span>
+              ))}
+            </div>
+          )}
         </header>
 
-        {project.translation?.body && (
-          <div class="prose prose-invert prose-neutral max-w-none">
-            <Fragment set:html={project.translation.body} />
-          </div>
+        <!-- Image Gallery Section -->
+        {project.galleryImages && project.galleryImages.length > 0 && (
+          <section class="p-8 md:p-12 border-b border-white/10 [.light_&]:border-neutral-200">
+            <div class="overflow-x-auto pb-4 -mx-8 md:-mx-12 px-8 md:px-12">
+              <div class="flex gap-4" style="width: max-content;">
+                {project.galleryImages.map((image: GalleryImage, index: number) => (
+                  <button
+                    class="flex-shrink-0 group cursor-pointer gallery-image"
+                    data-index={index}
+                    data-src={image.url}
+                    data-alt={image.alt || `Gallery image ${index + 1}`}
+                    type="button"
+                    aria-label={`View ${image.alt || `image ${index + 1}`}`}
+                  >
+                    <div class="w-80 aspect-video rounded-xl overflow-hidden border border-white/10 [.light_&]:border-neutral-200 group-hover:border-primary-500/50 [.light_&]:group-hover:border-terra-500/50 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary-500/10 [.light_&]:group-hover:shadow-terra-500/10">
+                      <img
+                        src={image.url}
+                        alt={image.alt || `Gallery image ${index + 1}`}
+                        loading="lazy"
+                        decoding="async"
+                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <!-- Scroll indicator for mobile -->
+            <div class="flex justify-center mt-4 md:hidden">
+              <span class="text-neutral-500 text-xs flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                Scroll for more
+              </span>
+            </div>
+          </section>
         )}
 
-        <footer class="mt-12 pt-8 border-t border-neutral-800 flex flex-wrap gap-4">
+        <!-- Body Content -->
+        {bodyHtml && (
+          <section class="p-8 md:p-12 border-b border-white/10 [.light_&]:border-neutral-200">
+            <div class="prose prose-lg prose-invert max-w-none cursor-text [.light_&]:prose-neutral prose-headings:font-heading prose-headings:font-bold prose-p:text-neutral-300 [.light_&]:prose-p:text-neutral-600 prose-a:text-primary-400 prose-a:no-underline hover:prose-a:underline prose-a:cursor-pointer prose-strong:text-white [.light_&]:prose-strong:text-neutral-900 prose-code:bg-neutral-800/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded [.light_&]:prose-code:bg-neutral-100">
+              <Fragment set:html={bodyHtml} />
+            </div>
+          </section>
+        )}
+
+        <!-- Action Links Footer -->
+        <footer class="p-8 md:p-12 flex flex-wrap gap-4">
           {project.demoUrl && (
             <a
               href={project.demoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              class="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all duration-300 font-medium shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-105 [.light_&]:bg-terra-500 [.light_&]:hover:bg-terra-600 [.light_&]:shadow-terra-500/25 [.light_&]:hover:shadow-terra-500/40"
             >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
               {t(lang, 'common.viewProject')}
             </a>
           )}
@@ -102,13 +228,175 @@ const description = project.translation?.metaDescription ?? project.translation?
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              class="px-6 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors font-medium"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-neutral-800 text-white rounded-xl hover:bg-neutral-700 transition-all duration-300 font-medium border border-neutral-700 [.light_&]:bg-neutral-100 [.light_&]:text-neutral-900 [.light_&]:border-neutral-300 [.light_&]:hover:bg-neutral-200"
             >
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
               GitHub
             </a>
           )}
         </footer>
       </article>
     </div>
-  </main>
+  </div>
+
+  <!-- Lightbox Modal for Gallery Images -->
+  <div
+    id="lightbox"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Image lightbox"
+  >
+    <button
+      id="lightbox-close"
+      type="button"
+      class="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors"
+      aria-label="Close lightbox"
+    >
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <button
+      id="lightbox-prev"
+      type="button"
+      class="absolute left-4 p-2 text-white/70 hover:text-white transition-colors"
+      aria-label="Previous image"
+    >
+      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+
+    <img
+      id="lightbox-image"
+      src=""
+      alt=""
+      class="max-h-[90vh] max-w-[90vw] object-contain"
+    />
+
+    <button
+      id="lightbox-next"
+      type="button"
+      class="absolute right-4 p-2 text-white/70 hover:text-white transition-colors"
+      aria-label="Next image"
+    >
+      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  </div>
 </BaseLayout>
+
+<script>
+  // Lightbox functionality for gallery images
+  document.addEventListener('DOMContentLoaded', () => {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImage = document.getElementById('lightbox-image') as HTMLImageElement;
+    const closeBtn = document.getElementById('lightbox-close');
+    const prevBtn = document.getElementById('lightbox-prev');
+    const nextBtn = document.getElementById('lightbox-next');
+    const galleryImages = document.querySelectorAll('.gallery-image');
+
+    if (!lightbox || !lightboxImage || galleryImages.length === 0) return;
+
+    let currentIndex = 0;
+    const images: { src: string; alt: string }[] = [];
+
+    // Collect image data
+    galleryImages.forEach((btn) => {
+      images.push({
+        src: btn.getAttribute('data-src') || '',
+        alt: btn.getAttribute('data-alt') || '',
+      });
+    });
+
+    // Show lightbox
+    function showLightbox(index: number) {
+      currentIndex = index;
+      const image = images[index];
+      lightboxImage.src = image.src;
+      lightboxImage.alt = image.alt;
+      lightbox.classList.remove('hidden');
+      lightbox.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Hide lightbox
+    function hideLightbox() {
+      lightbox.classList.add('hidden');
+      lightbox.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    // Navigate
+    function navigate(direction: number) {
+      currentIndex = (currentIndex + direction + images.length) % images.length;
+      const image = images[currentIndex];
+      lightboxImage.src = image.src;
+      lightboxImage.alt = image.alt;
+    }
+
+    // Event listeners
+    galleryImages.forEach((btn, index) => {
+      btn.addEventListener('click', () => showLightbox(index));
+    });
+
+    closeBtn?.addEventListener('click', hideLightbox);
+    prevBtn?.addEventListener('click', () => navigate(-1));
+    nextBtn?.addEventListener('click', () => navigate(1));
+
+    // Close on background click
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) hideLightbox();
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (lightbox.classList.contains('hidden')) return;
+
+      switch (e.key) {
+        case 'Escape':
+          hideLightbox();
+          break;
+        case 'ArrowLeft':
+          navigate(-1);
+          break;
+        case 'ArrowRight':
+          navigate(1);
+          break;
+      }
+    });
+  });
+</script>
+
+<style>
+  /* Custom scrollbar for gallery */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: var(--color-neutral-700);
+    border-radius: 4px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: var(--color-neutral-600);
+  }
+
+  .light .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: var(--color-neutral-300);
+  }
+
+  .light .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: var(--color-neutral-400);
+  }
+</style>

@@ -8,8 +8,14 @@
 export { get, getSafe, ApiError, BASE_URL, API_PREFIX } from './client';
 
 // Projects API
-export { getProjects, getProject, getProjectSlugs } from './projects';
-export type { GetProjectsOptions } from './projects';
+export { getProjects, getProject, getProjectSlugs, getTechnologies } from './projects';
+export type {
+  GetProjectsOptions,
+  ProjectStatus,
+  ProjectSortOption,
+  GalleryImage,
+  ProjectWithGallery,
+} from './projects';
 
 // Materials API
 export { getMaterials, getMaterial, getMaterialSlugs } from './materials';

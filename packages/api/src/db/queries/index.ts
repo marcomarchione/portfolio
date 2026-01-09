@@ -29,6 +29,7 @@ export {
 export {
   getProjectWithTranslation,
   getProjectWithAllTranslations,
+  getProjectGalleryImages,
   listProjects,
   countProjects,
   createProject,
@@ -36,6 +37,7 @@ export {
   type ListProjectsOptions,
   type CreateProjectData,
   type UpdateProjectData,
+  type GalleryImage,
 } from './projects';
 
 // Material queries

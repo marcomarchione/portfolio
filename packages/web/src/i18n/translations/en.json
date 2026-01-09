@@ -59,5 +59,26 @@
     "skills": {
       "title": "Technologies & Skills"
     }
+  },
+  "projects": {
+    "filterByTechnology": "Filter by technology",
+    "filterByStatus": "Filter by status",
+    "sortBy": "Sort by",
+    "status": {
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "archived": "Archived"
+    },
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "title": "Title"
+    },
+    "pagination": {
+      "page": "Page",
+      "of": "of",
+      "previous": "Previous",
+      "next": "Next"
+    }
   }
 }

@@ -55,7 +55,8 @@ services:
     ports:
       - "4321:4321"
     environment:
-      - PUBLIC_API_URL=http://localhost:3000
+      - PUBLIC_API_URL=http://api:3000
+      - PUBLIC_BROWSER_API_URL=http://localhost:3000
     volumes:
       - ./packages/shared:/app/packages/shared
       - ./packages/web:/app/packages/web

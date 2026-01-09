@@ -54,6 +54,7 @@ services:
       dockerfile: packages/web/Dockerfile
       args:
         - PUBLIC_API_URL=http://api:3000
+        - PUBLIC_BROWSER_API_URL=${PUBLIC_BROWSER_API_URL:-http://localhost:3000}
     container_name: marcomarchione-web
     restart: unless-stopped
     ports:

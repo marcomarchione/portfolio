@@ -27,6 +27,10 @@ export type ContentSortField = (typeof CONTENT_SORT_FIELDS)[number];
 export const SORT_ORDERS = ['asc', 'desc'] as const;
 export type SortOrder = (typeof SORT_ORDERS)[number];
 
+/** Project sort options for public API */
+export const PROJECT_SORT_OPTIONS = ['newest', 'oldest', 'title'] as const;
+export type ProjectSortOption = (typeof PROJECT_SORT_OPTIONS)[number];
+
 /**
  * Content status enum schema.
  * Validates draft/published/archived status values.
@@ -68,6 +72,14 @@ export const SortOrderSchema = Type.Union(
   { description: 'Sort direction' }
 );
 
+/**
+ * Project sort option enum schema (for public API).
+ */
+export const ProjectSortOptionSchema = Type.Union(
+  PROJECT_SORT_OPTIONS.map((opt) => Type.Literal(opt)),
+  { description: 'Sort option for project listing' }
+);
+
 /** URL schema - uses pattern for basic validation */
 export const UrlSchema = Type.String({
   pattern: '^https?://',
@@ -79,15 +91,17 @@ export const OptionalUrlSchema = Type.Union([UrlSchema, Type.Null()]);
 
 /**
  * Project list query schema.
- * Extends ListQuerySchema with technology filter.
+ * Extends ListQuerySchema with technology filter, projectStatus, and sorting.
  */
 export const ProjectQuerySchema = Type.Object({
   ...ListQuerySchema.properties,
   technology: Type.Optional(
     Type.String({
-      description: 'Filter by technology slug',
+      description: 'Filter by technology name',
     })
   ),
+  projectStatus: Type.Optional(ProjectStatusSchema),
+  sortBy: Type.Optional(ProjectSortOptionSchema),
 });
 export type ProjectQuery = Static<typeof ProjectQuerySchema>;
 
@@ -394,6 +408,16 @@ export const TagResponseSchema = Type.Object({
 });
 
 /**
+ * Gallery image response schema.
+ */
+export const GalleryImageResponseSchema = Type.Object({
+  id: Type.Integer(),
+  url: Type.String(),
+  alt: Type.Union([Type.String(), Type.Null()]),
+  displayOrder: Type.Integer(),
+});
+
+/**
  * Base content response schema.
  */
 const ContentBaseResponseSchema = Type.Object({
@@ -419,6 +443,7 @@ export const ProjectResponseSchema = Type.Object({
   endDate: Type.Union([Type.String(), Type.Null()]),
   translation: Type.Union([TranslationResponseSchema, Type.Null()]),
   technologies: Type.Array(TechnologyResponseSchema),
+  galleryImages: Type.Optional(Type.Array(GalleryImageResponseSchema)),
 });
 
 /**
@@ -455,6 +480,7 @@ export const AdminProjectResponseSchema = Type.Object({
   endDate: Type.Union([Type.String(), Type.Null()]),
   translations: Type.Array(TranslationResponseSchema),
   technologies: Type.Array(TechnologyResponseSchema),
+  galleryImages: Type.Optional(Type.Array(GalleryImageResponseSchema)),
 });
 
 /**

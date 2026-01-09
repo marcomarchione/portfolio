@@ -132,10 +132,10 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
         var currentLang = window.location.pathname.match(/^\/([a-z]{2})(\/|$)/)?.[1] || 'it';
 
         async function navigateTo(url, isPopState) {
-          // Skip if already on the same page
-          var currentUrl = window.location.pathname;
-          var targetUrl = url.split('?')[0].split('#')[0];
-          if (currentUrl === targetUrl && !isPopState) {
+          // Skip if already on the same page (including query params)
+          var currentFullUrl = window.location.pathname + window.location.search;
+          var targetUrl = url.split('#')[0]; // Only strip hash, keep query params
+          if (currentFullUrl === targetUrl && !isPopState) {
             return;
           }
 

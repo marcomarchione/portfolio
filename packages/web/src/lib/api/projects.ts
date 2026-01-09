@@ -3,14 +3,39 @@
  *
  * Functions for fetching project content from the API.
  */
-import type { Language, Project, PaginatedResponse, ApiResponse } from '@marcomarchione/shared';
+import type { Language, Project, PaginatedResponse, ApiResponse, Technology } from '@marcomarchione/shared';
 import { get, getSafe } from './client';
+
+/** Project development status */
+export type ProjectStatus = 'in-progress' | 'completed' | 'archived';
+
+/** Project sort options */
+export type ProjectSortOption = 'newest' | 'oldest' | 'title';
 
 /** Options for fetching projects list */
 export interface GetProjectsOptions {
   featured?: boolean;
   limit?: number;
   offset?: number;
+  /** Filter by technology name */
+  technology?: string;
+  /** Filter by project development status */
+  projectStatus?: ProjectStatus;
+  /** Sort order option */
+  sortBy?: ProjectSortOption;
+}
+
+/** Gallery image structure */
+export interface GalleryImage {
+  id: number;
+  url: string;
+  alt: string | null;
+  displayOrder: number;
+}
+
+/** Extended project type with gallery images */
+export interface ProjectWithGallery extends Project {
+  galleryImages?: GalleryImage[];
 }
 
 /**
@@ -36,22 +61,31 @@ export async function getProjects(
   if (options.offset !== undefined) {
     params.set('offset', String(options.offset));
   }
+  if (options.technology !== undefined) {
+    params.set('technology', options.technology);
+  }
+  if (options.projectStatus !== undefined) {
+    params.set('projectStatus', options.projectStatus);
+  }
+  if (options.sortBy !== undefined) {
+    params.set('sortBy', options.sortBy);
+  }
 
   return get<PaginatedResponse<Project>>(`/projects?${params.toString()}`);
 }
 
 /**
- * Fetches a single project by slug.
+ * Fetches a single project by slug (with gallery images).
  *
  * @param slug - Project slug
  * @param lang - Language code for translations
- * @returns Project data or null if not found
+ * @returns Project data with gallery images or null if not found
  */
 export async function getProject(
   slug: string,
   lang: Language
-): Promise<Project | null> {
-  const response = await getSafe<ApiResponse<Project>>(`/projects/${slug}?lang=${lang}`);
+): Promise<ProjectWithGallery | null> {
+  const response = await getSafe<ApiResponse<ProjectWithGallery>>(`/projects/${slug}?lang=${lang}`);
   return response?.data ?? null;
 }
 
@@ -63,4 +97,14 @@ export async function getProject(
 export async function getProjectSlugs(): Promise<string[]> {
   const response = await getSafe<PaginatedResponse<Project>>('/projects?limit=1000');
   return response?.data.map((p: Project) => p.slug) ?? [];
+}
+
+/**
+ * Fetches all available technologies for filtering.
+ *
+ * @returns Array of technologies
+ */
+export async function getTechnologies(): Promise<Technology[]> {
+  const response = await getSafe<ApiResponse<Technology[]>>('/technologies');
+  return response?.data ?? [];
 }
