@@ -122,7 +122,13 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
         });
 
         // Handle browser back/forward
+        var lastPathname = window.location.pathname;
         window.addEventListener('popstate', function() {
+          // Skip navigation for hash-only changes (same pathname)
+          if (window.location.pathname === lastPathname) {
+            return;
+          }
+          lastPathname = window.location.pathname;
           navigateTo(window.location.pathname, true);
         });
 
@@ -211,6 +217,8 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`
             if (!isPopState) {
               history.pushState({}, '', url);
             }
+            // Update lastPathname for popstate tracking
+            lastPathname = window.location.pathname;
 
             // Update active nav links
             updateNavLinks();

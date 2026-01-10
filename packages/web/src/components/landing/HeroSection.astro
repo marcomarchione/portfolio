@@ -4,7 +4,7 @@
  *
  * Full-height hero section with name, positioning text, and social links.
  * Uses DisplayHeading with GradientText for the name.
- * The "Agent Software Developer" subtitle is always in English.
+ * Choral animation - all elements appear together.
  *
  * @example
  * <HeroSection lang="en" />
@@ -13,6 +13,7 @@ import type { Language } from '@marcomarchione/shared';
 import DisplayHeading from '../ui/DisplayHeading.astro';
 import GradientText from '../ui/GradientText.astro';
 import SocialLinks from './SocialLinks.astro';
+import { t } from '../../i18n/utils';
 
 export interface Props {
   lang?: Language;
@@ -25,24 +26,120 @@ const { lang = 'it' } = Astro.props;
   id="hero"
   class="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 relative"
 >
-  <div class="text-center space-y-6">
+  <!-- Main content - choral animation -->
+  <div class="text-center space-y-6 hero-content">
     <!-- Name with gradient effect -->
-    <div class="animate-fade-in-up">
+    <div>
       <DisplayHeading level={1} class="text-center">
         <GradientText>Marco Marchione</GradientText>
       </DisplayHeading>
     </div>
 
     <!-- Positioning text - always English -->
-    <div class="animate-fade-in-up animate-delay-200">
+    <div>
       <p class="text-xl md:text-2xl text-neutral-400 [.light_&]:text-neutral-600 font-body">
         Agent Software Developer
       </p>
     </div>
 
     <!-- Social links -->
-    <div class="pt-4 animate-fade-in-up animate-delay-400">
+    <div class="pt-4">
       <SocialLinks />
     </div>
   </div>
+
+  <!-- Scroll down button -->
+  <a
+    href="#about"
+    id="scroll-button"
+    class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-neutral-500 hover:text-primary-400 [.light_&]:hover:text-terra-500 transition-colors opacity-0"
+    aria-label="Scroll down"
+  >
+    <span class="text-xs uppercase tracking-widest opacity-60">{t(lang, 'common.discoverMore')}</span>
+    <div class="scroll-arrow">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M12 5v14M5 12l7 7 7-7" />
+      </svg>
+    </div>
+  </a>
 </section>
+
+<script>
+  // Show scroll button after hero content animation completes
+  function showScrollButton() {
+    const scrollButton = document.getElementById('scroll-button');
+    if (scrollButton && !scrollButton.classList.contains('opacity-100')) {
+      setTimeout(() => {
+        scrollButton.classList.remove('opacity-0');
+        scrollButton.classList.add('opacity-100', 'transition-opacity', 'duration-500');
+      }, 1000);
+    }
+  }
+
+  // Handle initial page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showScrollButton);
+  } else {
+    showScrollButton();
+  }
+
+  // Handle SPA navigation
+  document.addEventListener('astro:page-load', showScrollButton);
+</script>
+
+<style is:global>
+  /* Choral fade-in animation for hero content */
+  @keyframes hero-fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .hero-content {
+    opacity: 0;
+    animation: hero-fade-in 0.8s ease-out 0.2s forwards;
+    animation-fill-mode: forwards;
+  }
+
+  /* Scroll arrow bounce animation */
+  @keyframes bounce-arrow {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(6px);
+    }
+  }
+
+  .scroll-arrow {
+    animation: bounce-arrow 2s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-content {
+      opacity: 1;
+      animation: none;
+      transform: none;
+    }
+    #scroll-button {
+      opacity: 1 !important;
+    }
+    .scroll-arrow {
+      animation: none;
+    }
+  }
+</style>
