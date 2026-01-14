@@ -34,6 +34,9 @@ WORKDIR /app
 # Copy built output (server + client assets)
 COPY --from=builder /app/packages/web/dist ./dist
 
+# Copy node_modules for SSR runtime dependencies
+COPY --from=builder /app/node_modules ./node_modules
+
 # Set environment variables for production
 ENV HOST=0.0.0.0
 ENV PORT=4321
