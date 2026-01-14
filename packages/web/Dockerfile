@@ -12,7 +12,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/web/package.json ./packages/web/
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN bun install --no-save
 
 # Copy source code
 COPY packages/shared ./packages/shared
