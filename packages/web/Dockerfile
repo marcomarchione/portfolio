@@ -27,8 +27,8 @@ ENV PUBLIC_API_URL=$PUBLIC_API_URL
 ENV PUBLIC_BROWSER_API_URL=$PUBLIC_BROWSER_API_URL
 RUN bun run build
 
-# Production stage with Bun for SSR
-FROM oven/bun:1.3-slim AS runner
+# Production stage with Node.js for SSR
+FROM node:22-slim AS runner
 WORKDIR /app
 
 # Copy built output (server + client assets)
@@ -49,5 +49,5 @@ EXPOSE 4321
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost:${PORT:-4321}/ || exit 1
 
-# Run the SSR server
-CMD ["bun", "dist/server/entry.mjs"]
+# Run the SSR server with Node.js
+CMD ["node", "dist/server/entry.mjs"]
