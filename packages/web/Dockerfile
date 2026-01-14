@@ -1,5 +1,5 @@
 # Web (Astro) Dockerfile
-# Multi-stage build: Bun for building, nginx for serving static site
+# Multi-stage build: Bun for building and running SSR server
 # Build from repo root with: docker build -f packages/web/Dockerfile .
 
 # Build stage
@@ -27,25 +27,28 @@ ENV PUBLIC_API_URL=$PUBLIC_API_URL
 ENV PUBLIC_BROWSER_API_URL=$PUBLIC_BROWSER_API_URL
 RUN bun run build
 
-# Production stage with nginx
-FROM nginx:alpine AS runner
+# Production stage with Bun runtime for SSR
+FROM oven/bun:1.3-slim AS runner
+WORKDIR /app
 
-# Copy nginx configuration
-COPY packages/web/nginx.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
 
-# Copy built assets
-COPY --from=builder /app/packages/web/dist /usr/share/nginx/html
+# Create non-root user
+RUN groupadd -g 1001 nodejs && \
+    useradd -u 1001 -g nodejs -s /bin/sh astro
 
-# Railway sets PORT env var, nginx needs to listen on it
-# Create a script to update nginx config with dynamic PORT
-RUN echo '#!/bin/sh' > /docker-entrypoint.d/10-update-port.sh && \
-    echo 'sed -i "s/listen 80;/listen ${PORT:-80};/g" /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.d/10-update-port.sh && \
-    chmod +x /docker-entrypoint.d/10-update-port.sh
+# Copy built application
+COPY --from=builder --chown=astro:nodejs /app/packages/web/dist ./dist
+COPY --from=builder --chown=astro:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=astro:nodejs /app/packages/shared ./packages/shared
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:${PORT:-80}/ || exit 1
+USER astro
 
-EXPOSE 80
+# Railway sets PORT automatically, default to 4321 for local
+ENV HOST=0.0.0.0
+ENV PORT=${PORT:-4321}
 
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 4321
+
+# Run the Astro SSR server
+CMD ["bun", "run", "dist/server/entry.mjs"]
