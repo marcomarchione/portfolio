@@ -2,12 +2,20 @@
 /**
  * News Article Detail Page
  *
- * Displays a single news article with full content.
+ * Displays a single news article with full content, cover image, and metadata.
+ * Features:
+ * - Cover image or fallback component
+ * - Markdown content with syntax highlighting
+ * - Clickable tags linking to filtered listing
+ * - Social sharing metadata (Open Graph & Twitter Cards)
+ * - Responsive layout
  */
 import { LANGUAGES, type Language } from '@marcomarchione/shared';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { t } from '../../../i18n';
 import { getNewsItem, getNewsSlugs } from '../../../lib/api';
+import { parseMarkdown } from '../../../lib/markdown';
+import NewsCoverFallback from '../../../components/news/NewsCoverFallback.astro';
 
 export async function getStaticPaths() {
   const slugs = await getNewsSlugs();
@@ -31,109 +39,174 @@ if (!article) {
 
 const title = article.translation?.metaTitle ?? article.translation?.title ?? slug;
 const description = article.translation?.metaDescription ?? article.translation?.description ?? '';
-const ogImage = article.coverImage ?? undefined;
 
-// Helper to format date
-function formatDate(dateString: string | null): string {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString(lang, {
+// Parse markdown body content with Shiki syntax highlighting
+const bodyHtml = article.translation?.body
+  ? await parseMarkdown(article.translation.body)
+  : '';
+
+// Format publication date
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return date.toLocaleDateString(lang, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
-}
+};
+
+const publishedDate = formatDate(article.publishedAt);
+
+// Prepare social metadata
+const ogImage = article.coverImage || undefined;
+const canonicalUrl = `/${lang}/news/${slug}/`;
+const publishedTime = article.publishedAt;
 ---
 
-<BaseLayout lang={lang} title={title} description={description} ogImage={ogImage}>
-  <main class="min-h-screen bg-bg-primary text-neutral-100">
-    <div class="container mx-auto px-4 py-16">
-      <nav class="mb-8">
+<BaseLayout lang={lang} title={title} description={description}>
+  <!-- Social Metadata -->
+  <Fragment slot="head">
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="article" />
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    <meta property="article:author" content="Marco Marchione" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+  </Fragment>
+
+  <div class="min-h-screen py-16">
+    <div class="container mx-auto px-4">
+      <!-- Back Navigation -->
+      <nav class="mb-8 max-w-4xl mx-auto">
         <a
           href={`/${lang}/news/`}
-          class="text-primary-500 hover:text-primary-400 transition-colors"
+          class="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors [.light_&]:text-terra-600 [.light_&]:hover:text-terra-500"
         >
-          &larr; {t(lang, 'common.backToList')}
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          {t(lang, 'news.backToNews')}
         </a>
       </nav>
 
-      <article class="max-w-3xl mx-auto">
-        {article.coverImage && (
-          <img
-            src={article.coverImage}
-            alt={article.translation?.title ?? slug}
-            class="w-full h-64 md:h-96 object-cover rounded-lg mb-8"
-          />
+      <!-- Main Article Card with Glass Morphism -->
+      <article class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl [.light_&]:bg-white/80 [.light_&]:border-neutral-200 max-w-4xl mx-auto">
+        <!-- Cover Image or Fallback -->
+        {article.coverImage ? (
+          <div class="w-full aspect-video overflow-hidden">
+            <img
+              src={article.coverImage}
+              alt={article.translation?.title ?? slug}
+              class="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+        ) : (
+          <NewsCoverFallback />
         )}
 
-        <header class="mb-8">
-          <h1 class="font-heading text-4xl md:text-5xl font-bold mb-4">
+        <!-- Header Section -->
+        <header class="p-8 md:p-12 border-b border-white/10 [.light_&]:border-neutral-200">
+          <!-- Title -->
+          <h1 class="font-heading text-4xl md:text-5xl font-bold mb-6 text-white [.light_&]:text-neutral-900">
             {article.translation?.title ?? slug}
           </h1>
 
-          <div class="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
-            {article.publishedAt && (
-              <time datetime={article.publishedAt}>
-                {t(lang, 'common.published')} {formatDate(article.publishedAt)}
-              </time>
-            )}
-
-            {article.readingTime && (
+          <!-- Meta Information Row -->
+          <div class="flex flex-wrap items-center gap-4 text-sm text-neutral-400 [.light_&]:text-neutral-500 mb-6">
+            {publishedDate && (
               <span>
-                {t(lang, 'common.readingTime', { minutes: String(article.readingTime) })}
+                {t(lang, 'news.publishedOn')} {publishedDate}
               </span>
             )}
+            <span id="reading-time-display" class="hidden">
+              <!-- Reading time will be inserted here by client-side script -->
+            </span>
           </div>
 
-          {article.tags && article.tags.length > 0 && (
-            <div class="flex flex-wrap gap-2 mt-4">
-              {article.tags.map((tag) => (
-                <span class="text-xs px-3 py-1 bg-accent-500/10 text-accent-400 rounded-full">
-                  {tag.name}
-                </span>
-              ))}
-            </div>
+          <!-- Description -->
+          {article.translation?.description && (
+            <p class="text-xl text-neutral-300 leading-relaxed [.light_&]:text-neutral-600">
+              {article.translation.description}
+            </p>
           )}
         </header>
 
-        {article.translation?.description && (
-          <p class="text-xl text-neutral-400 mb-8 border-l-4 border-primary-500 pl-4">
-            {article.translation.description}
-          </p>
+        <!-- Body Content -->
+        {bodyHtml && (
+          <section class="p-8 md:p-12 border-b border-white/10 [.light_&]:border-neutral-200">
+            <div class="prose prose-lg prose-invert max-w-none cursor-text [.light_&]:prose-neutral prose-headings:font-heading prose-headings:font-bold prose-p:text-neutral-300 [.light_&]:prose-p:text-neutral-600 prose-a:text-primary-400 prose-a:no-underline hover:prose-a:underline prose-a:cursor-pointer prose-strong:text-white [.light_&]:prose-strong:text-neutral-900 prose-code:bg-neutral-800/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded [.light_&]:prose-code:bg-neutral-100">
+              <Fragment set:html={bodyHtml} />
+            </div>
+          </section>
         )}
 
-        {article.translation?.body && (
-          <div class="prose prose-invert prose-neutral max-w-none">
-            <Fragment set:html={article.translation.body} />
-          </div>
+        <!-- Tags Section -->
+        {article.tags && article.tags.length > 0 && (
+          <footer class="p-8 md:p-12">
+            <h2 class="text-sm font-medium text-neutral-400 [.light_&]:text-neutral-600 mb-3">
+              {t(lang, 'news.tags')}
+            </h2>
+            <div class="flex flex-wrap gap-2">
+              {article.tags.map((tag) => (
+                <a
+                  href={`/${lang}/news/?tag=${tag.slug}`}
+                  class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:bg-primary-500/30 hover:border-primary-500/50 transition-all duration-200 [.light_&]:bg-terra-100 [.light_&]:text-terra-700 [.light_&]:border-terra-200 [.light_&]:hover:bg-terra-200 [.light_&]:hover:border-terra-300"
+                >
+                  {tag.name}
+                </a>
+              ))}
+            </div>
+          </footer>
         )}
-
-        <footer class="mt-12 pt-8 border-t border-neutral-800">
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-neutral-800 text-neutral-300 rounded-lg hover:bg-neutral-700 transition-colors text-sm"
-            onclick="navigator.share ? navigator.share({ title: document.title, url: window.location.href }) : navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'))"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-            </svg>
-            {t(lang, 'common.share')}
-          </button>
-        </footer>
       </article>
     </div>
-  </main>
+  </div>
 </BaseLayout>
+
+<script>
+  // Client-side reading time calculation
+  import { calculateReadingTime } from '../../../lib/utils/readingTime';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Get article body text content
+    const articleBody = document.querySelector('.prose');
+    if (!articleBody) return;
+
+    const bodyText = articleBody.textContent || '';
+    const readingTime = calculateReadingTime(bodyText);
+
+    // Get reading time display element
+    const readingTimeEl = document.getElementById('reading-time-display');
+    if (!readingTimeEl) return;
+
+    // Get language from URL
+    const pathParts = window.location.pathname.split('/');
+    const lang = pathParts[1] || 'en';
+
+    // Translation templates for reading time
+    const templates: Record<string, string> = {
+      it: '{minutes} min di lettura',
+      en: '{minutes} min read',
+      es: '{minutes} min de lectura',
+      de: '{minutes} Min. Lesezeit',
+    };
+
+    const template = templates[lang] || templates['en'];
+    const readingTimeText = template.replace('{minutes}', String(readingTime));
+
+    // Display reading time
+    readingTimeEl.textContent = readingTimeText;
+    readingTimeEl.classList.remove('hidden');
+  });
+</script>

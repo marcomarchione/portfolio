@@ -2,14 +2,23 @@
 /**
  * News Listing Page
  *
- * Displays all published news articles with translations for the current language.
+ * Displays a list of news articles with filtering and sorting.
+ * Features:
+ * - Tag filtering with clickable pills
+ * - Sort by newest, oldest, or title
+ * - Load More pagination (not page numbers)
+ * - Glass morphism card design
+ * - Vertical list layout
  */
 import { LANGUAGES, type Language } from '@marcomarchione/shared';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { t } from '../../../i18n';
-import { getNews } from '../../../lib/api';
+import NewsFilterable from '../../../components/news/NewsFilterable';
 
-export function getStaticPaths() {
+// Enable SSR mode for dynamic content
+export const prerender = false;
+
+export async function getStaticPaths() {
   return LANGUAGES.map((lang) => ({
     params: { lang },
   }));
@@ -17,86 +26,83 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Language };
 
-// Fetch news from API
-const newsResponse = await getNews(lang).catch(() => null);
-const news = newsResponse?.data ?? [];
+// Get query parameters from URL
+const url = new URL(Astro.request.url);
+const initialTag = url.searchParams.get('tag') || '';
+const initialSort = url.searchParams.get('sortBy') || 'newest';
 
+// Build API URL
+let apiBaseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+// Ensure /api/v1 suffix is present
+if (!apiBaseUrl.endsWith('/api/v1')) {
+  apiBaseUrl = `${apiBaseUrl}/api/v1`;
+}
+const params = new URLSearchParams();
+params.set('lang', lang);
+if (initialTag) params.set('tag', initialTag);
+if (initialSort && initialSort !== 'newest') params.set('sortBy', initialSort);
+params.set('limit', '10');
+params.set('offset', '0');
+
+// Fetch initial news data
+let initialNews = [];
+let initialPagination = null;
+
+try {
+  const response = await fetch(`${apiBaseUrl}/news?${params.toString()}`);
+  if (response.ok) {
+    const data = await response.json();
+    initialNews = data.data || [];
+    initialPagination = data.pagination || null;
+  }
+} catch (error) {
+  console.error('Error fetching news:', error);
+}
+
+// Page metadata
 const title = t(lang, 'meta.newsTitle');
 const description = t(lang, 'meta.newsDescription');
 
-// Helper to format date
-function formatDate(dateString: string | null): string {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString(lang, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
+// Labels for NewsFilterable component
+const labels = {
+  title: t(lang, 'news.title'),
+  filterByTag: t(lang, 'news.filterByTag'),
+  sortBy: t(lang, 'news.sortBy'),
+  sortNewest: t(lang, 'news.sortNewest'),
+  sortOldest: t(lang, 'news.sortOldest'),
+  sortTitle: t(lang, 'news.sortTitle'),
+  loadMore: t(lang, 'news.loadMore'),
+  noResults: t(lang, 'news.noResults'),
+  all: t(lang, 'news.all'),
+  readingTime: t(lang, 'common.readingTime'),
+  featured: t(lang, 'common.featured'),
+};
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
-  <section class="min-h-screen">
-    <div class="container mx-auto px-4 py-16">
-      <h1 class="font-heading text-4xl font-bold mb-8 text-white [.light_&]:text-neutral-900">{t(lang, 'nav.news')}</h1>
+  <div class="min-h-screen py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <!-- Page Header -->
+      <header class="mb-12">
+        <h1 class="font-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white [.light_&]:text-neutral-900">
+          {labels.title}
+        </h1>
+        <p class="text-xl text-neutral-400 [.light_&]:text-neutral-600">
+          {description}
+        </p>
+      </header>
 
-      {news.length === 0 ? (
-        <p class="text-neutral-400 [.light_&]:text-neutral-600">{t(lang, 'common.noResults')}</p>
-      ) : (
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {news.map((article) => (
-            <article class="bg-bg-secondary [.light_&]:bg-white rounded-lg overflow-hidden border border-neutral-800 [.light_&]:border-neutral-200 hover:border-primary-500 [.light_&]:hover:border-primary-400 transition-all duration-300">
-              {article.coverImage && (
-                <img
-                  src={article.coverImage}
-                  alt={article.translation?.title ?? article.slug}
-                  class="w-full h-48 object-cover"
-                  loading="lazy"
-                />
-              )}
-              <div class="p-6">
-                <div class="flex items-center gap-3 text-xs text-neutral-500 mb-2">
-                  {article.publishedAt && (
-                    <time datetime={article.publishedAt}>
-                      {formatDate(article.publishedAt)}
-                    </time>
-                  )}
-                  {article.readingTime && (
-                    <span>
-                      {t(lang, 'common.readingTime', { minutes: String(article.readingTime) })}
-                    </span>
-                  )}
-                </div>
-
-                <h2 class="font-heading text-xl font-semibold mb-2 text-white [.light_&]:text-neutral-900">
-                  <a
-                    href={`/${lang}/news/${article.slug}/`}
-                    class="hover:text-primary-400 [.light_&]:hover:text-primary-600 transition-colors"
-                  >
-                    {article.translation?.title ?? article.slug}
-                  </a>
-                </h2>
-
-                {article.translation?.description && (
-                  <p class="text-neutral-400 [.light_&]:text-neutral-600 text-sm line-clamp-3">
-                    {article.translation.description}
-                  </p>
-                )}
-
-                {article.tags && article.tags.length > 0 && (
-                  <div class="flex flex-wrap gap-2 mt-4">
-                    {article.tags.slice(0, 3).map((tag) => (
-                      <span class="text-xs px-2 py-1 bg-neutral-800 [.light_&]:bg-neutral-100 [.light_&]:text-neutral-700 rounded">
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+      <!-- Filterable News Component -->
+      <NewsFilterable
+        client:load
+        lang={lang}
+        initialNews={initialNews}
+        initialPagination={initialPagination}
+        initialTag={initialTag}
+        initialSort={initialSort}
+        labels={labels}
+        apiBaseUrl={apiBaseUrl}
+      />
     </div>
-  </section>
+  </div>
 </BaseLayout>

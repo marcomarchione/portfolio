@@ -68,12 +68,14 @@ export const publicNewsRoutes = new Elysia({ name: 'public-news', prefix: '/news
       const offset = Number(query.offset ?? 0);
       const featured = query.featured === 'true' ? true : query.featured === 'false' ? false : query.featured;
       const tag = query.tag;
+      const sortBy = query.sortBy ?? 'newest';
 
       const options = {
         limit,
         offset,
         featured,
         tag,
+        sortBy,
         publishedOnly: true,
       };
 
@@ -123,7 +125,7 @@ export const publicNewsRoutes = new Elysia({ name: 'public-news', prefix: '/news
         tags: ['news'],
         summary: 'List published news',
         description:
-          'Returns a paginated list of published news articles with translations for the requested language.',
+          'Returns a paginated list of published news articles with translations for the requested language. Supports filtering by tag and sorting options (newest, oldest, title).',
       },
     }
   )

@@ -35,6 +35,10 @@ export type ProjectSortOption = (typeof PROJECT_SORT_OPTIONS)[number];
 export const MATERIAL_SORT_OPTIONS = ['newest', 'oldest', 'title'] as const;
 export type MaterialSortOption = (typeof MATERIAL_SORT_OPTIONS)[number];
 
+/** News sort options for public API */
+export const NEWS_SORT_OPTIONS = ['newest', 'oldest', 'title'] as const;
+export type NewsSortOption = (typeof NEWS_SORT_OPTIONS)[number];
+
 /**
  * Content status enum schema.
  * Validates draft/published/archived status values.
@@ -92,6 +96,14 @@ export const MaterialSortOptionSchema = Type.Union(
   { description: 'Sort option for material listing' }
 );
 
+/**
+ * News sort option enum schema (for public API).
+ */
+export const NewsSortOptionSchema = Type.Union(
+  NEWS_SORT_OPTIONS.map((opt) => Type.Literal(opt)),
+  { description: 'Sort option for news listing' }
+);
+
 /** URL schema - uses pattern for basic validation */
 export const UrlSchema = Type.String({
   pattern: '^https?://',
@@ -135,7 +147,7 @@ export type MaterialQuery = Static<typeof MaterialQuerySchema>;
 
 /**
  * News list query schema.
- * Extends ListQuerySchema with tag filter.
+ * Extends ListQuerySchema with tag filter and sorting.
  */
 export const NewsQuerySchema = Type.Object({
   ...ListQuerySchema.properties,
@@ -144,6 +156,7 @@ export const NewsQuerySchema = Type.Object({
       description: 'Filter by tag slug',
     })
   ),
+  sortBy: Type.Optional(NewsSortOptionSchema),
 });
 export type NewsQuery = Static<typeof NewsQuerySchema>;
 
@@ -576,7 +589,7 @@ export const PaginationMetaSchema = Type.Object({
 });
 
 /**
- * Generic paginated response wrapper.
+ * Paginated response wrapper.
  */
 export const PaginatedResponseSchema = <T extends TSchema>(schema: T) =>
   Type.Object({

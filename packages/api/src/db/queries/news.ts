@@ -121,25 +121,26 @@ export async function getNewsWithAllTranslations(db: DrizzleDB, id: number) {
 
 /**
  * Builds sort clause based on options.
+ * Maps public API sortBy values ('newest', 'oldest', 'title') to database fields.
  */
 function buildSortClause(
-  sortBy: ContentSortField = 'updatedAt',
-  sortOrder: SortOrder = 'desc',
+  sortBy: string = 'newest',
   hasItalianTitle: boolean
 ): SQL[] {
-  const orderFn = sortOrder === 'asc' ? asc : desc;
-
   switch (sortBy) {
+    case 'oldest':
+      // Sort by publishedAt ascending (oldest first)
+      return [asc(schema.contentBase.publishedAt)];
     case 'title':
+      // Sort by title alphabetically if Italian translation available
       if (hasItalianTitle) {
-        return [orderFn(schema.contentTranslations.title)];
+        return [asc(schema.contentTranslations.title)];
       }
-      return [orderFn(schema.contentBase.updatedAt)];
-    case 'createdAt':
-      return [orderFn(schema.contentBase.createdAt)];
-    case 'updatedAt':
+      return [desc(schema.contentBase.publishedAt)]; // Fallback to newest
+    case 'newest':
     default:
-      return [orderFn(schema.contentBase.updatedAt)];
+      // Sort by publishedAt descending (newest first) - default
+      return [desc(schema.contentBase.publishedAt)];
   }
 }
 
@@ -159,8 +160,7 @@ export async function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     publishedOnly = false,
     tag,
     search,
-    sortBy = 'updatedAt',
-    sortOrder = 'desc',
+    sortBy = 'newest',
   } = options;
 
   const conditions: SQL[] = [eq(schema.contentBase.type, 'news')];
@@ -223,7 +223,7 @@ export async function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
         )
       )
       .where(and(...conditions))
-      .orderBy(...buildSortClause(sortBy, sortOrder, true))
+      .orderBy(...buildSortClause(sortBy, true))
       .limit(limit)
       .offset(offset);
 
@@ -242,7 +242,7 @@ export async function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     .from(schema.contentBase)
     .innerJoin(schema.news, eq(schema.contentBase.id, schema.news.contentId))
     .where(and(...conditions))
-    .orderBy(...buildSortClause(sortBy, sortOrder, false))
+    .orderBy(...buildSortClause(sortBy, false))
     .limit(limit)
     .offset(offset);
 

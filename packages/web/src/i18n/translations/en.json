@@ -205,5 +205,19 @@
       "previous": "Previous",
       "next": "Next"
     }
+  },
+  "news": {
+    "title": "News & Articles",
+    "filterByTag": "Filter by tag",
+    "sortBy": "Sort by",
+    "sortNewest": "Newest first",
+    "sortOldest": "Oldest first",
+    "sortTitle": "Title (A-Z)",
+    "loadMore": "Load More",
+    "noResults": "No articles found",
+    "all": "All",
+    "backToNews": "Back to News",
+    "publishedOn": "Published on",
+    "tags": "Tags"
   }
 }

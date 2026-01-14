@@ -205,5 +205,19 @@
       "previous": "Vorherige",
       "next": "Nachste"
     }
+  },
+  "news": {
+    "title": "Neuigkeiten und Artikel",
+    "filterByTag": "Nach Schlagwort filtern",
+    "sortBy": "Sortieren nach",
+    "sortNewest": "Neueste zuerst",
+    "sortOldest": "Alteste zuerst",
+    "sortTitle": "Titel (A-Z)",
+    "loadMore": "Mehr laden",
+    "noResults": "Keine Artikel gefunden",
+    "all": "Alle",
+    "backToNews": "Zuruck zu Neuigkeiten",
+    "publishedOn": "Veroffentlicht am",
+    "tags": "Schlagworter"
   }
 }
