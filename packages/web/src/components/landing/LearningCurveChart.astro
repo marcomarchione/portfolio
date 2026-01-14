@@ -147,27 +147,49 @@ const yLabels = [0, 25, 50, 75, 100];
         {t(lang, 'landing.comparison.learningCurve.xAxis')}
       </text>
 
-      <!-- Traditional curve -->
+      <!-- Traditional curve - dark theme -->
       <path
         d={traditionalPath}
         fill="none"
-        stroke="url(#traditionalGradient)"
+        stroke="url(#traditionalGradientDark)"
         stroke-width="3"
         stroke-linecap="round"
         stroke-linejoin="round"
-        class="animate-draw-line"
+        class="animate-draw-line curve-dark"
+        style="--line-length: 400"
+      />
+      <!-- Traditional curve - light theme -->
+      <path
+        d={traditionalPath}
+        fill="none"
+        stroke="url(#traditionalGradientLight)"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="animate-draw-line curve-light"
         style="--line-length: 400"
       />
 
-      <!-- Agent curve -->
+      <!-- Agent curve - dark theme -->
       <path
         d={agentPath}
         fill="none"
-        stroke="url(#agentGradient)"
+        stroke="url(#agentGradientDark)"
         stroke-width="3"
         stroke-linecap="round"
         stroke-linejoin="round"
-        class="animate-draw-line"
+        class="animate-draw-line curve-dark"
+        style="--line-length: 400"
+      />
+      <!-- Agent curve - light theme -->
+      <path
+        d={agentPath}
+        fill="none"
+        stroke="url(#agentGradientLight)"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="animate-draw-line curve-light"
         style="--line-length: 400"
       />
 
@@ -193,13 +215,23 @@ const yLabels = [0, 25, 50, 75, 100];
 
       <!-- Gradient definitions -->
       <defs>
-        <linearGradient id="traditionalGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#525252" class="[.light_&]:stop-color-[#a3a3a3]" />
-          <stop offset="100%" stop-color="#737373" class="[.light_&]:stop-color-[#d4d4d4]" />
+        <!-- Dark theme gradients -->
+        <linearGradient id="traditionalGradientDark" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#525252" />
+          <stop offset="100%" stop-color="#737373" />
         </linearGradient>
-        <linearGradient id="agentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#3d7eff" class="[.light_&]:stop-color-[#B45309]" />
-          <stop offset="100%" stop-color="#8b5cf6" class="[.light_&]:stop-color-[#D97706]" />
+        <linearGradient id="agentGradientDark" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#3d7eff" />
+          <stop offset="100%" stop-color="#8b5cf6" />
+        </linearGradient>
+        <!-- Light theme gradients (terra colors) -->
+        <linearGradient id="traditionalGradientLight" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#a3a3a3" />
+          <stop offset="100%" stop-color="#d4d4d4" />
+        </linearGradient>
+        <linearGradient id="agentGradientLight" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#B45309" />
+          <stop offset="100%" stop-color="#D97706" />
         </linearGradient>
       </defs>
     </svg>
@@ -225,5 +257,20 @@ const yLabels = [0, 25, 50, 75, 100];
   /* Trigger animation when in view */
   :global(.in-view) .animate-draw-line {
     animation: drawLine 1.5s ease-out forwards;
+  }
+
+  /* Theme-based curve visibility */
+  .curve-light {
+    display: none;
+  }
+  .curve-dark {
+    display: block;
+  }
+
+  :global(.light) .curve-light {
+    display: block;
+  }
+  :global(.light) .curve-dark {
+    display: none;
   }
 </style>

@@ -11,53 +11,66 @@
  */
 ---
 
-<script>
-  // Initialize scroll animations when DOM is ready
-  function initScrollAnimations() {
-    // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)'
-    ).matches;
+<script is:inline>
+  (function() {
+    // Prevent multiple initializations
+    if (window.__scrollAnimationsInitialized) return;
+    window.__scrollAnimationsInitialized = true;
 
-    if (prefersReducedMotion) {
-      // Show all elements immediately if reduced motion is preferred
-      document.querySelectorAll('.animate-on-scroll').forEach((el) => {
-        el.classList.add('animate-visible');
+    // Initialize scroll animations
+    function initScrollAnimations() {
+      const prefersReducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+
+      if (prefersReducedMotion) {
+        document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
+          el.classList.add('animate-visible');
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(
+        function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('animate-visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          root: null,
+          rootMargin: '0px 0px -50px 0px',
+          threshold: 0.1,
+        }
+      );
+
+      document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
+        observer.observe(el);
       });
-      return;
     }
 
-    // Create IntersectionObserver for scroll animations
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-visible');
-            // Optionally stop observing after animation
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: '0px 0px -50px 0px',
-        threshold: 0.1,
-      }
-    );
+    // Reset animations for SPA navigation
+    function resetScrollAnimations() {
+      document.querySelectorAll('.animate-on-scroll.animate-visible').forEach(function(el) {
+        el.classList.remove('animate-visible');
+      });
 
-    // Observe all elements with animate-on-scroll class
-    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
-      observer.observe(el);
-    });
-  }
+      document.querySelectorAll('.animate-draw-line, .time-savings-bar, .time-distribution-segment').forEach(function(el) {
+        el.style.animation = 'none';
+        void el.offsetHeight;
+        el.style.animation = '';
+      });
+    }
 
-  // Run on initial load
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initScrollAnimations);
-  } else {
+    // Run on initial load
     initScrollAnimations();
-  }
 
-  // Re-run after SPA navigation (for custom SPA navigation)
-  document.addEventListener('astro:page-load', initScrollAnimations);
+    // Handle View Transitions navigation
+    document.addEventListener('astro:page-load', function() {
+      resetScrollAnimations();
+      initScrollAnimations();
+    });
+  })();
 </script>

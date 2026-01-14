@@ -28,10 +28,10 @@ const traditional = [
 ];
 
 const agent = [
-  { key: 'coding', value: 30, color: 'bg-primary-500' },
-  { key: 'clientCalls', value: 35, color: 'bg-accent-500' },
-  { key: 'documentation', value: 20, color: 'bg-primary-400' },
-  { key: 'learning', value: 15, color: 'bg-accent-400' }
+  { key: 'coding', value: 30, color: 'bg-primary-500 [.light_&]:bg-terra-500' },
+  { key: 'clientCalls', value: 35, color: 'bg-accent-500 [.light_&]:bg-terra-600' },
+  { key: 'documentation', value: 20, color: 'bg-primary-400 [.light_&]:bg-terra-400' },
+  { key: 'learning', value: 15, color: 'bg-accent-400 [.light_&]:bg-terra-300' }
 ];
 
 // Calculate client time improvement
@@ -94,7 +94,7 @@ const clientTimeImprovement = Math.round(((agent[1].value - traditional[1].value
       <div class="h-6 rounded-lg overflow-hidden flex time-distribution-bar">
         {agent.map((item, index) => (
           <div
-            class={`${item.color} [.light_&]:bg-terra-${400 + index * 100} time-distribution-segment`}
+            class={`${item.color} time-distribution-segment`}
             style={`--segment-width: ${item.value}%; --segment-delay: ${index * 0.1 + 0.2}s`}
             title={`${t(lang, `landing.comparison.timeDistribution.activities.${item.key}`)}: ${item.value}%`}
           />
