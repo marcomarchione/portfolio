@@ -77,8 +77,12 @@ describe('Public Materials API - Search and Sort', () => {
         translations: [{ lang: 'it', title: 'Template Node.js', description: 'Template base per server Node' }],
       });
 
-      // Small delay to ensure database writes are committed
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Verify data was inserted by fetching all materials first
+      const { body: allMaterials } = await testJsonRequest<{
+        data: Array<{ slug: string }>;
+        pagination: { total: number };
+      }>(testApp.app, '/api/v1/materials');
+      expect(allMaterials.pagination.total).toBe(2);
 
       // Search for a term only in description
       const { status, body } = await testJsonRequest<{
