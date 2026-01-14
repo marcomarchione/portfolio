@@ -20,6 +20,7 @@ import {
 } from '../../db/queries';
 import type { Language, MaterialCategory } from '../../db/schema';
 import type { DrizzleDB } from '../../db';
+import type { ContentSortField, SortOrder } from '../../db/queries/content';
 
 /**
  * Formats a material for API response.
@@ -53,6 +54,21 @@ function formatMaterialResponse(material: NonNullable<Awaited<ReturnType<typeof 
 }
 
 /**
+ * Maps public sort options to database sort fields and orders.
+ */
+function mapSortOption(sortBy?: string): { sortBy: ContentSortField; sortOrder: SortOrder } {
+  switch (sortBy) {
+    case 'oldest':
+      return { sortBy: 'createdAt', sortOrder: 'asc' };
+    case 'title':
+      return { sortBy: 'title', sortOrder: 'asc' };
+    case 'newest':
+    default:
+      return { sortBy: 'createdAt', sortOrder: 'desc' };
+  }
+}
+
+/**
  * Public materials routes plugin.
  */
 export const publicMaterialsRoutes = new Elysia({ name: 'public-materials', prefix: '/materials' })
@@ -66,12 +82,20 @@ export const publicMaterialsRoutes = new Elysia({ name: 'public-materials', pref
       const offset = Number(query.offset ?? 0);
       const featured = query.featured === 'true' ? true : query.featured === 'false' ? false : query.featured;
       const category = query.category as MaterialCategory | undefined;
+      const search = query.search as string | undefined;
+      const sortByParam = query.sortBy as string | undefined;
+
+      // Map public sort option to database sort fields
+      const { sortBy, sortOrder } = mapSortOption(sortByParam);
 
       const options = {
         limit,
         offset,
         featured,
         category,
+        search,
+        sortBy,
+        sortOrder,
         publishedOnly: true,
       };
 
@@ -118,7 +142,7 @@ export const publicMaterialsRoutes = new Elysia({ name: 'public-materials', pref
         tags: ['materials'],
         summary: 'List published materials',
         description:
-          'Returns a paginated list of published materials with translations for the requested language.',
+          'Returns a paginated list of published materials with translations for the requested language. Supports category filter, search by title/description, and sorting options.',
       },
     }
   )
