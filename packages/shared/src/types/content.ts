@@ -64,6 +64,14 @@ export interface Media {
   createdAt: string;
 }
 
+/** Gallery image for project gallery */
+export interface GalleryImage {
+  id: number;
+  url: string;
+  alt: string | null;
+  displayOrder: number;
+}
+
 /** Project with optional translation and technologies */
 export interface Project extends ContentBase {
   type: 'project';
@@ -75,6 +83,7 @@ export interface Project extends ContentBase {
   translation?: ContentTranslation | null;
   translations?: ContentTranslation[];
   technologies?: Technology[];
+  galleryImages?: GalleryImage[];
 }
 
 /** Material with optional translation */

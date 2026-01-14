@@ -16,6 +16,7 @@ export type {
   Technology,
   Tag,
   Media,
+  GalleryImage,
   Project,
   Material,
   News,
