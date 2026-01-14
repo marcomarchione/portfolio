@@ -25,7 +25,7 @@ import {
 import type { SelectedMedia } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
-import { materialKeys } from '@/lib/query/keys';
+import { materialKeys, dashboardKeys } from '@/lib/query/keys';
 import { showSuccess, showApiError } from '@/components/common/Toast';
 import { validateUrl } from '@/lib/validation/content';
 import type { Material, ContentStatus, Language, MaterialCategory } from '@marcomarchione/shared';
@@ -156,6 +156,7 @@ export default function MaterialFormPage() {
     }) => post<ApiResponse<Material>>('/admin/materials', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: materialKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 
@@ -171,6 +172,7 @@ export default function MaterialFormPage() {
     }) => put<ApiResponse<Material>>(`/admin/materials/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: materialKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 
@@ -186,6 +188,7 @@ export default function MaterialFormPage() {
         });
       }
       queryClient.invalidateQueries({ queryKey: materialKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 

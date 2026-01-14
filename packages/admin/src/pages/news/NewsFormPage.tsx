@@ -26,7 +26,7 @@ import {
 import type { SelectedMedia } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
-import { newsKeys } from '@/lib/query/keys';
+import { newsKeys, dashboardKeys } from '@/lib/query/keys';
 import { showSuccess, showApiError } from '@/components/common/Toast';
 import type { News, ContentStatus, Language } from '@marcomarchione/shared';
 import { LANGUAGES } from '@marcomarchione/shared';
@@ -142,6 +142,7 @@ export default function NewsFormPage() {
     }) => post<ApiResponse<News>>('/admin/news', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: newsKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 
@@ -156,6 +157,7 @@ export default function NewsFormPage() {
     }) => put<ApiResponse<News>>(`/admin/news/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: newsKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 
@@ -171,6 +173,7 @@ export default function NewsFormPage() {
         });
       }
       queryClient.invalidateQueries({ queryKey: newsKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 

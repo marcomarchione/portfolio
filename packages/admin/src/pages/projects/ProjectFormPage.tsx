@@ -26,7 +26,7 @@ import {
 } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
-import { projectKeys } from '@/lib/query/keys';
+import { projectKeys, dashboardKeys } from '@/lib/query/keys';
 import { showSuccess, showApiError } from '@/components/common/Toast';
 import { validateUrl } from '@/lib/validation/content';
 import type { Project, ContentStatus, Language, ProjectStatus as ProjectStatusType } from '@marcomarchione/shared';
@@ -168,6 +168,7 @@ export default function ProjectFormPage() {
     }) => post<ApiResponse<Project>>('/admin/projects', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 
@@ -185,6 +186,7 @@ export default function ProjectFormPage() {
     }) => put<ApiResponse<Project>>(`/admin/projects/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 
@@ -201,6 +203,7 @@ export default function ProjectFormPage() {
         });
       }
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 

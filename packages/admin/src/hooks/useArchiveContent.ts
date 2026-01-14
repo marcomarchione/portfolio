@@ -6,7 +6,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { del } from '../lib/api/client';
 import toast from 'react-hot-toast';
-import { projectKeys, materialKeys, newsKeys } from '../lib/query/keys';
+import { projectKeys, materialKeys, newsKeys, dashboardKeys } from '../lib/query/keys';
 
 type ContentType = 'projects' | 'materials' | 'news';
 
@@ -49,6 +49,8 @@ export function useArchiveContent({ contentType, onSuccess }: ArchiveOptions) {
     onSuccess: () => {
       // Invalidate list queries to refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      // Invalidate dashboard to update stats and recent items
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
 
       toast.success('Content archived successfully');
       onSuccess?.();
