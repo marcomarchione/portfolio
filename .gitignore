@@ -51,3 +51,6 @@ packages/api/uploads/
 
 # Playwright MCP screenshots
 .playwright-mcp/
+
+# Railway CLI config
+.railway/
