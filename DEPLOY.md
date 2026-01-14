@@ -180,10 +180,27 @@ bun run db:push
 
 ## Deploy automatico
 
-Railway effettua deploy automatici ad ogni push su main. Per disabilitare:
+Railway è configurato per deployare **solo dopo che i test GitHub Actions passano**.
 
-1. Vai nelle impostazioni del servizio
-2. Disabilita "Auto Deploy"
+### Configurazione (già impostata)
+
+Il file `railway.toml` configura:
+```toml
+[deploy]
+checkSuites = ["Tests"]
+```
+
+Questo significa che Railway:
+- ✅ Deploya solo se il workflow "Tests" passa
+- ❌ NON deploya se i test falliscono
+
+### Settings Dashboard Railway
+
+Per ogni servizio, verifica in **Settings → Deployments**:
+- ✅ "Deploy on GitHub Push" abilitato
+- ✅ "Check Suites" → Seleziona "Tests"
+
+Vedi [RAILWAY_SETUP.md](./RAILWAY_SETUP.md) per dettagli completi.
 
 ## Troubleshooting
 

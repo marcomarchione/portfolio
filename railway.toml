@@ -8,8 +8,20 @@
 #
 # Each service should be configured in Railway dashboard with:
 # - Root Directory: / (repository root)
-# - Dockerfile Path: packages/<service>/Dockerfile.railway
+# - Dockerfile Path: packages/<service>/Dockerfile
 # - Watch Paths: packages/<service>/**, packages/shared/**
+#
+# IMPORTANT: In Railway dashboard settings:
+# - Enable "Deploy on GitHub Actions Success" or
+# - Disable "Auto Deploy" and use GitHub workflow to trigger deploys
+# - Configure Check Suites: Only deploy if "Tests" workflow passes
 
 [build]
 builder = "dockerfile"
+
+[deploy]
+# Railway will check GitHub Actions status before deploying
+checkSuites = ["Tests"]
+# Restart policy if deployment fails
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
