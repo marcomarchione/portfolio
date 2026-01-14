@@ -11,66 +11,70 @@
  */
 ---
 
-<script is:inline>
-  (function() {
-    // Prevent multiple initializations
-    if (window.__scrollAnimationsInitialized) return;
-    window.__scrollAnimationsInitialized = true;
+<script>
+  // Store observer reference to disconnect on re-init
+  let scrollObserver: IntersectionObserver | null = null;
 
-    // Initialize scroll animations
-    function initScrollAnimations() {
-      const prefersReducedMotion = window.matchMedia(
-        '(prefers-reduced-motion: reduce)'
-      ).matches;
+  function initScrollAnimations(): void {
+    // Disconnect old observer if exists
+    if (scrollObserver) {
+      scrollObserver.disconnect();
+      scrollObserver = null;
+    }
 
-      if (prefersReducedMotion) {
-        document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
-          el.classList.add('animate-visible');
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    if (prefersReducedMotion) {
+      document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+        el.classList.add('animate-visible');
+      });
+      return;
+    }
+
+    scrollObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-visible');
+            scrollObserver?.unobserve(entry.target);
+          }
         });
-        return;
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.1,
       }
+    );
 
-      var observer = new IntersectionObserver(
-        function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('animate-visible');
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        {
-          root: null,
-          rootMargin: '0px 0px -50px 0px',
-          threshold: 0.1,
-        }
-      );
-
-      document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
-        observer.observe(el);
-      });
-    }
-
-    // Reset animations for SPA navigation
-    function resetScrollAnimations() {
-      document.querySelectorAll('.animate-on-scroll.animate-visible').forEach(function(el) {
-        el.classList.remove('animate-visible');
-      });
-
-      document.querySelectorAll('.animate-draw-line, .time-savings-bar, .time-distribution-segment').forEach(function(el) {
-        el.style.animation = 'none';
-        void el.offsetHeight;
-        el.style.animation = '';
-      });
-    }
-
-    // Run on initial load
-    initScrollAnimations();
-
-    // Handle View Transitions navigation
-    document.addEventListener('astro:page-load', function() {
-      resetScrollAnimations();
-      initScrollAnimations();
+    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+      scrollObserver?.observe(el);
     });
-  })();
+  }
+
+  function resetAnimations(): void {
+    document.querySelectorAll('.animate-on-scroll.animate-visible').forEach((el) => {
+      el.classList.remove('animate-visible');
+    });
+
+    document.querySelectorAll('.animate-draw-line, .time-savings-bar, .time-distribution-segment').forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.animation = 'none';
+      void htmlEl.offsetHeight; // Force reflow
+      htmlEl.style.animation = '';
+    });
+  }
+
+  function handlePageLoad(): void {
+    resetAnimations();
+    initScrollAnimations();
+  }
+
+  // Listen for SPA navigation (custom implementation dispatches astro:page-load)
+  document.addEventListener('astro:page-load', handlePageLoad);
+
+  // Run immediately for initial page load (custom SPA doesn't dispatch event on initial load)
+  handlePageLoad();
 </script>
