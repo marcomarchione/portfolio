@@ -31,11 +31,14 @@ RUN bun run build
 FROM node:22-slim AS runner
 WORKDIR /app
 
+# Copy package.json for dependency installation
+COPY --from=builder /app/packages/web/package.json ./package.json
+
+# Install production dependencies only
+RUN npm install --omit=dev
+
 # Copy built output (server + client assets)
 COPY --from=builder /app/packages/web/dist ./dist
-
-# Copy node_modules for SSR runtime dependencies
-COPY --from=builder /app/node_modules ./node_modules
 
 # Set environment variables for production
 ENV HOST=0.0.0.0
