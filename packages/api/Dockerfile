@@ -1,4 +1,4 @@
-# API Dockerfile
+# API Dockerfile - v2 cache bust
 # Uses Bun runtime for the Elysia backend with PostgreSQL
 # Build from repo root with: docker build -f packages/api/Dockerfile .
 
