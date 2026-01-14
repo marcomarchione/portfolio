@@ -40,6 +40,11 @@ jobs:
       - name: Typecheck shared package
         run: bun run --filter @marcomarchione/shared typecheck
 
+      - name: Push database schema
+        run: cd packages/api && bun run drizzle-kit push
+        env:
+          DATABASE_URL: postgres://portfolio_test:test_password@localhost:5433/portfolio_test
+
       - name: Run API tests
         run: bun run --filter @marcomarchione/api test
         env:
