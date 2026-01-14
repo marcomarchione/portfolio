@@ -42,9 +42,9 @@ export const PaginationSchema = Type.Object({
   limit: Type.Optional(
     IntegerOrString({
       minimum: 1,
-      maximum: 100,
+      maximum: 1000,
       default: 20,
-      description: 'Number of items per page (1-100)',
+      description: 'Number of items per page (1-1000)',
     })
   ),
   offset: Type.Optional(
