@@ -207,9 +207,9 @@ function parsePasswordHash(value: string | undefined, isProduction: boolean): st
     return '$2b$10$development-hash-for-testing-only';
   }
 
-  // Validate bcrypt hash format
-  if (!value.startsWith('$2')) {
-    console.warn('[CONFIG] Warning: ADMIN_PASSWORD_HASH does not appear to be a valid bcrypt hash');
+  // Validate password hash format (bcrypt $2 or argon2 $argon2)
+  if (!value.startsWith('$2') && !value.startsWith('$argon2')) {
+    console.warn('[CONFIG] Warning: ADMIN_PASSWORD_HASH does not appear to be a valid password hash');
   }
 
   return value;
