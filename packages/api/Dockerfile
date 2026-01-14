@@ -10,7 +10,7 @@ FROM base AS deps
 COPY package.json bun.lock* ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/api/package.json ./packages/api/
-RUN bun install --production --ignore-scripts
+RUN bun install --ignore-scripts --no-save
 
 # Build stage
 FROM base AS builder
@@ -25,9 +25,9 @@ COPY package.json ./
 FROM base AS runner
 ENV NODE_ENV=production
 
-# Create non-root user (Alpine Linux syntax)
-RUN addgroup -S -g 1001 nodejs && \
-    adduser -S -u 1001 -G nodejs elysia
+# Create non-root user (Debian syntax for oven/bun image)
+RUN groupadd -g 1001 nodejs && \
+    useradd -u 1001 -g nodejs -s /bin/sh elysia
 
 # Copy application files
 COPY --from=builder --chown=elysia:nodejs /app/node_modules ./node_modules
