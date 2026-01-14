@@ -2,11 +2,12 @@
  * Supporting Tables and Junction Tables Tests
  *
  * Tests for technologies, tags, media, project_technologies, and news_tags tables.
+ * Uses PostgreSQL with shared test database.
  */
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import type postgres from 'postgres';
+import { createTestDatabase, resetDatabase, closeDatabase } from './test-utils';
 import { technologies } from './schema/technologies';
 import { tags } from './schema/tags';
 import { media } from './schema/media';
@@ -16,349 +17,287 @@ import { news } from './schema/news';
 import { projectTechnologies } from './schema/project-technologies';
 import { newsTags } from './schema/news-tags';
 
-// SQL to create all tables with proper constraints
-const CREATE_TABLES_SQL = `
-  CREATE TABLE IF NOT EXISTS content_base (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL CHECK (type IN ('project', 'material', 'news')),
-    slug TEXT NOT NULL UNIQUE,
-    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
-    featured INTEGER NOT NULL DEFAULT 0,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    published_at INTEGER
-  );
-
-  CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    content_id INTEGER NOT NULL UNIQUE REFERENCES content_base(id) ON DELETE CASCADE,
-    github_url TEXT,
-    demo_url TEXT,
-    project_status TEXT NOT NULL DEFAULT 'in-progress' CHECK (project_status IN ('in-progress', 'completed', 'archived')),
-    start_date INTEGER,
-    end_date INTEGER
-  );
-
-  CREATE TABLE IF NOT EXISTS news (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    content_id INTEGER NOT NULL UNIQUE REFERENCES content_base(id) ON DELETE CASCADE,
-    cover_image TEXT,
-    reading_time INTEGER
-  );
-
-  CREATE TABLE IF NOT EXISTS technologies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    icon TEXT,
-    color TEXT
-  );
-
-  CREATE TABLE IF NOT EXISTS tags (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE
-  );
-
-  CREATE TABLE IF NOT EXISTS media (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    filename TEXT NOT NULL,
-    mime_type TEXT NOT NULL,
-    size INTEGER NOT NULL,
-    storage_key TEXT NOT NULL UNIQUE,
-    alt_text TEXT,
-    created_at INTEGER NOT NULL,
-    deleted_at INTEGER,
-    variants TEXT,
-    width INTEGER,
-    height INTEGER
-  );
-
-  CREATE TABLE IF NOT EXISTS project_technologies (
-    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    technology_id INTEGER NOT NULL REFERENCES technologies(id) ON DELETE CASCADE,
-    PRIMARY KEY (project_id, technology_id)
-  );
-
-  CREATE TABLE IF NOT EXISTS news_tags (
-    news_id INTEGER NOT NULL REFERENCES news(id) ON DELETE CASCADE,
-    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (news_id, tag_id)
-  );
-`;
-
 describe('Supporting Tables and Junction Tables', () => {
-  let sqlite: Database;
-  let db: ReturnType<typeof drizzle>;
+  let client: ReturnType<typeof postgres>;
+  let db: ReturnType<typeof createTestDatabase>['db'];
 
   beforeAll(() => {
-    sqlite = new Database(':memory:');
-    sqlite.exec('PRAGMA foreign_keys = ON');
-    sqlite.exec(CREATE_TABLES_SQL);
-    db = drizzle(sqlite);
+    const testDb = createTestDatabase();
+    client = testDb.client;
+    db = testDb.db;
   });
 
-  afterAll(() => {
-    sqlite.close();
+  afterAll(async () => {
+    await closeDatabase(client);
   });
 
-  beforeEach(() => {
-    // Clean tables in correct order (respecting foreign keys)
-    sqlite.exec('DELETE FROM news_tags');
-    sqlite.exec('DELETE FROM project_technologies');
-    sqlite.exec('DELETE FROM news');
-    sqlite.exec('DELETE FROM projects');
-    sqlite.exec('DELETE FROM content_base');
-    sqlite.exec('DELETE FROM technologies');
-    sqlite.exec('DELETE FROM tags');
-    sqlite.exec('DELETE FROM media');
+  beforeEach(async () => {
+    await resetDatabase(db);
   });
 
-  test('technologies table unique constraint on name field', () => {
+  test('technologies table unique constraint on name field', async () => {
     // Insert first technology
-    db.insert(technologies).values({
+    await db.insert(technologies).values({
       name: 'TypeScript',
       icon: 'typescript-icon',
       color: '#3178c6',
-    }).run();
+    });
 
-    const result = db.select().from(technologies).all();
+    const result = await db.select().from(technologies);
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe('TypeScript');
 
     // Inserting duplicate name should fail
-    expect(() => {
-      db.insert(technologies).values({
+    let error: Error | null = null;
+    try {
+      await db.insert(technologies).values({
         name: 'TypeScript',
         icon: 'different-icon',
-      }).run();
-    }).toThrow();
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).not.toBeNull();
 
     // Different name should work
-    db.insert(technologies).values({
+    await db.insert(technologies).values({
       name: 'React',
       color: '#61dafb',
-    }).run();
+    });
 
-    const allTech = db.select().from(technologies).all();
+    const allTech = await db.select().from(technologies);
     expect(allTech).toHaveLength(2);
   });
 
-  test('tags table unique constraint on slug field', () => {
+  test('tags table unique constraint on slug field', async () => {
     // Insert first tag
-    db.insert(tags).values({
+    await db.insert(tags).values({
       name: 'Web Development',
       slug: 'web-dev',
-    }).run();
+    });
 
-    const result = db.select().from(tags).all();
+    const result = await db.select().from(tags);
     expect(result).toHaveLength(1);
     expect(result[0].slug).toBe('web-dev');
 
     // Inserting duplicate slug should fail
-    expect(() => {
-      db.insert(tags).values({
+    let error: Error | null = null;
+    try {
+      await db.insert(tags).values({
         name: 'Web Developer',
         slug: 'web-dev',
-      }).run();
-    }).toThrow();
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).not.toBeNull();
 
     // Different slug should work (same name is allowed)
-    db.insert(tags).values({
+    await db.insert(tags).values({
       name: 'Web Development',
       slug: 'web-development',
-    }).run();
+    });
 
-    const allTags = db.select().from(tags).all();
+    const allTags = await db.select().from(tags);
     expect(allTags).toHaveLength(2);
   });
 
-  test('media table required fields and storage_key uniqueness', () => {
-    const now = Date.now();
+  test('media table required fields and storage_key uniqueness', async () => {
+    const now = new Date();
 
     // Insert valid media
-    db.insert(media).values({
+    await db.insert(media).values({
       filename: 'image.png',
       mimeType: 'image/png',
       size: 1024,
       storageKey: 'uploads/2024/01/image.png',
-      createdAt: new Date(now),
-    }).run();
+      createdAt: now,
+    });
 
-    const result = db.select().from(media).all();
+    const result = await db.select().from(media);
     expect(result).toHaveLength(1);
     expect(result[0].filename).toBe('image.png');
     expect(result[0].mimeType).toBe('image/png');
     expect(result[0].size).toBe(1024);
 
     // Duplicate storage_key should fail
-    expect(() => {
-      db.insert(media).values({
+    let error1: Error | null = null;
+    try {
+      await db.insert(media).values({
         filename: 'another-image.png',
         mimeType: 'image/png',
         size: 2048,
         storageKey: 'uploads/2024/01/image.png',
-        createdAt: new Date(now),
-      }).run();
-    }).toThrow();
+        createdAt: now,
+      });
+    } catch (e) {
+      error1 = e as Error;
+    }
+    expect(error1).not.toBeNull();
 
-    // Required fields missing should fail
-    expect(() => {
-      sqlite.exec(`INSERT INTO media (filename, storage_key, created_at) VALUES ('test.jpg', 'unique-key', ${now})`);
-    }).toThrow();
+    // Required fields missing should fail (mime_type is NOT NULL)
+    let error2: Error | null = null;
+    try {
+      await db.execute(
+        sql`INSERT INTO media (filename, storage_key, size, created_at)
+            VALUES ('test.jpg', 'unique-key', 1024, NOW())`
+      );
+    } catch (e) {
+      error2 = e as Error;
+    }
+    expect(error2).not.toBeNull();
   });
 
-  test('project_technologies junction table composite primary key', () => {
-    const now = Date.now();
+  test('project_technologies junction table composite primary key', async () => {
+    const now = new Date();
 
     // Create project content
-    db.insert(contentBase).values({
+    const [content] = await db.insert(contentBase).values({
       type: 'project',
       slug: 'test-project',
-      createdAt: new Date(now),
-      updatedAt: new Date(now),
-    }).run();
-    const content = db.select().from(contentBase).all()[0];
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
     // Create project extension
-    db.insert(projects).values({
+    const [project] = await db.insert(projects).values({
       contentId: content.id,
       projectStatus: 'in-progress',
-    }).run();
-    const project = db.select().from(projects).all()[0];
+    }).returning();
 
     // Create technologies
-    db.insert(technologies).values({ name: 'TypeScript' }).run();
-    db.insert(technologies).values({ name: 'React' }).run();
-    const allTech = db.select().from(technologies).all();
+    const [tech1] = await db.insert(technologies).values({ name: 'TypeScript' }).returning();
+    const [tech2] = await db.insert(technologies).values({ name: 'React' }).returning();
 
     // Link project to technologies
-    db.insert(projectTechnologies).values({
+    await db.insert(projectTechnologies).values({
       projectId: project.id,
-      technologyId: allTech[0].id,
-    }).run();
+      technologyId: tech1.id,
+    });
 
-    db.insert(projectTechnologies).values({
+    await db.insert(projectTechnologies).values({
       projectId: project.id,
-      technologyId: allTech[1].id,
-    }).run();
+      technologyId: tech2.id,
+    });
 
-    const links = db.select().from(projectTechnologies).all();
+    const links = await db.select().from(projectTechnologies);
     expect(links).toHaveLength(2);
 
     // Duplicate link should fail (composite primary key)
-    expect(() => {
-      db.insert(projectTechnologies).values({
+    let error: Error | null = null;
+    try {
+      await db.insert(projectTechnologies).values({
         projectId: project.id,
-        technologyId: allTech[0].id,
-      }).run();
-    }).toThrow();
+        technologyId: tech1.id,
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).not.toBeNull();
   });
 
-  test('news_tags junction table composite primary key', () => {
-    const now = Date.now();
+  test('news_tags junction table composite primary key', async () => {
+    const now = new Date();
 
     // Create news content
-    db.insert(contentBase).values({
+    const [content] = await db.insert(contentBase).values({
       type: 'news',
       slug: 'test-news',
-      createdAt: new Date(now),
-      updatedAt: new Date(now),
-    }).run();
-    const content = db.select().from(contentBase).all()[0];
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
     // Create news extension
-    db.insert(news).values({
+    const [newsItem] = await db.insert(news).values({
       contentId: content.id,
       readingTime: 5,
-    }).run();
-    const newsItem = db.select().from(news).all()[0];
+    }).returning();
 
     // Create tags
-    db.insert(tags).values({ name: 'Tech', slug: 'tech' }).run();
-    db.insert(tags).values({ name: 'Tutorial', slug: 'tutorial' }).run();
-    const allTags = db.select().from(tags).all();
+    const [tag1] = await db.insert(tags).values({ name: 'Tech', slug: 'tech' }).returning();
+    const [tag2] = await db.insert(tags).values({ name: 'Tutorial', slug: 'tutorial' }).returning();
 
     // Link news to tags
-    db.insert(newsTags).values({
+    await db.insert(newsTags).values({
       newsId: newsItem.id,
-      tagId: allTags[0].id,
-    }).run();
+      tagId: tag1.id,
+    });
 
-    db.insert(newsTags).values({
+    await db.insert(newsTags).values({
       newsId: newsItem.id,
-      tagId: allTags[1].id,
-    }).run();
+      tagId: tag2.id,
+    });
 
-    const links = db.select().from(newsTags).all();
+    const links = await db.select().from(newsTags);
     expect(links).toHaveLength(2);
 
     // Duplicate link should fail (composite primary key)
-    expect(() => {
-      db.insert(newsTags).values({
+    let error: Error | null = null;
+    try {
+      await db.insert(newsTags).values({
         newsId: newsItem.id,
-        tagId: allTags[0].id,
-      }).run();
-    }).toThrow();
+        tagId: tag1.id,
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).not.toBeNull();
   });
 
-  test('CASCADE DELETE behavior on junction table foreign keys', () => {
-    const now = Date.now();
+  test('CASCADE DELETE behavior on junction table foreign keys', async () => {
+    const now = new Date();
 
     // Create project with technology links
-    db.insert(contentBase).values({
+    const [content] = await db.insert(contentBase).values({
       type: 'project',
       slug: 'cascade-test',
-      createdAt: new Date(now),
-      updatedAt: new Date(now),
-    }).run();
-    const content = db.select().from(contentBase).all()[0];
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
-    db.insert(projects).values({
+    const [project] = await db.insert(projects).values({
       contentId: content.id,
-    }).run();
-    const project = db.select().from(projects).all()[0];
+    }).returning();
 
-    db.insert(technologies).values({ name: 'Node.js' }).run();
-    const tech = db.select().from(technologies).all()[0];
+    const [tech] = await db.insert(technologies).values({ name: 'Node.js' }).returning();
 
-    db.insert(projectTechnologies).values({
+    await db.insert(projectTechnologies).values({
       projectId: project.id,
       technologyId: tech.id,
-    }).run();
+    });
 
     // Verify link exists
-    let links = db.select().from(projectTechnologies).all();
+    let links = await db.select().from(projectTechnologies);
     expect(links).toHaveLength(1);
 
     // Delete project should cascade to junction table
-    db.delete(projects).where(eq(projects.id, project.id)).run();
+    await db.delete(projects).where(eq(projects.id, project.id));
 
-    links = db.select().from(projectTechnologies).all();
+    links = await db.select().from(projectTechnologies);
     expect(links).toHaveLength(0);
 
     // Technology should still exist (only junction record deleted)
-    const remainingTech = db.select().from(technologies).all();
+    const remainingTech = await db.select().from(technologies);
     expect(remainingTech).toHaveLength(1);
 
     // Also test deleting technology cascades to junction
     // First recreate the setup
-    db.insert(projects).values({
+    const [newProject] = await db.insert(projects).values({
       contentId: content.id,
-    }).run();
-    const newProject = db.select().from(projects).all()[0];
+    }).returning();
 
-    db.insert(projectTechnologies).values({
+    await db.insert(projectTechnologies).values({
       projectId: newProject.id,
       technologyId: tech.id,
-    }).run();
+    });
 
-    links = db.select().from(projectTechnologies).all();
+    links = await db.select().from(projectTechnologies);
     expect(links).toHaveLength(1);
 
     // Delete technology should cascade to junction table
-    db.delete(technologies).where(eq(technologies.id, tech.id)).run();
+    await db.delete(technologies).where(eq(technologies.id, tech.id));
 
-    links = db.select().from(projectTechnologies).all();
+    links = await db.select().from(projectTechnologies);
     expect(links).toHaveLength(0);
   });
 });

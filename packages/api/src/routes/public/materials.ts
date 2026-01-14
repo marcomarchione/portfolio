@@ -24,7 +24,7 @@ import type { DrizzleDB } from '../../db';
 /**
  * Formats a material for API response.
  */
-function formatMaterialResponse(material: NonNullable<ReturnType<typeof getMaterialWithTranslation>>) {
+function formatMaterialResponse(material: NonNullable<Awaited<ReturnType<typeof getMaterialWithTranslation>>>) {
   return {
     id: material.id,
     type: material.type,
@@ -75,38 +75,40 @@ export const publicMaterialsRoutes = new Elysia({ name: 'public-materials', pref
         publishedOnly: true,
       };
 
-      const materials = listMaterials(db, options);
-      const total = countMaterials(db, options);
+      const materials = await listMaterials(db, options);
+      const total = await countMaterials(db, options);
 
       // Get translations for each material
-      const materialsWithTranslations = materials.map((material) => {
-        const translation = getTranslation(db, material.id, lang);
-        return {
-          id: material.id,
-          type: material.type,
-          slug: material.slug,
-          status: material.status,
-          featured: material.featured,
-          createdAt: material.createdAt.toISOString(),
-          updatedAt: material.updatedAt.toISOString(),
-          publishedAt: material.publishedAt?.toISOString() ?? null,
-          category: material.category,
-          downloadUrl: material.downloadUrl,
-          fileSize: material.fileSize,
-          translation: translation
-            ? {
-                id: translation.id,
-                contentId: translation.contentId,
-                lang: translation.lang,
-                title: translation.title,
-                description: translation.description,
-                body: translation.body,
-                metaTitle: translation.metaTitle,
-                metaDescription: translation.metaDescription,
-              }
-            : null,
-        };
-      });
+      const materialsWithTranslations = await Promise.all(
+        materials.map(async (material) => {
+          const translation = await getTranslation(db, material.id, lang);
+          return {
+            id: material.id,
+            type: material.type,
+            slug: material.slug,
+            status: material.status,
+            featured: material.featured,
+            createdAt: material.createdAt.toISOString(),
+            updatedAt: material.updatedAt.toISOString(),
+            publishedAt: material.publishedAt?.toISOString() ?? null,
+            category: material.category,
+            downloadUrl: material.downloadUrl,
+            fileSize: material.fileSize,
+            translation: translation
+              ? {
+                  id: translation.id,
+                  contentId: translation.contentId,
+                  lang: translation.lang,
+                  title: translation.title,
+                  description: translation.description,
+                  body: translation.body,
+                  metaTitle: translation.metaTitle,
+                  metaDescription: translation.metaDescription,
+                }
+              : null,
+          };
+        })
+      );
 
       return createPaginatedResponse(materialsWithTranslations, total, offset, limit);
     },
@@ -125,7 +127,7 @@ export const publicMaterialsRoutes = new Elysia({ name: 'public-materials', pref
     async (ctx: any) => {
       const db = ctx.db as DrizzleDB;
       const lang = (ctx.query.lang ?? 'it') as Language;
-      const material = getMaterialWithTranslation(db, ctx.params.slug, lang);
+      const material = await getMaterialWithTranslation(db, ctx.params.slug, lang);
 
       if (!material || material.status !== 'published') {
         throw new NotFoundError('Material not found');

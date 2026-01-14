@@ -16,6 +16,9 @@ import {
   TranslationBodySchema,
   TranslationLangParamSchema,
   AssignTechnologiesBodySchema,
+  AssignGalleryMediaBodySchema,
+  UpdateGalleryOrderBodySchema,
+  GalleryMediaIdParamSchema,
 } from '../../types/content-schemas';
 import { LangSchema } from '../../types/validation';
 import {
@@ -31,6 +34,9 @@ import {
   assignTechnologies,
   removeTechnology,
   getProjectTechnologies,
+  assignProjectMedia,
+  removeProjectMedia,
+  updateProjectMediaOrder,
 } from '../../db/queries';
 import type { ContentStatus, Language } from '../../db/schema';
 import type { ContentSortField, SortOrder } from '../../db/queries/content';
@@ -40,7 +46,7 @@ import type { DrizzleDB } from '../../db';
  * Formats a project for admin API response.
  */
 function formatAdminProjectResponse(
-  project: NonNullable<ReturnType<typeof getProjectWithAllTranslations>>
+  project: NonNullable<Awaited<ReturnType<typeof getProjectWithAllTranslations>>>
 ) {
   return {
     id: project.id,
@@ -67,6 +73,7 @@ function formatAdminProjectResponse(
       metaDescription: t.metaDescription,
     })),
     technologies: project.technologies,
+    galleryImages: project.galleryImages,
   };
 }
 
@@ -96,17 +103,19 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
         sortOrder,
       };
 
-      const projects = listProjects(db, options);
-      const total = countProjects(db, options);
+      const projects = await listProjects(db, options);
+      const total = await countProjects(db, options);
 
       // Get all translations for each project
-      const projectsWithAllTranslations = projects.map((project) => {
-        const fullProject = getProjectWithAllTranslations(db, project.id);
-        if (!fullProject) return null;
-        return formatAdminProjectResponse(fullProject);
-      }).filter(Boolean);
+      const projectsWithAllTranslations = await Promise.all(
+        projects.map(async (project) => {
+          const fullProject = await getProjectWithAllTranslations(db, project.id);
+          if (!fullProject) return null;
+          return formatAdminProjectResponse(fullProject);
+        })
+      );
 
-      return createPaginatedResponse(projectsWithAllTranslations, total, offset, limit);
+      return createPaginatedResponse(projectsWithAllTranslations.filter(Boolean), total, offset, limit);
     },
     {
       query: AdminListQuerySchema,
@@ -123,7 +132,7 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
     async ({ params, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
-      const project = getProjectWithAllTranslations(db, id);
+      const project = await getProjectWithAllTranslations(db, id);
 
       if (!project) {
         throw new NotFoundError('Project not found');
@@ -144,7 +153,7 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
     '/',
     async ({ body, db: rawDb, set }) => {
       const db = rawDb as DrizzleDB;
-      const project = createProject(db, {
+      const project = await createProject(db, {
         slug: body.slug,
         status: body.status as ContentStatus | undefined,
         featured: body.featured,
@@ -174,7 +183,7 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const project = updateProject(db, id, {
+      const project = await updateProject(db, id, {
         slug: body.slug,
         status: body.status as ContentStatus | undefined,
         featured: body.featured,
@@ -214,12 +223,12 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
       const lang = params.lang as Language;
 
       // Verify project exists
-      const project = getProjectWithAllTranslations(db, id);
+      const project = await getProjectWithAllTranslations(db, id);
       if (!project) {
         throw new NotFoundError('Project not found');
       }
 
-      const translation = upsertTranslation(db, id, lang, {
+      const translation = await upsertTranslation(db, id, lang, {
         title: body.title,
         description: body.description,
         body: body.body,
@@ -255,13 +264,13 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const archived = archiveContent(db, id);
+      const archived = await archiveContent(db, id);
       if (!archived) {
         throw new NotFoundError('Project not found');
       }
 
       // Get updated project with all translations
-      const project = getProjectWithAllTranslations(db, id);
+      const project = await getProjectWithAllTranslations(db, id);
       if (!project) {
         throw new NotFoundError('Project not found');
       }
@@ -284,16 +293,16 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
       const id = parseInt(params.id, 10);
 
       // Get project record
-      const projectRecord = getProjectByContentId(db, id);
+      const projectRecord = await getProjectByContentId(db, id);
       if (!projectRecord) {
         throw new NotFoundError('Project not found');
       }
 
       // Assign technologies
-      assignTechnologies(db, projectRecord.id, body.technologyIds);
+      await assignTechnologies(db, projectRecord.id, body.technologyIds);
 
       // Get updated project
-      const project = getProjectWithAllTranslations(db, id);
+      const project = await getProjectWithAllTranslations(db, id);
       if (!project) {
         throw new NotFoundError('Project not found');
       }
@@ -319,16 +328,16 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
       const techId = parseInt(params.techId, 10);
 
       // Get project record
-      const projectRecord = getProjectByContentId(db, id);
+      const projectRecord = await getProjectByContentId(db, id);
       if (!projectRecord) {
         throw new NotFoundError('Project not found');
       }
 
       // Remove technology
-      removeTechnology(db, projectRecord.id, techId);
+      await removeTechnology(db, projectRecord.id, techId);
 
       // Get updated project
-      const project = getProjectWithAllTranslations(db, id);
+      const project = await getProjectWithAllTranslations(db, id);
       if (!project) {
         throw new NotFoundError('Project not found');
       }
@@ -344,6 +353,106 @@ export const adminProjectsRoutes: any = new Elysia({ name: 'admin-projects', pre
         tags: ['admin', 'projects'],
         summary: 'Remove technology from project',
         description: 'Removes a single technology association from a project.',
+      },
+    }
+  )
+  // Gallery media routes
+  .post(
+    '/:id/media',
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
+      const id = parseInt(params.id, 10);
+
+      // Get project record (need projects.id, not content_base.id)
+      const projectRecord = await getProjectByContentId(db, id);
+      if (!projectRecord) {
+        throw new NotFoundError('Project not found');
+      }
+
+      // Assign gallery media
+      await assignProjectMedia(db, projectRecord.id, body.mediaItems);
+
+      // Return updated project
+      const project = await getProjectWithAllTranslations(db, id);
+      if (!project) {
+        throw new NotFoundError('Project not found');
+      }
+
+      return createResponse(formatAdminProjectResponse(project));
+    },
+    {
+      params: AdminIdParamSchema,
+      body: AssignGalleryMediaBodySchema,
+      detail: {
+        tags: ['admin', 'projects'],
+        summary: 'Assign gallery media to project',
+        description: 'Replaces all project gallery media with the provided list.',
+      },
+    }
+  )
+  .delete(
+    '/:id/media/:mediaId',
+    async ({ params, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
+      const id = parseInt(params.id, 10);
+      const mediaId = parseInt(params.mediaId, 10);
+
+      // Get project record
+      const projectRecord = await getProjectByContentId(db, id);
+      if (!projectRecord) {
+        throw new NotFoundError('Project not found');
+      }
+
+      // Remove media from gallery
+      await removeProjectMedia(db, projectRecord.id, mediaId);
+
+      // Return updated project
+      const project = await getProjectWithAllTranslations(db, id);
+      if (!project) {
+        throw new NotFoundError('Project not found');
+      }
+
+      return createResponse(formatAdminProjectResponse(project));
+    },
+    {
+      params: GalleryMediaIdParamSchema,
+      detail: {
+        tags: ['admin', 'projects'],
+        summary: 'Remove media from project gallery',
+        description: 'Removes a single media item from the project gallery.',
+      },
+    }
+  )
+  .put(
+    '/:id/media/order',
+    async ({ params, body, db: rawDb }) => {
+      const db = rawDb as DrizzleDB;
+      const id = parseInt(params.id, 10);
+
+      // Get project record
+      const projectRecord = await getProjectByContentId(db, id);
+      if (!projectRecord) {
+        throw new NotFoundError('Project not found');
+      }
+
+      // Update gallery order
+      await updateProjectMediaOrder(db, projectRecord.id, body.mediaItems);
+
+      // Return updated project
+      const project = await getProjectWithAllTranslations(db, id);
+      if (!project) {
+        throw new NotFoundError('Project not found');
+      }
+
+      return createResponse(formatAdminProjectResponse(project));
+    },
+    {
+      params: AdminIdParamSchema,
+      body: UpdateGalleryOrderBodySchema,
+      detail: {
+        tags: ['admin', 'projects'],
+        summary: 'Update project gallery order',
+        description: 'Updates the display order of gallery media items.',
       },
     }
   );

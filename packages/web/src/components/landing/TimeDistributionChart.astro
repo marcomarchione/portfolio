@@ -1,0 +1,169 @@
+---
+/**
+ * TimeDistributionChart Component
+ *
+ * Visual comparison of how time is distributed between activities
+ * for traditional vs agent-assisted developers.
+ * Shows that agent developers have more time for client interaction.
+ *
+ * @example
+ * <TimeDistributionChart lang="en" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+
+// Time distribution percentages
+const traditional = [
+  { key: 'coding', value: 55, color: 'bg-neutral-500' },
+  { key: 'clientCalls', value: 15, color: 'bg-neutral-400' },
+  { key: 'documentation', value: 20, color: 'bg-neutral-600' },
+  { key: 'learning', value: 10, color: 'bg-neutral-700' }
+];
+
+const agent = [
+  { key: 'coding', value: 30, color: 'bg-primary-500' },
+  { key: 'clientCalls', value: 35, color: 'bg-accent-500' },
+  { key: 'documentation', value: 20, color: 'bg-primary-400' },
+  { key: 'learning', value: 15, color: 'bg-accent-400' }
+];
+
+// Calculate client time improvement
+const clientTimeImprovement = Math.round(((agent[1].value - traditional[1].value) / traditional[1].value) * 100);
+---
+
+<div class="h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 md:p-5 [.light_&]:bg-[#EBE4D8] [.light_&]:border-[#E5DED4]">
+  <!-- Chart Title -->
+  <h3 class="text-base font-semibold text-white [.light_&]:text-neutral-900 mb-1 text-center">
+    {t(lang, 'landing.comparison.timeDistribution.title')}
+  </h3>
+  <p class="text-xs text-neutral-400 [.light_&]:text-neutral-600 mb-4 text-center">
+    {t(lang, 'landing.comparison.timeDistribution.subtitle')}
+  </p>
+
+  <!-- Two columns: Traditional vs Agent -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Traditional Developer -->
+    <div class="time-distribution-column animate-on-scroll" style="--stagger-delay: 0s">
+      <h4 class="text-xs font-medium text-neutral-400 [.light_&]:text-neutral-600 mb-2 text-center">
+        {t(lang, 'landing.comparison.traditional')}
+      </h4>
+
+      <!-- Stacked bar -->
+      <div class="h-6 rounded-lg overflow-hidden flex time-distribution-bar">
+        {traditional.map((item, index) => (
+          <div
+            class={`${item.color} [.light_&]:opacity-70 time-distribution-segment`}
+            style={`--segment-width: ${item.value}%; --segment-delay: ${index * 0.1}s`}
+            title={`${t(lang, `landing.comparison.timeDistribution.activities.${item.key}`)}: ${item.value}%`}
+          />
+        ))}
+      </div>
+
+      <!-- Legend -->
+      <div class="mt-2 space-y-1">
+        {traditional.map((item) => (
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-1.5">
+              <div class={`w-2.5 h-2.5 rounded ${item.color} [.light_&]:opacity-70`} />
+              <span class="text-neutral-400 [.light_&]:text-neutral-600">
+                {t(lang, `landing.comparison.timeDistribution.activities.${item.key}`)}
+              </span>
+            </div>
+            <span class="text-neutral-500 [.light_&]:text-neutral-500 font-medium">
+              {item.value}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Agent Developer -->
+    <div class="time-distribution-column animate-on-scroll" style="--stagger-delay: 0.2s">
+      <h4 class="text-xs font-medium text-primary-400 [.light_&]:text-terra-600 mb-2 text-center">
+        {t(lang, 'landing.comparison.agent')}
+      </h4>
+
+      <!-- Stacked bar -->
+      <div class="h-6 rounded-lg overflow-hidden flex time-distribution-bar">
+        {agent.map((item, index) => (
+          <div
+            class={`${item.color} [.light_&]:bg-terra-${400 + index * 100} time-distribution-segment`}
+            style={`--segment-width: ${item.value}%; --segment-delay: ${index * 0.1 + 0.2}s`}
+            title={`${t(lang, `landing.comparison.timeDistribution.activities.${item.key}`)}: ${item.value}%`}
+          />
+        ))}
+      </div>
+
+      <!-- Legend -->
+      <div class="mt-2 space-y-1">
+        {agent.map((item, index) => {
+          const isClientCalls = item.key === 'clientCalls';
+          return (
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-1.5">
+                <div class={`w-2.5 h-2.5 rounded ${item.color}`} />
+                <span class={isClientCalls ? "text-accent-400 [.light_&]:text-terra-600 font-medium" : "text-neutral-400 [.light_&]:text-neutral-600"}>
+                  {t(lang, `landing.comparison.timeDistribution.activities.${item.key}`)}
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class={isClientCalls ? "text-accent-400 [.light_&]:text-terra-600 font-semibold" : "text-neutral-500 [.light_&]:text-neutral-500 font-medium"}>
+                  {item.value}%
+                </span>
+                {isClientCalls && (
+                  <span class="px-1 py-0.5 rounded bg-green-500/20 text-green-400 [.light_&]:bg-green-100 [.light_&]:text-green-700 text-xs font-semibold">
+                    +{clientTimeImprovement}%
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+
+  <!-- Highlight box -->
+  <div class="mt-3 pt-3 border-t border-white/10 [.light_&]:border-[#E5DED4]">
+    <div class="flex items-center justify-center gap-2 text-center">
+      <svg class="w-4 h-4 text-accent-400 [.light_&]:text-terra-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      <p class="text-xs text-neutral-300 [.light_&]:text-neutral-700">
+        <span class="text-accent-400 [.light_&]:text-terra-600 font-semibold">+{clientTimeImprovement}%</span>
+        {' '}{t(lang, 'landing.comparison.timeDistribution.moreClientTime')}
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .time-distribution-column {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    transition-delay: var(--stagger-delay);
+  }
+
+  .time-distribution-column.animate-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .time-distribution-segment {
+    width: 0;
+    transition: width 0.8s ease-out;
+    transition-delay: var(--segment-delay);
+  }
+
+  .time-distribution-column.animate-visible .time-distribution-segment {
+    width: var(--segment-width);
+  }
+</style>

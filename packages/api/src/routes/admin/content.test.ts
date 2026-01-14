@@ -3,7 +3,7 @@
  *
  * Tests for content status (publish/unpublish) endpoints.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import {
   createTestAppWithAuth,
   testAuthJsonRequest,
@@ -15,25 +15,29 @@ describe('Admin Content Routes - Publish/Unpublish', () => {
   let testApp: AuthTestApp;
   let token: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     token = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   describe('PATCH /api/v1/admin/:contentType/:id/publish', () => {
     test('publishing content (draft to published) sets publishedAt timestamp', async () => {
       // Create a draft project
-      const project = createProject(testApp.db, {
+      const project = await createProject(testApp.db, {
         slug: 'test-project',
         status: 'draft',
       });
 
       // Verify publishedAt is null initially
-      const beforePublish = getContentById(testApp.db, project.id);
+      const beforePublish = await getContentById(testApp.db, project.id);
       expect(beforePublish?.publishedAt).toBeNull();
 
       // Publish the project
@@ -52,20 +56,20 @@ describe('Admin Content Routes - Publish/Unpublish', () => {
       expect(response.body.data.publishedAt).not.toBeNull();
 
       // Verify in database
-      const afterPublish = getContentById(testApp.db, project.id);
+      const afterPublish = await getContentById(testApp.db, project.id);
       expect(afterPublish?.status).toBe('published');
       expect(afterPublish?.publishedAt).not.toBeNull();
     });
 
     test('unpublishing content (published to draft) preserves publishedAt', async () => {
       // Create a published project
-      const project = createProject(testApp.db, {
+      const project = await createProject(testApp.db, {
         slug: 'test-published-project',
         status: 'published',
       });
 
       // Get the publishedAt timestamp
-      const beforeUnpublish = getContentById(testApp.db, project.id);
+      const beforeUnpublish = await getContentById(testApp.db, project.id);
       const originalPublishedAt = beforeUnpublish?.publishedAt;
       expect(originalPublishedAt).not.toBeNull();
 
@@ -86,14 +90,14 @@ describe('Admin Content Routes - Publish/Unpublish', () => {
       expect(response.body.data.publishedAt).not.toBeNull();
 
       // Verify in database - publishedAt should be preserved
-      const afterUnpublish = getContentById(testApp.db, project.id);
+      const afterUnpublish = await getContentById(testApp.db, project.id);
       expect(afterUnpublish?.status).toBe('draft');
       expect(afterUnpublish?.publishedAt?.getTime()).toBe(originalPublishedAt?.getTime());
     });
 
     test('archiving content works correctly', async () => {
       // Create a news item
-      const newsItem = createNews(testApp.db, {
+      const newsItem = await createNews(testApp.db, {
         slug: 'test-news',
         status: 'published',
       });
@@ -113,7 +117,7 @@ describe('Admin Content Routes - Publish/Unpublish', () => {
       expect(response.body.data.status).toBe('archived');
 
       // Verify in database
-      const afterArchive = getContentById(testApp.db, newsItem.id);
+      const afterArchive = await getContentById(testApp.db, newsItem.id);
       expect(afterArchive?.status).toBe('archived');
     });
 

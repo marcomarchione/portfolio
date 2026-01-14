@@ -4,11 +4,9 @@
  * Content translation database operations.
  */
 import { eq, and } from 'drizzle-orm';
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
 import type { Language } from '../schema';
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Data for creating/updating a translation */
 export interface TranslationData {
@@ -27,8 +25,8 @@ export interface TranslationData {
  * @param lang - Language code
  * @returns Translation or undefined
  */
-export function getTranslation(db: DrizzleDB, contentId: number, lang: Language) {
-  return db
+export async function getTranslation(db: DrizzleDB, contentId: number, lang: Language) {
+  const [result] = await db
     .select()
     .from(schema.contentTranslations)
     .where(
@@ -36,8 +34,8 @@ export function getTranslation(db: DrizzleDB, contentId: number, lang: Language)
         eq(schema.contentTranslations.contentId, contentId),
         eq(schema.contentTranslations.lang, lang)
       )
-    )
-    .get();
+    );
+  return result;
 }
 
 /**
@@ -47,12 +45,11 @@ export function getTranslation(db: DrizzleDB, contentId: number, lang: Language)
  * @param contentId - Content ID
  * @returns Array of translations
  */
-export function getAllTranslations(db: DrizzleDB, contentId: number) {
+export async function getAllTranslations(db: DrizzleDB, contentId: number) {
   return db
     .select()
     .from(schema.contentTranslations)
-    .where(eq(schema.contentTranslations.contentId, contentId))
-    .all();
+    .where(eq(schema.contentTranslations.contentId, contentId));
 }
 
 /**
@@ -64,17 +61,17 @@ export function getAllTranslations(db: DrizzleDB, contentId: number) {
  * @param data - Translation data
  * @returns Created or updated translation
  */
-export function upsertTranslation(
+export async function upsertTranslation(
   db: DrizzleDB,
   contentId: number,
   lang: Language,
   data: TranslationData
 ) {
-  const existing = getTranslation(db, contentId, lang);
+  const existing = await getTranslation(db, contentId, lang);
 
   if (existing) {
     // Update existing translation
-    db.update(schema.contentTranslations)
+    await db.update(schema.contentTranslations)
       .set({
         title: data.title,
         description: data.description ?? null,
@@ -82,13 +79,12 @@ export function upsertTranslation(
         metaTitle: data.metaTitle ?? null,
         metaDescription: data.metaDescription ?? null,
       })
-      .where(eq(schema.contentTranslations.id, existing.id))
-      .run();
+      .where(eq(schema.contentTranslations.id, existing.id));
 
-    return getTranslation(db, contentId, lang)!;
+    return (await getTranslation(db, contentId, lang))!;
   } else {
     // Create new translation
-    db.insert(schema.contentTranslations)
+    const [result] = await db.insert(schema.contentTranslations)
       .values({
         contentId,
         lang,
@@ -98,8 +94,8 @@ export function upsertTranslation(
         metaTitle: data.metaTitle ?? null,
         metaDescription: data.metaDescription ?? null,
       })
-      .run();
+      .returning();
 
-    return getTranslation(db, contentId, lang)!;
+    return result;
   }
 }

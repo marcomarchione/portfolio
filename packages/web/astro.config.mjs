@@ -19,4 +19,20 @@ export default defineConfig({
   adapter: node({
     mode: 'standalone',
   }),
+  markdown: {
+    shikiConfig: {
+      theme: 'github-dark',
+      langs: [
+        'javascript',
+        'typescript',
+        'python',
+        'bash',
+        'json',
+        'html',
+        'css',
+        'sql',
+        'yaml',
+      ],
+    },
+  },
 });

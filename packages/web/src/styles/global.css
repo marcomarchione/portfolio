@@ -65,6 +65,9 @@
 /* Tailwind CSS v4 Theme Configuration */
 @import 'tailwindcss';
 
+/* Typography Plugin for prose classes */
+@plugin "@tailwindcss/typography";
+
 @theme {
   /* Primary Color - Agent Blue */
   --color-primary-50: #eff6ff;
@@ -335,6 +338,48 @@ code, pre, kbd, samp {
 /* SPA navigation - main content fade transition */
 main {
   transition: opacity 100ms ease-out;
+}
+
+/* ============================================
+   Prose Code Block Styling
+   ============================================ */
+
+/* Code blocks within prose containers */
+.prose pre {
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+  background-color: var(--color-neutral-900) !important;
+}
+
+.light .prose pre {
+  background-color: var(--color-neutral-100) !important;
+}
+
+/* Custom scrollbar for code blocks */
+.prose pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.prose pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prose pre::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-700);
+  border-radius: 4px;
+}
+
+.prose pre::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-600);
+}
+
+.light .prose pre::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+}
+
+.light .prose pre::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
 }
 
 /* ============================================

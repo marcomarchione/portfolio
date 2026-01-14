@@ -3,7 +3,7 @@
  *
  * Standalone lookup table for categorizing news articles.
  */
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, serial, index } from 'drizzle-orm/pg-core';
 
 /**
  * Tags Table
@@ -11,11 +11,11 @@ import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
  * Stores tag definitions for categorizing news articles.
  * Referenced by the news_tags junction table.
  */
-export const tags = sqliteTable(
+export const tags = pgTable(
   'tags',
   {
     /** Auto-incrementing primary key */
-    id: integer('id').primaryKey({ autoIncrement: true }),
+    id: serial('id').primaryKey(),
 
     /** Tag display name */
     name: text('name').notNull(),

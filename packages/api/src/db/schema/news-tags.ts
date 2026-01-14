@@ -3,7 +3,7 @@
  *
  * Many-to-many relationship between news and tags.
  */
-import { sqliteTable, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, integer, primaryKey, index } from 'drizzle-orm/pg-core';
 import { news } from './news';
 import { tags } from './tags';
 
@@ -13,7 +13,7 @@ import { tags } from './tags';
  * Links news articles to their associated tags.
  * Uses composite primary key on (news_id, tag_id).
  */
-export const newsTags = sqliteTable(
+export const newsTags = pgTable(
   'news_tags',
   {
     /** Foreign key to news table */

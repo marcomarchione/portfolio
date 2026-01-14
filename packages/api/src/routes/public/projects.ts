@@ -42,7 +42,7 @@ function mapSortOption(sortBy?: ProjectSortOption): { sortBy: ContentSortField; 
 /**
  * Formats a project for API response (single project with full details).
  */
-function formatProjectResponse(project: NonNullable<ReturnType<typeof getProjectWithTranslation>>) {
+function formatProjectResponse(project: NonNullable<Awaited<ReturnType<typeof getProjectWithTranslation>>>) {
   return {
     id: project.id,
     type: project.type,
@@ -106,40 +106,42 @@ export const publicProjectsRoutes = new Elysia({ name: 'public-projects', prefix
         featuredFirst: true, // Always sort featured projects first
       };
 
-      const projects = listProjects(db, options);
-      const total = countProjects(db, options);
+      const projects = await listProjects(db, options);
+      const total = await countProjects(db, options);
 
       // Get translations for each project
-      const projectsWithTranslations = projects.map((project) => {
-        const translation = getTranslation(db, project.id, lang);
-        return {
-          id: project.id,
-          type: project.type,
-          slug: project.slug,
-          status: project.status,
-          featured: project.featured,
-          createdAt: project.createdAt.toISOString(),
-          updatedAt: project.updatedAt.toISOString(),
-          publishedAt: project.publishedAt?.toISOString() ?? null,
-          githubUrl: project.githubUrl,
-          demoUrl: project.demoUrl,
-          projectStatus: project.projectStatus,
-          startDate: project.startDate?.toISOString() ?? null,
-          endDate: project.endDate?.toISOString() ?? null,
-          translation: translation
-            ? {
-                id: translation.id,
-                contentId: translation.contentId,
-                lang: translation.lang,
-                title: translation.title,
-                description: translation.description,
-                body: translation.body,
-                metaTitle: translation.metaTitle,
-                metaDescription: translation.metaDescription,
-              }
-            : null,
-        };
-      });
+      const projectsWithTranslations = await Promise.all(
+        projects.map(async (project) => {
+          const translation = await getTranslation(db, project.id, lang);
+          return {
+            id: project.id,
+            type: project.type,
+            slug: project.slug,
+            status: project.status,
+            featured: project.featured,
+            createdAt: project.createdAt.toISOString(),
+            updatedAt: project.updatedAt.toISOString(),
+            publishedAt: project.publishedAt?.toISOString() ?? null,
+            githubUrl: project.githubUrl,
+            demoUrl: project.demoUrl,
+            projectStatus: project.projectStatus,
+            startDate: project.startDate?.toISOString() ?? null,
+            endDate: project.endDate?.toISOString() ?? null,
+            translation: translation
+              ? {
+                  id: translation.id,
+                  contentId: translation.contentId,
+                  lang: translation.lang,
+                  title: translation.title,
+                  description: translation.description,
+                  body: translation.body,
+                  metaTitle: translation.metaTitle,
+                  metaDescription: translation.metaDescription,
+                }
+              : null,
+          };
+        })
+      );
 
       return createPaginatedResponse(projectsWithTranslations, total, offset, limit);
     },
@@ -158,7 +160,7 @@ export const publicProjectsRoutes = new Elysia({ name: 'public-projects', prefix
     async (ctx: any) => {
       const db = ctx.db as DrizzleDB;
       const lang = (ctx.query.lang ?? 'it') as Language;
-      const project = getProjectWithTranslation(db, ctx.params.slug, lang);
+      const project = await getProjectWithTranslation(db, ctx.params.slug, lang);
 
       if (!project || project.status !== 'published') {
         throw new NotFoundError('Project not found');

@@ -4,11 +4,9 @@
  * Base content lookup and listing functions for content_base table.
  */
 import { eq, and, sql, desc, asc, like } from 'drizzle-orm';
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
 import type { ContentType, ContentStatus } from '../schema';
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Sort fields for content lists */
 export type ContentSortField = 'title' | 'createdAt' | 'updatedAt';
@@ -38,8 +36,9 @@ export interface ListContentOptions {
  * @param id - Content ID
  * @returns Content base record or undefined
  */
-export function getContentById(db: DrizzleDB, id: number) {
-  return db.select().from(schema.contentBase).where(eq(schema.contentBase.id, id)).get();
+export async function getContentById(db: DrizzleDB, id: number) {
+  const [result] = await db.select().from(schema.contentBase).where(eq(schema.contentBase.id, id));
+  return result;
 }
 
 /**
@@ -50,12 +49,12 @@ export function getContentById(db: DrizzleDB, id: number) {
  * @param type - Content type
  * @returns Content base record or undefined
  */
-export function getContentBySlug(db: DrizzleDB, slug: string, type: ContentType) {
-  return db
+export async function getContentBySlug(db: DrizzleDB, slug: string, type: ContentType) {
+  const [result] = await db
     .select()
     .from(schema.contentBase)
-    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, type)))
-    .get();
+    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, type)));
+  return result;
 }
 
 /**
@@ -65,8 +64,9 @@ export function getContentBySlug(db: DrizzleDB, slug: string, type: ContentType)
  * @param slug - Content slug
  * @returns Content base record or undefined
  */
-export function getContentBySlugOnly(db: DrizzleDB, slug: string) {
-  return db.select().from(schema.contentBase).where(eq(schema.contentBase.slug, slug)).get();
+export async function getContentBySlugOnly(db: DrizzleDB, slug: string) {
+  const [result] = await db.select().from(schema.contentBase).where(eq(schema.contentBase.slug, slug));
+  return result;
 }
 
 /**
@@ -77,7 +77,7 @@ export function getContentBySlugOnly(db: DrizzleDB, slug: string) {
  * @param options - List options
  * @returns Array of content base records
  */
-export function listContent(db: DrizzleDB, type: ContentType, options: ListContentOptions = {}) {
+export async function listContent(db: DrizzleDB, type: ContentType, options: ListContentOptions = {}) {
   const { limit = 20, offset = 0, status, featured, publishedOnly = false } = options;
 
   const conditions = [eq(schema.contentBase.type, type)];
@@ -98,8 +98,7 @@ export function listContent(db: DrizzleDB, type: ContentType, options: ListConte
     .where(and(...conditions))
     .orderBy(desc(schema.contentBase.publishedAt), desc(schema.contentBase.createdAt))
     .limit(limit)
-    .offset(offset)
-    .all();
+    .offset(offset);
 }
 
 /**
@@ -110,7 +109,7 @@ export function listContent(db: DrizzleDB, type: ContentType, options: ListConte
  * @param options - List options
  * @returns Total count
  */
-export function countContent(db: DrizzleDB, type: ContentType, options: ListContentOptions = {}) {
+export async function countContent(db: DrizzleDB, type: ContentType, options: ListContentOptions = {}) {
   const { status, featured, publishedOnly = false } = options;
 
   const conditions = [eq(schema.contentBase.type, type)];
@@ -125,11 +124,10 @@ export function countContent(db: DrizzleDB, type: ContentType, options: ListCont
     conditions.push(eq(schema.contentBase.featured, featured));
   }
 
-  const result = db
-    .select({ count: sql<number>`count(*)` })
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(schema.contentBase)
-    .where(and(...conditions))
-    .get();
+    .where(and(...conditions));
 
   return result?.count ?? 0;
 }
@@ -142,7 +140,7 @@ export function countContent(db: DrizzleDB, type: ContentType, options: ListCont
  * @param status - New status
  * @returns Updated content or undefined
  */
-export function updateContentStatus(db: DrizzleDB, id: number, status: ContentStatus) {
+export async function updateContentStatus(db: DrizzleDB, id: number, status: ContentStatus) {
   const now = new Date();
   const updates: Partial<schema.ContentBase> = {
     status,
@@ -151,13 +149,13 @@ export function updateContentStatus(db: DrizzleDB, id: number, status: ContentSt
 
   // Set publishedAt when first published
   if (status === 'published') {
-    const existing = getContentById(db, id);
+    const existing = await getContentById(db, id);
     if (existing && !existing.publishedAt) {
       updates.publishedAt = now;
     }
   }
 
-  db.update(schema.contentBase).set(updates).where(eq(schema.contentBase.id, id)).run();
+  await db.update(schema.contentBase).set(updates).where(eq(schema.contentBase.id, id));
 
   return getContentById(db, id);
 }
@@ -169,6 +167,6 @@ export function updateContentStatus(db: DrizzleDB, id: number, status: ContentSt
  * @param id - Content ID
  * @returns Updated content or undefined
  */
-export function archiveContent(db: DrizzleDB, id: number) {
+export async function archiveContent(db: DrizzleDB, id: number) {
   return updateContentStatus(db, id, 'archived');
 }

@@ -36,27 +36,40 @@ import {
   validateFileSize,
   getMaxFileSize,
   getAllowedMimeTypes,
-  saveFile,
   processImage,
-  getPublicUrl,
-  deleteFile,
   isRasterImage,
+  saveFile,
+  deleteFile,
+  getStoragePublicUrl,
+  type StorageConfig,
 } from '../../services/media';
 import { config } from '../../config';
 import type { Media, MediaVariants } from '../../db/schema';
 import type { DrizzleDB } from '../../db';
 
 /**
+ * Gets storage configuration from app config.
+ */
+function getStorageConfigFromAppConfig(): StorageConfig {
+  return {
+    backend: config.STORAGE_BACKEND,
+    uploadsPath: config.UPLOADS_PATH,
+    r2Config: config.R2_CONFIG,
+  };
+}
+
+/**
  * Formats a media record for API response.
  */
 function formatMediaResponse(media: Media) {
+  const storageConfig = getStorageConfigFromAppConfig();
   const response: Record<string, unknown> = {
     id: media.id,
     filename: media.filename,
     mimeType: media.mimeType,
     size: media.size,
     storageKey: media.storageKey,
-    url: getPublicUrl(media.storageKey),
+    url: getStoragePublicUrl(media.storageKey, storageConfig),
     altText: media.altText,
     width: media.width,
     height: media.height,
@@ -74,7 +87,7 @@ function formatMediaResponse(media: Media) {
         if (variant) {
           variantsWithUrls[key] = {
             ...variant,
-            url: getPublicUrl(variant.path),
+            url: getStoragePublicUrl(variant.path, storageConfig),
           };
         }
       }
@@ -128,11 +141,17 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
         );
       }
 
-      // Save file to disk
-      const saveResult = await saveFile(file, config.UPLOADS_PATH);
+      // Get storage configuration
+      const storageConfig = getStorageConfigFromAppConfig();
+
+      // Read file buffer (needed for both saving and image processing)
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+      // Save file using storage provider (works for both local and R2)
+      const saveResult = await saveFile(file, storageConfig);
 
       // Insert media record
-      const media = insertMedia(db, {
+      const media = await insertMedia(db, {
         filename: saveResult.filename,
         mimeType: saveResult.mimeType,
         size: saveResult.size,
@@ -143,14 +162,14 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
       // Process image variants asynchronously (fire-and-forget)
       if (isRasterImage(file.type)) {
         processImage(
-          saveResult.filePath,
-          config.UPLOADS_PATH,
+          fileBuffer,
           saveResult.storageKey,
-          saveResult.mimeType
-        ).then((result) => {
+          saveResult.mimeType,
+          storageConfig
+        ).then(async (result) => {
           // Update media record with variants and dimensions
           if (result.width > 0 && Object.keys(result.variants).length > 0) {
-            updateMediaVariants(db, media.id, {
+            await updateMediaVariants(db, media.id, {
               variants: JSON.stringify(result.variants),
               width: result.width,
               height: result.height,
@@ -190,8 +209,8 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
         mimeType,
       };
 
-      const mediaList = listMedia(db, options);
-      const total = countMedia(db, options);
+      const mediaList = await listMedia(db, options);
+      const total = await countMedia(db, options);
 
       const formattedList = mediaList.map(formatMediaResponse);
 
@@ -220,8 +239,8 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
         mimeType,
       };
 
-      const mediaList = listDeletedMedia(db, options);
-      const total = countDeletedMedia(db, options);
+      const mediaList = await listDeletedMedia(db, options);
+      const total = await countDeletedMedia(db, options);
 
       const formattedList = mediaList.map(formatMediaResponse);
 
@@ -241,7 +260,7 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
     async ({ params, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
-      const media = getMediaById(db, id);
+      const media = await getMediaById(db, id);
 
       if (!media) {
         throw new NotFoundError('Media not found');
@@ -264,7 +283,7 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const media = updateMediaAltText(db, id, body.altText ?? null);
+      const media = await updateMediaAltText(db, id, body.altText ?? null);
 
       if (!media) {
         throw new NotFoundError('Media not found');
@@ -288,7 +307,7 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const media = restoreMedia(db, id);
+      const media = await restoreMedia(db, id);
 
       if (!media) {
         throw new NotFoundError('Media not found or not in trash');
@@ -314,7 +333,7 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const media = softDeleteMedia(db, id);
+      const media = await softDeleteMedia(db, id);
 
       if (!media) {
         throw new NotFoundError('Media not found');
@@ -343,7 +362,7 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
       const id = parseInt(params.id, 10);
 
       // Get media including deleted to verify it exists and is in trash
-      const media = getMediaById(db, id, true);
+      const media = await getMediaById(db, id, true);
 
       if (!media) {
         throw new NotFoundError('Media not found');
@@ -353,11 +372,14 @@ export const adminMediaRoutes: any = new Elysia({ name: 'admin-media', prefix: '
         throw new ValidationError('Media must be in trash before permanent deletion');
       }
 
-      // Delete files from disk (original + variants)
-      await deleteFile(config.UPLOADS_PATH, media.storageKey, true);
+      // Get storage configuration
+      const storageConfig = getStorageConfigFromAppConfig();
+
+      // Delete files from storage (original + variants)
+      await deleteFile(media.storageKey, storageConfig, true);
 
       // Delete database record
-      const deleted = permanentlyDeleteMedia(db, id);
+      const deleted = await permanentlyDeleteMedia(db, id);
 
       if (!deleted) {
         throw new NotFoundError('Media not found');

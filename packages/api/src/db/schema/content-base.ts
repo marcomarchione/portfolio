@@ -4,8 +4,7 @@
  * Primary table for all content types with shared metadata fields.
  * Supports three content types: project, material, and news.
  */
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
-import { sql } from 'drizzle-orm';
+import { pgTable, text, serial, boolean, timestamp, index } from 'drizzle-orm/pg-core';
 
 /** Valid content types for the CMS */
 export const CONTENT_TYPES = ['project', 'material', 'news'] as const;
@@ -21,11 +20,11 @@ export type ContentStatus = (typeof CONTENT_STATUSES)[number];
  * Stores shared metadata for all content types (projects, materials, news).
  * Type-specific data is stored in extension tables with 1:1 relationships.
  */
-export const contentBase = sqliteTable(
+export const contentBase = pgTable(
   'content_base',
   {
     /** Auto-incrementing primary key */
-    id: integer('id').primaryKey({ autoIncrement: true }),
+    id: serial('id').primaryKey(),
 
     /** Content type discriminator with CHECK constraint */
     type: text('type', { enum: CONTENT_TYPES }).notNull(),
@@ -37,20 +36,16 @@ export const contentBase = sqliteTable(
     status: text('status', { enum: CONTENT_STATUSES }).notNull().default('draft'),
 
     /** Whether this content is featured on the homepage */
-    featured: integer('featured', { mode: 'boolean' }).notNull().default(false),
+    featured: boolean('featured').notNull().default(false),
 
-    /** Unix timestamp of creation */
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .$defaultFn(() => new Date()),
+    /** Timestamp of creation */
+    createdAt: timestamp('created_at').notNull().defaultNow(),
 
-    /** Unix timestamp of last update */
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .$defaultFn(() => new Date()),
+    /** Timestamp of last update */
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
 
-    /** Unix timestamp of publication (null if never published) */
-    publishedAt: integer('published_at', { mode: 'timestamp_ms' }),
+    /** Timestamp of publication (null if never published) */
+    publishedAt: timestamp('published_at'),
   },
   (table) => [
     index('idx_content_base_type').on(table.type),

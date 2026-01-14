@@ -21,6 +21,8 @@ import {
   FormField,
   SelectField,
   DateField,
+  GallerySelector,
+  type GalleryItem,
 } from '@/components/forms';
 import { useContentForm } from '@/hooks/useContentForm';
 import { get, put, post, patch } from '@/lib/api/client';
@@ -41,6 +43,7 @@ interface ProjectSpecificFields {
   startDate: string | null;
   endDate: string | null;
   technologyIds: number[];
+  galleryItems: GalleryItem[];
 }
 
 const DEFAULT_PROJECT_FIELDS: ProjectSpecificFields = {
@@ -50,6 +53,7 @@ const DEFAULT_PROJECT_FIELDS: ProjectSpecificFields = {
   startDate: null,
   endDate: null,
   technologyIds: [],
+  galleryItems: [],
 };
 
 /**
@@ -140,6 +144,12 @@ export default function ProjectFormPage() {
       startDate: project.startDate,
       endDate: project.endDate,
       technologyIds: project.technologies?.map(t => t.id) || [],
+      galleryItems: project.galleryImages?.map(img => ({
+        mediaId: img.id,
+        url: img.url,
+        alt: img.alt,
+        displayOrder: img.displayOrder,
+      })) || [],
     } : undefined,
     validateSpecificFields: validateProjectFields,
   });
@@ -271,6 +281,14 @@ export default function ProjectFormPage() {
           technologyIds: form.specificFields.technologyIds,
         });
       }
+
+      // 4. Assign gallery media
+      await post<ApiResponse<Project>>(`/admin/projects/${projectId}/media`, {
+        mediaItems: form.specificFields.galleryItems.map(item => ({
+          mediaId: item.mediaId,
+          displayOrder: item.displayOrder,
+        })),
+      });
 
       showSuccess(isEditing ? 'Project saved successfully' : 'Project created successfully');
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
@@ -518,6 +536,19 @@ export default function ProjectFormPage() {
             label="Project Technologies"
             selectedIds={form.specificFields.technologyIds}
             onChange={(ids) => form.setSpecificField('technologyIds', ids)}
+          />
+        </div>
+
+        {/* Gallery Images */}
+        <div className="glass-card p-6">
+          <h2 className="text-lg font-display font-semibold text-neutral-100 mb-4">
+            Gallery Images
+          </h2>
+          <GallerySelector
+            label="Project Gallery"
+            items={form.specificFields.galleryItems}
+            onChange={(items) => form.setSpecificField('galleryItems', items)}
+            helpText="Drag and drop to reorder. Images will be displayed in the public project gallery."
           />
         </div>
 

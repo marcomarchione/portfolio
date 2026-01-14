@@ -3,14 +3,12 @@
  *
  * News-specific database operations including joins with tags.
  */
-import { eq, and, sql, desc, asc, inArray, like } from 'drizzle-orm';
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import { eq, and, sql, desc, asc, inArray, like, ilike } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
 import type { ContentStatus, Language } from '../schema';
 import { getContentById, type ListContentOptions, type ContentSortField, type SortOrder } from './content';
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Options for listing news */
 export interface ListNewsOptions extends ListContentOptions {
@@ -43,8 +41,8 @@ export interface UpdateNewsData {
  * @param lang - Language code
  * @returns News with translation or null
  */
-export function getNewsWithTranslation(db: DrizzleDB, slug: string, lang: Language) {
-  const result = db
+export async function getNewsWithTranslation(db: DrizzleDB, slug: string, lang: Language) {
+  const [result] = await db
     .select({
       content: schema.contentBase,
       news: schema.news,
@@ -59,19 +57,18 @@ export function getNewsWithTranslation(db: DrizzleDB, slug: string, lang: Langua
         eq(schema.contentTranslations.lang, lang)
       )
     )
-    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, 'news')))
-    .get();
+    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, 'news')));
 
   if (!result) return null;
 
   // Get tags for news
-  const tags = db
+  const tagResults = await db
     .select({ tag: schema.tags })
     .from(schema.newsTags)
     .innerJoin(schema.tags, eq(schema.newsTags.tagId, schema.tags.id))
-    .where(eq(schema.newsTags.newsId, result.news.id))
-    .all()
-    .map((r) => r.tag);
+    .where(eq(schema.newsTags.newsId, result.news.id));
+
+  const tags = tagResults.map((r) => r.tag);
 
   return {
     ...result.content,
@@ -88,31 +85,29 @@ export function getNewsWithTranslation(db: DrizzleDB, slug: string, lang: Langua
  * @param id - Content ID
  * @returns News with all translations or null
  */
-export function getNewsWithAllTranslations(db: DrizzleDB, id: number) {
-  const content = getContentById(db, id);
+export async function getNewsWithAllTranslations(db: DrizzleDB, id: number) {
+  const content = await getContentById(db, id);
   if (!content || content.type !== 'news') return null;
 
-  const newsItem = db
+  const [newsItem] = await db
     .select()
     .from(schema.news)
-    .where(eq(schema.news.contentId, id))
-    .get();
+    .where(eq(schema.news.contentId, id));
 
   if (!newsItem) return null;
 
-  const translations = db
+  const translations = await db
     .select()
     .from(schema.contentTranslations)
-    .where(eq(schema.contentTranslations.contentId, id))
-    .all();
+    .where(eq(schema.contentTranslations.contentId, id));
 
-  const tags = db
+  const tagResults = await db
     .select({ tag: schema.tags })
     .from(schema.newsTags)
     .innerJoin(schema.tags, eq(schema.newsTags.tagId, schema.tags.id))
-    .where(eq(schema.newsTags.newsId, newsItem.id))
-    .all()
-    .map((r) => r.tag);
+    .where(eq(schema.newsTags.newsId, newsItem.id));
+
+  const tags = tagResults.map((r) => r.tag);
 
   // Return with content.id as the primary id (not newsItem.id)
   return {
@@ -155,7 +150,7 @@ function buildSortClause(
  * @param options - List options
  * @returns Array of news items
  */
-export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
+export async function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
   const {
     limit = 20,
     offset = 0,
@@ -182,19 +177,18 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
 
   // Filter by tag if provided
   if (tag) {
-    const tagRecord = db
+    const [tagRecord] = await db
       .select()
       .from(schema.tags)
-      .where(eq(schema.tags.slug, tag))
-      .get();
+      .where(eq(schema.tags.slug, tag));
 
     if (tagRecord) {
-      const newsIds = db
+      const newsIdsResults = await db
         .select({ newsId: schema.newsTags.newsId })
         .from(schema.newsTags)
-        .where(eq(schema.newsTags.tagId, tagRecord.id))
-        .all()
-        .map((r) => r.newsId);
+        .where(eq(schema.newsTags.tagId, tagRecord.id));
+
+      const newsIds = newsIdsResults.map((r) => r.newsId);
 
       if (newsIds.length > 0) {
         conditions.push(inArray(schema.news.id, newsIds));
@@ -211,10 +205,10 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
 
   if (needsItalianJoin) {
     if (search) {
-      conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+      conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
     }
 
-    const results = db
+    const results = await db
       .select({
         content: schema.contentBase,
         news: schema.news,
@@ -231,8 +225,7 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
       .where(and(...conditions))
       .orderBy(...buildSortClause(sortBy, sortOrder, true))
       .limit(limit)
-      .offset(offset)
-      .all();
+      .offset(offset);
 
     return results.map((r) => ({
       ...r.content,
@@ -241,7 +234,7 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     }));
   }
 
-  const results = db
+  const results = await db
     .select({
       content: schema.contentBase,
       news: schema.news,
@@ -251,8 +244,7 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
     .where(and(...conditions))
     .orderBy(...buildSortClause(sortBy, sortOrder, false))
     .limit(limit)
-    .offset(offset)
-    .all();
+    .offset(offset);
 
   return results.map((r) => ({
     ...r.content,
@@ -268,7 +260,7 @@ export function listNews(db: DrizzleDB, options: ListNewsOptions = {}) {
  * @param options - List options
  * @returns Total count
  */
-export function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
+export async function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
   const { status, featured, publishedOnly = false, tag, search } = options;
 
   const conditions: SQL[] = [eq(schema.contentBase.type, 'news')];
@@ -285,19 +277,18 @@ export function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
 
   // Filter by tag if provided
   if (tag) {
-    const tagRecord = db
+    const [tagRecord] = await db
       .select()
       .from(schema.tags)
-      .where(eq(schema.tags.slug, tag))
-      .get();
+      .where(eq(schema.tags.slug, tag));
 
     if (tagRecord) {
-      const newsIds = db
+      const newsIdsResults = await db
         .select({ newsId: schema.newsTags.newsId })
         .from(schema.newsTags)
-        .where(eq(schema.newsTags.tagId, tagRecord.id))
-        .all()
-        .map((r) => r.newsId);
+        .where(eq(schema.newsTags.tagId, tagRecord.id));
+
+      const newsIds = newsIdsResults.map((r) => r.newsId);
 
       if (newsIds.length > 0) {
         conditions.push(inArray(schema.news.id, newsIds));
@@ -310,10 +301,10 @@ export function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
   }
 
   if (search) {
-    conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+    conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
 
-    const result = db
-      .select({ count: sql<number>`count(*)` })
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
       .from(schema.contentBase)
       .innerJoin(schema.news, eq(schema.contentBase.id, schema.news.contentId))
       .leftJoin(
@@ -323,18 +314,16 @@ export function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
           eq(schema.contentTranslations.lang, 'it')
         )
       )
-      .where(and(...conditions))
-      .get();
+      .where(and(...conditions));
 
     return result?.count ?? 0;
   }
 
-  const result = db
-    .select({ count: sql<number>`count(*)` })
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(schema.contentBase)
     .innerJoin(schema.news, eq(schema.contentBase.id, schema.news.contentId))
-    .where(and(...conditions))
-    .get();
+    .where(and(...conditions));
 
   return result?.count ?? 0;
 }
@@ -346,12 +335,12 @@ export function countNews(db: DrizzleDB, options: ListNewsOptions = {}) {
  * @param data - News data
  * @returns Created news item
  */
-export function createNews(db: DrizzleDB, data: CreateNewsData) {
+export async function createNews(db: DrizzleDB, data: CreateNewsData) {
   const now = new Date();
   const status = data.status ?? 'draft';
 
   // Insert content_base
-  db.insert(schema.contentBase)
+  const [content] = await db.insert(schema.contentBase)
     .values({
       type: 'news',
       slug: data.slug,
@@ -361,28 +350,16 @@ export function createNews(db: DrizzleDB, data: CreateNewsData) {
       updatedAt: now,
       publishedAt: status === 'published' ? now : null,
     })
-    .run();
-
-  const content = db
-    .select()
-    .from(schema.contentBase)
-    .where(eq(schema.contentBase.slug, data.slug))
-    .get()!;
+    .returning();
 
   // Insert news extension
-  db.insert(schema.news)
+  const [newsItem] = await db.insert(schema.news)
     .values({
       contentId: content.id,
       coverImage: data.coverImage ?? null,
       readingTime: data.readingTime ?? null,
     })
-    .run();
-
-  const newsItem = db
-    .select()
-    .from(schema.news)
-    .where(eq(schema.news.contentId, content.id))
-    .get()!;
+    .returning();
 
   // Return with content.id as the primary id (not newsItem.id)
   return {
@@ -402,9 +379,9 @@ export function createNews(db: DrizzleDB, data: CreateNewsData) {
  * @param data - Update data
  * @returns Updated news item or null
  */
-export function updateNews(db: DrizzleDB, id: number, data: UpdateNewsData) {
+export async function updateNews(db: DrizzleDB, id: number, data: UpdateNewsData) {
   const now = new Date();
-  const content = getContentById(db, id);
+  const content = await getContentById(db, id);
   if (!content || content.type !== 'news') return null;
 
   // Update content_base
@@ -418,17 +395,15 @@ export function updateNews(db: DrizzleDB, id: number, data: UpdateNewsData) {
   }
   if (data.featured !== undefined) contentUpdates.featured = data.featured;
 
-  db.update(schema.contentBase)
+  await db.update(schema.contentBase)
     .set(contentUpdates)
-    .where(eq(schema.contentBase.id, id))
-    .run();
+    .where(eq(schema.contentBase.id, id));
 
   // Update news extension
-  const newsItem = db
+  const [newsItem] = await db
     .select()
     .from(schema.news)
-    .where(eq(schema.news.contentId, id))
-    .get();
+    .where(eq(schema.news.contentId, id));
 
   if (newsItem) {
     const newsUpdates: Record<string, unknown> = {};
@@ -436,10 +411,9 @@ export function updateNews(db: DrizzleDB, id: number, data: UpdateNewsData) {
     if (data.readingTime !== undefined) newsUpdates.readingTime = data.readingTime;
 
     if (Object.keys(newsUpdates).length > 0) {
-      db.update(schema.news)
+      await db.update(schema.news)
         .set(newsUpdates)
-        .where(eq(schema.news.id, newsItem.id))
-        .run();
+        .where(eq(schema.news.id, newsItem.id));
     }
   }
 

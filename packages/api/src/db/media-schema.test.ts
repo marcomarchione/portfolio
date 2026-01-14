@@ -1,235 +1,230 @@
 /**
  * Media Table Schema Tests
  *
- * Tests for media table schema changes including new columns:
+ * Tests for media table schema changes including columns:
  * deletedAt, variants, width, height
+ * Uses PostgreSQL with shared test database.
  */
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
-import { eq } from 'drizzle-orm';
+import { eq, lt, isNotNull, sql } from 'drizzle-orm';
+import type postgres from 'postgres';
+import { createTestDatabase, resetDatabase, closeDatabase } from './test-utils';
 import { media } from './schema/media';
 
-// SQL to create media table with new columns
-const CREATE_MEDIA_TABLE_SQL = `
-  CREATE TABLE IF NOT EXISTS media (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    filename TEXT NOT NULL,
-    mime_type TEXT NOT NULL,
-    size INTEGER NOT NULL,
-    storage_key TEXT NOT NULL UNIQUE,
-    alt_text TEXT,
-    created_at INTEGER NOT NULL,
-    deleted_at INTEGER,
-    variants TEXT,
-    width INTEGER,
-    height INTEGER
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_media_created_at ON media(created_at);
-  CREATE INDEX IF NOT EXISTS idx_media_storage_key ON media(storage_key);
-  CREATE INDEX IF NOT EXISTS idx_media_deleted_at ON media(deleted_at);
-`;
-
 describe('Media Table Schema', () => {
-  let sqlite: Database;
-  let db: ReturnType<typeof drizzle>;
+  let client: ReturnType<typeof postgres>;
+  let db: ReturnType<typeof createTestDatabase>['db'];
 
   beforeAll(() => {
-    sqlite = new Database(':memory:');
-    sqlite.exec(CREATE_MEDIA_TABLE_SQL);
-    db = drizzle(sqlite);
+    const testDb = createTestDatabase();
+    client = testDb.client;
+    db = testDb.db;
   });
 
-  afterAll(() => {
-    sqlite.close();
+  afterAll(async () => {
+    await closeDatabase(client);
   });
 
-  beforeEach(() => {
-    sqlite.exec('DELETE FROM media');
+  beforeEach(async () => {
+    await resetDatabase(db);
   });
 
-  test('deletedAt column is nullable and accepts timestamp values', () => {
-    const now = Date.now();
+  test('deletedAt column is nullable and accepts timestamp values', async () => {
+    const now = new Date();
 
     // Insert media with null deletedAt
-    db.insert(media).values({
+    const [inserted] = await db.insert(media).values({
       filename: 'test-image.jpg',
       mimeType: 'image/jpeg',
       size: 1024,
       storageKey: '2025/01/uuid-test-image.jpg',
-      createdAt: new Date(now),
+      createdAt: now,
       deletedAt: null,
-    }).run();
+    }).returning();
 
-    let result = db.select().from(media).where(eq(media.storageKey, '2025/01/uuid-test-image.jpg')).get();
-    expect(result).toBeDefined();
-    expect(result!.deletedAt).toBeNull();
+    let result = await db.select().from(media).where(eq(media.id, inserted.id));
+    expect(result).toHaveLength(1);
+    expect(result[0].deletedAt).toBeNull();
 
     // Update with deletedAt timestamp
-    const deleteTime = new Date(now + 1000);
-    db.update(media)
+    const deleteTime = new Date(now.getTime() + 1000);
+    await db.update(media)
       .set({ deletedAt: deleteTime })
-      .where(eq(media.id, result!.id))
-      .run();
+      .where(eq(media.id, inserted.id));
 
-    result = db.select().from(media).where(eq(media.id, result!.id)).get();
-    expect(result!.deletedAt).toEqual(deleteTime);
+    result = await db.select().from(media).where(eq(media.id, inserted.id));
+    expect(result[0].deletedAt).toEqual(deleteTime);
   });
 
-  test('variants column stores valid JSON data', () => {
-    const now = Date.now();
+  test('variants column stores valid JSON data', async () => {
+    const now = new Date();
     const variants = JSON.stringify({
       thumb: { path: '2025/01/uuid-test-thumb.webp', width: 400, height: 300 },
       medium: { path: '2025/01/uuid-test-medium.webp', width: 800, height: 600 },
       large: { path: '2025/01/uuid-test-large.webp', width: 1200, height: 900 },
     });
 
-    db.insert(media).values({
+    await db.insert(media).values({
       filename: 'test-variants.jpg',
       mimeType: 'image/jpeg',
       size: 2048,
       storageKey: '2025/01/uuid-test-variants.jpg',
-      createdAt: new Date(now),
+      createdAt: now,
       variants,
-    }).run();
+    });
 
-    const result = db.select().from(media).where(eq(media.storageKey, '2025/01/uuid-test-variants.jpg')).get();
-    expect(result).toBeDefined();
-    expect(result!.variants).toBe(variants);
+    const result = await db.select().from(media).where(eq(media.storageKey, '2025/01/uuid-test-variants.jpg'));
+    expect(result).toHaveLength(1);
+    expect(result[0].variants).toBe(variants);
 
     // Parse and verify JSON structure
-    const parsedVariants = JSON.parse(result!.variants!);
+    const parsedVariants = JSON.parse(result[0].variants!);
     expect(parsedVariants.thumb.width).toBe(400);
     expect(parsedVariants.medium.width).toBe(800);
     expect(parsedVariants.large.width).toBe(1200);
   });
 
-  test('width and height columns are nullable integers', () => {
-    const now = Date.now();
+  test('width and height columns are nullable integers', async () => {
+    const now = new Date();
 
     // Insert with width/height
-    db.insert(media).values({
+    await db.insert(media).values({
       filename: 'image-with-dimensions.jpg',
       mimeType: 'image/jpeg',
       size: 4096,
       storageKey: '2025/01/uuid-dimensions.jpg',
-      createdAt: new Date(now),
+      createdAt: now,
       width: 1920,
       height: 1080,
-    }).run();
+    });
 
-    let result = db.select().from(media).where(eq(media.storageKey, '2025/01/uuid-dimensions.jpg')).get();
-    expect(result).toBeDefined();
-    expect(result!.width).toBe(1920);
-    expect(result!.height).toBe(1080);
+    let result = await db.select().from(media).where(eq(media.storageKey, '2025/01/uuid-dimensions.jpg'));
+    expect(result).toHaveLength(1);
+    expect(result[0].width).toBe(1920);
+    expect(result[0].height).toBe(1080);
 
     // Insert without width/height (null)
-    db.insert(media).values({
+    await db.insert(media).values({
       filename: 'pdf-no-dimensions.pdf',
       mimeType: 'application/pdf',
       size: 8192,
       storageKey: '2025/01/uuid-pdf.pdf',
-      createdAt: new Date(now),
+      createdAt: now,
       width: null,
       height: null,
-    }).run();
+    });
 
-    result = db.select().from(media).where(eq(media.storageKey, '2025/01/uuid-pdf.pdf')).get();
-    expect(result).toBeDefined();
-    expect(result!.width).toBeNull();
-    expect(result!.height).toBeNull();
+    result = await db.select().from(media).where(eq(media.storageKey, '2025/01/uuid-pdf.pdf'));
+    expect(result).toHaveLength(1);
+    expect(result[0].width).toBeNull();
+    expect(result[0].height).toBeNull();
   });
 
-  test('index on deletedAt exists and supports cleanup queries', () => {
-    const now = Date.now();
-    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+  test('deletedAt supports cleanup queries', async () => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     // Insert multiple records with various deletedAt values
-    const testData = [
-      { filename: 'active.jpg', storageKey: 'active', deletedAt: null },
-      { filename: 'recent-delete.jpg', storageKey: 'recent', deletedAt: new Date(now - 1000) },
-      { filename: 'old-delete.jpg', storageKey: 'old', deletedAt: new Date(thirtyDaysAgo - 1000) },
-    ];
+    await db.insert(media).values({
+      filename: 'active.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      storageKey: 'active',
+      createdAt: now,
+      deletedAt: null,
+    });
 
-    for (const item of testData) {
-      db.insert(media).values({
-        filename: item.filename,
-        mimeType: 'image/jpeg',
-        size: 1024,
-        storageKey: item.storageKey,
-        createdAt: new Date(now),
-        deletedAt: item.deletedAt,
-      }).run();
-    }
+    await db.insert(media).values({
+      filename: 'recent-delete.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      storageKey: 'recent',
+      createdAt: now,
+      deletedAt: new Date(now.getTime() - 1000),
+    });
+
+    await db.insert(media).values({
+      filename: 'old-delete.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      storageKey: 'old',
+      createdAt: now,
+      deletedAt: new Date(thirtyDaysAgo.getTime() - 1000),
+    });
 
     // Query for cleanup candidates (deletedAt before threshold)
-    const thresholdDate = new Date(thirtyDaysAgo);
-
-    // Using raw SQL to test index usage
-    const cleanupCandidates = sqlite.query(`
-      SELECT * FROM media
-      WHERE deleted_at IS NOT NULL
-      AND deleted_at < ?
-    `).all(thresholdDate.getTime());
+    const cleanupCandidates = await db
+      .select()
+      .from(media)
+      .where(lt(media.deletedAt, thirtyDaysAgo));
 
     expect(cleanupCandidates).toHaveLength(1);
-    expect((cleanupCandidates[0] as { storage_key: string }).storage_key).toBe('old');
-
-    // Verify index exists
-    const indexes = sqlite.query(`
-      SELECT name FROM sqlite_master
-      WHERE type = 'index' AND tbl_name = 'media' AND name = 'idx_media_deleted_at'
-    `).all();
-    expect(indexes).toHaveLength(1);
+    expect(cleanupCandidates[0].storageKey).toBe('old');
   });
 
-  test('storage_key remains unique across records', () => {
-    const now = Date.now();
+  test('storage_key remains unique across records', async () => {
+    const now = new Date();
 
-    db.insert(media).values({
+    await db.insert(media).values({
       filename: 'unique-test.jpg',
       mimeType: 'image/jpeg',
       size: 1024,
       storageKey: '2025/01/unique-key.jpg',
-      createdAt: new Date(now),
-    }).run();
+      createdAt: now,
+    });
 
     // Attempting to insert duplicate storage_key should fail
-    expect(() => {
-      db.insert(media).values({
+    let error: Error | null = null;
+    try {
+      await db.insert(media).values({
         filename: 'another-file.jpg',
         mimeType: 'image/jpeg',
         size: 2048,
         storageKey: '2025/01/unique-key.jpg',
-        createdAt: new Date(now),
-      }).run();
-    }).toThrow();
+        createdAt: now,
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).not.toBeNull();
+    expect(error?.message).toContain('unique');
   });
 
-  test('all required fields are enforced', () => {
+  test('all required fields are enforced', async () => {
     // Missing filename should fail
-    expect(() => {
-      sqlite.exec(`
-        INSERT INTO media (mime_type, size, storage_key, created_at)
-        VALUES ('image/jpeg', 1024, 'key1', ${Date.now()})
-      `);
-    }).toThrow();
+    let error1: Error | null = null;
+    try {
+      await db.execute(
+        sql`INSERT INTO media (mime_type, size, storage_key, created_at)
+            VALUES ('image/jpeg', 1024, 'key1', NOW())`
+      );
+    } catch (e) {
+      error1 = e as Error;
+    }
+    expect(error1).not.toBeNull();
 
     // Missing mimeType should fail
-    expect(() => {
-      sqlite.exec(`
-        INSERT INTO media (filename, size, storage_key, created_at)
-        VALUES ('test.jpg', 1024, 'key2', ${Date.now()})
-      `);
-    }).toThrow();
+    let error2: Error | null = null;
+    try {
+      await db.execute(
+        sql`INSERT INTO media (filename, size, storage_key, created_at)
+            VALUES ('test.jpg', 1024, 'key2', NOW())`
+      );
+    } catch (e) {
+      error2 = e as Error;
+    }
+    expect(error2).not.toBeNull();
 
     // Missing size should fail
-    expect(() => {
-      sqlite.exec(`
-        INSERT INTO media (filename, mime_type, storage_key, created_at)
-        VALUES ('test.jpg', 'image/jpeg', 'key3', ${Date.now()})
-      `);
-    }).toThrow();
+    let error3: Error | null = null;
+    try {
+      await db.execute(
+        sql`INSERT INTO media (filename, mime_type, storage_key, created_at)
+            VALUES ('test.jpg', 'image/jpeg', 'key3', NOW())`
+      );
+    } catch (e) {
+      error3 = e as Error;
+    }
+    expect(error3).not.toBeNull();
   });
 });

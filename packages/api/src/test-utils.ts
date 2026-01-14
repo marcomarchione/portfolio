@@ -2,19 +2,18 @@
  * API Test Utilities
  *
  * Provides helper functions for testing API endpoints.
- * Creates isolated test instances with in-memory databases.
+ * Creates isolated test instances with PostgreSQL databases.
  */
 import { Elysia } from 'elysia';
 import jwt from '@elysiajs/jwt';
+import postgres from 'postgres';
 import { createTestDatabase, resetDatabase, closeDatabase } from './db/test-utils';
 import { errorHandler } from './middleware/error-handler';
 import { createCorsMiddleware } from './middleware/cors';
-import { createAuthMiddleware } from './middleware/auth';
 import { createDatabasePlugin } from './plugins/database';
 import { createSwaggerPlugin } from './plugins/swagger';
 import { apiRoutes } from './routes';
 import { config } from './config';
-import type { Database } from 'bun:sqlite';
 
 /**
  * Default test JWT secret.
@@ -49,12 +48,12 @@ export interface TestApp {
   app: any;
   /** Database instance for direct queries in tests */
   db: ReturnType<typeof createTestDatabase>['db'];
-  /** SQLite connection for cleanup */
-  sqlite: Database;
+  /** PostgreSQL client for cleanup */
+  client: ReturnType<typeof postgres>;
   /** Reset database to clean state */
-  reset: () => void;
+  reset: () => Promise<void>;
   /** Close database connection */
-  cleanup: () => void;
+  cleanup: () => Promise<void>;
 }
 
 /** Auth test app instance with token generation */
@@ -68,7 +67,7 @@ export interface AuthTestApp extends TestApp {
 }
 
 /**
- * Creates a test API application with an in-memory database.
+ * Creates a test API application with a PostgreSQL database.
  * Use this for integration tests that need a full API stack.
  *
  * @param options - Test app configuration
@@ -81,12 +80,13 @@ export interface AuthTestApp extends TestApp {
  * describe('API Tests', () => {
  *   let testApp: TestApp;
  *
- *   beforeEach(() => {
+ *   beforeEach(async () => {
  *     testApp = createTestApp();
+ *     await testApp.reset();
  *   });
  *
- *   afterEach(() => {
- *     testApp.cleanup();
+ *   afterEach(async () => {
+ *     await testApp.cleanup();
  *   });
  *
  *   test('health check', async () => {
@@ -102,7 +102,7 @@ export function createTestApp(options: TestAppOptions = {}): TestApp {
   const { cors = false, swagger = false, corsOrigins = [] } = options;
 
   // Create test database
-  const { sqlite, db } = createTestDatabase();
+  const { client, db } = createTestDatabase();
 
   // Build app with test configuration
   let app: any = new Elysia({ name: 'test-api' })
@@ -125,9 +125,9 @@ export function createTestApp(options: TestAppOptions = {}): TestApp {
   return {
     app,
     db,
-    sqlite,
-    reset: () => resetDatabase(sqlite),
-    cleanup: () => closeDatabase(sqlite),
+    client,
+    reset: () => resetDatabase(db),
+    cleanup: () => closeDatabase(client),
   };
 }
 
@@ -145,12 +145,13 @@ export function createTestApp(options: TestAppOptions = {}): TestApp {
  * describe('Protected API Tests', () => {
  *   let testApp: AuthTestApp;
  *
- *   beforeEach(() => {
+ *   beforeEach(async () => {
  *     testApp = createTestAppWithAuth();
+ *     await testApp.reset();
  *   });
  *
- *   afterEach(() => {
- *     testApp.cleanup();
+ *   afterEach(async () => {
+ *     await testApp.cleanup();
  *   });
  *
  *   test('protected route with valid token', async () => {
@@ -174,7 +175,7 @@ export function createTestAppWithAuth(options: AuthTestAppOptions = {}): AuthTes
   } = options;
 
   // Create test database
-  const { sqlite, db } = createTestDatabase();
+  const { client, db } = createTestDatabase();
 
   // Build app with test configuration
   let app: any = new Elysia({ name: 'test-api-with-auth' })
@@ -246,9 +247,9 @@ export function createTestAppWithAuth(options: AuthTestAppOptions = {}): AuthTes
   return {
     app,
     db,
-    sqlite,
-    reset: () => resetDatabase(sqlite),
-    cleanup: () => closeDatabase(sqlite),
+    client,
+    reset: () => resetDatabase(db),
+    cleanup: () => closeDatabase(client),
     generateAccessToken,
     generateRefreshToken,
     generateExpiredToken,

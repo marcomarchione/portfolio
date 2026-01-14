@@ -33,7 +33,7 @@ import type { DrizzleDB } from '../../db';
  * Formats a material for admin API response.
  */
 function formatAdminMaterialResponse(
-  material: NonNullable<ReturnType<typeof getMaterialWithAllTranslations>>
+  material: NonNullable<Awaited<ReturnType<typeof getMaterialWithAllTranslations>>>
 ) {
   return {
     id: material.id,
@@ -86,17 +86,19 @@ export const adminMaterialsRoutes: any = new Elysia({ name: 'admin-materials', p
         sortOrder,
       };
 
-      const materials = listMaterials(db, options);
-      const total = countMaterials(db, options);
+      const materials = await listMaterials(db, options);
+      const total = await countMaterials(db, options);
 
       // Get all translations for each material
-      const materialsWithAllTranslations = materials.map((material) => {
-        const fullMaterial = getMaterialWithAllTranslations(db, material.id);
-        if (!fullMaterial) return null;
-        return formatAdminMaterialResponse(fullMaterial);
-      }).filter(Boolean);
+      const materialsWithAllTranslations = await Promise.all(
+        materials.map(async (material) => {
+          const fullMaterial = await getMaterialWithAllTranslations(db, material.id);
+          if (!fullMaterial) return null;
+          return formatAdminMaterialResponse(fullMaterial);
+        })
+      );
 
-      return createPaginatedResponse(materialsWithAllTranslations, total, offset, limit);
+      return createPaginatedResponse(materialsWithAllTranslations.filter(Boolean), total, offset, limit);
     },
     {
       query: AdminListQuerySchema,
@@ -113,7 +115,7 @@ export const adminMaterialsRoutes: any = new Elysia({ name: 'admin-materials', p
     async ({ params, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
-      const material = getMaterialWithAllTranslations(db, id);
+      const material = await getMaterialWithAllTranslations(db, id);
 
       if (!material) {
         throw new NotFoundError('Material not found');
@@ -134,7 +136,7 @@ export const adminMaterialsRoutes: any = new Elysia({ name: 'admin-materials', p
     '/',
     async ({ body, db: rawDb, set }) => {
       const db = rawDb as DrizzleDB;
-      const material = createMaterial(db, {
+      const material = await createMaterial(db, {
         slug: body.slug,
         category: body.category as MaterialCategory,
         downloadUrl: body.downloadUrl,
@@ -162,7 +164,7 @@ export const adminMaterialsRoutes: any = new Elysia({ name: 'admin-materials', p
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const material = updateMaterial(db, id, {
+      const material = await updateMaterial(db, id, {
         slug: body.slug,
         category: body.category as MaterialCategory | undefined,
         downloadUrl: body.downloadUrl,
@@ -196,12 +198,12 @@ export const adminMaterialsRoutes: any = new Elysia({ name: 'admin-materials', p
       const lang = params.lang as Language;
 
       // Verify material exists
-      const material = getMaterialWithAllTranslations(db, id);
+      const material = await getMaterialWithAllTranslations(db, id);
       if (!material) {
         throw new NotFoundError('Material not found');
       }
 
-      const translation = upsertTranslation(db, id, lang, {
+      const translation = await upsertTranslation(db, id, lang, {
         title: body.title,
         description: body.description,
         body: body.body,
@@ -237,13 +239,13 @@ export const adminMaterialsRoutes: any = new Elysia({ name: 'admin-materials', p
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const archived = archiveContent(db, id);
+      const archived = await archiveContent(db, id);
       if (!archived) {
         throw new NotFoundError('Material not found');
       }
 
       // Get updated material with all translations
-      const material = getMaterialWithAllTranslations(db, id);
+      const material = await getMaterialWithAllTranslations(db, id);
       if (!material) {
         throw new NotFoundError('Material not found');
       }

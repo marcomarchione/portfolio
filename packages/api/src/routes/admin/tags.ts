@@ -37,7 +37,7 @@ class ConflictError extends ApiError {
 /**
  * Formats a tag for API response.
  */
-function formatTagResponse(tag: ReturnType<typeof getTagById>) {
+function formatTagResponse(tag: Awaited<ReturnType<typeof getTagById>>) {
   if (!tag) return null;
   return {
     id: tag.id,
@@ -55,7 +55,7 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
     '/',
     async ({ db: rawDb }) => {
       const db = rawDb as DrizzleDB;
-      const tags = listTags(db);
+      const tags = await listTags(db);
       return createResponse(tags.map(formatTagResponse).filter(Boolean));
     },
     {
@@ -71,7 +71,7 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
     async ({ params, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
-      const tag = getTagById(db, id);
+      const tag = await getTagById(db, id);
 
       if (!tag) {
         throw new NotFoundError('Tag not found');
@@ -92,7 +92,7 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
     '/',
     async ({ body, db: rawDb, set }) => {
       const db = rawDb as DrizzleDB;
-      const tag = createTag(db, {
+      const tag = await createTag(db, {
         name: body.name,
         slug: body.slug,
       });
@@ -115,7 +115,7 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const tag = updateTag(db, id, {
+      const tag = await updateTag(db, id, {
         name: body.name,
         slug: body.slug,
       });
@@ -144,26 +144,26 @@ export const adminTagsRoutes: any = new Elysia({ name: 'admin-tags', prefix: '/t
       const force = query.force === 'true';
 
       // Check if tag exists
-      const tag = getTagById(db, id);
+      const tag = await getTagById(db, id);
       if (!tag) {
         throw new NotFoundError('Tag not found');
       }
 
       // If force=true, use cascade delete
       if (force) {
-        deleteTagWithCascade(db, id);
+        await deleteTagWithCascade(db, id);
         return createResponse({ message: 'Tag deleted successfully (with cascade)', id });
       }
 
       // Otherwise, check if referenced and fail if so
-      if (isTagReferenced(db, id)) {
+      if (await isTagReferenced(db, id)) {
         throw new ConflictError('Tag is referenced by one or more news items', {
           tagId: id,
         });
       }
 
       // Delete
-      deleteTag(db, id);
+      await deleteTag(db, id);
 
       return createResponse({ message: 'Tag deleted successfully', id });
     },

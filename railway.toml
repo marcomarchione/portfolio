@@ -1,0 +1,15 @@
+# Railway Configuration for Monorepo
+# See DEPLOY.md for complete setup instructions
+#
+# This monorepo requires 3 separate Railway services:
+# 1. api   - Elysia REST API (packages/api)
+# 2. admin - React Admin Panel (packages/admin)
+# 3. web   - Astro Public Website (packages/web)
+#
+# Each service should be configured in Railway dashboard with:
+# - Root Directory: / (repository root)
+# - Dockerfile Path: packages/<service>/Dockerfile.railway
+# - Watch Paths: packages/<service>/**, packages/shared/**
+
+[build]
+builder = "dockerfile"

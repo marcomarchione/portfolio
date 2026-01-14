@@ -3,12 +3,14 @@
  *
  * Uses Sharp library to generate WebP variants at different sizes.
  * Extracts image dimensions and creates optimized versions.
+ * Supports both local filesystem and R2 storage backends.
  */
 import sharp from 'sharp';
 import { mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { getVariantKey, getStorageDir, type VariantType } from './storage';
 import { isRasterImage } from './validation';
+import type { StorageConfig } from './storage-provider';
 
 /** Variant configuration with target width */
 export const VARIANT_WIDTHS: Record<VariantType, number> = {
@@ -44,14 +46,100 @@ export interface ProcessingResult {
 /**
  * Processes an image and generates WebP variants at different sizes.
  * Skips processing for SVG and PDF files.
+ * Supports both local filesystem and R2 storage backends.
  *
- * @param inputPath - Absolute path to the original image file
- * @param uploadsPath - Base uploads directory
+ * @param inputBuffer - Buffer containing the original image data
  * @param storageKey - Storage key for the original file
  * @param mimeType - MIME type of the original file
+ * @param storageConfig - Storage configuration for saving variants
  * @returns Processing result with dimensions and variant metadata
  */
 export async function processImage(
+  inputBuffer: Buffer,
+  storageKey: string,
+  mimeType: string,
+  storageConfig: StorageConfig
+): Promise<ProcessingResult> {
+  // Import dynamically to avoid circular dependency
+  const { saveBuffer } = await import('./storage-provider');
+
+  // Skip processing for non-raster images (SVG, PDF)
+  if (!isRasterImage(mimeType)) {
+    return {
+      width: 0,
+      height: 0,
+      variants: {},
+    };
+  }
+
+  // Get original image metadata
+  const image = sharp(inputBuffer);
+  const metadata = await image.metadata();
+  const originalWidth = metadata.width ?? 0;
+  const originalHeight = metadata.height ?? 0;
+
+  if (originalWidth === 0 || originalHeight === 0) {
+    console.warn(`Could not read dimensions from buffer for: ${storageKey}`);
+    return {
+      width: 0,
+      height: 0,
+      variants: {},
+    };
+  }
+
+  const variants: ProcessingResult['variants'] = {};
+
+  // Generate each variant
+  for (const variant of ['thumb', 'medium', 'large'] as const) {
+    const targetWidth = VARIANT_WIDTHS[variant];
+
+    // Skip variant if original is smaller than target width
+    if (originalWidth <= targetWidth) {
+      continue;
+    }
+
+    const variantKey = getVariantKey(storageKey, variant);
+
+    // Calculate proportional height
+    const scaleFactor = targetWidth / originalWidth;
+    const targetHeight = Math.round(originalHeight * scaleFactor);
+
+    try {
+      // Generate WebP variant to buffer
+      const variantBuffer = await sharp(inputBuffer)
+        .resize(targetWidth, targetHeight, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 80 })
+        .toBuffer();
+
+      // Save variant using storage provider (works for both local and R2)
+      await saveBuffer(variantBuffer, variantKey, 'image/webp', storageConfig);
+
+      variants[variant] = {
+        path: variantKey,
+        width: targetWidth,
+        height: targetHeight,
+      };
+    } catch (error) {
+      console.error(`Failed to generate ${variant} variant for ${storageKey}:`, error);
+      // Continue with other variants even if one fails
+    }
+  }
+
+  return {
+    width: originalWidth,
+    height: originalHeight,
+    variants,
+  };
+}
+
+/**
+ * Legacy function for local filesystem processing.
+ * @deprecated Use processImage with StorageConfig instead.
+ */
+export async function processImageLegacy(
   inputPath: string,
   uploadsPath: string,
   storageKey: string,

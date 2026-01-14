@@ -1,0 +1,10 @@
+# Bun test configuration
+# Limit concurrency to prevent PostgreSQL connection exhaustion
+
+[test]
+# Limit to 4 concurrent test files to prevent DB connection exhaustion
+# PostgreSQL has 100 max connections, each test file uses 1
+concurrency = 4
+
+# Increase timeout for beforeEach hooks (DB reset can be slow)
+timeout = 10000

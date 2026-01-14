@@ -4,10 +4,8 @@
  * CRUD operations for technologies and tags tables.
  */
 import { eq, sql } from 'drizzle-orm';
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Data for creating a technology */
 export interface CreateTechnologyData {
@@ -43,8 +41,8 @@ export interface UpdateTagData {
  * @param db - Drizzle database instance
  * @returns Array of technologies
  */
-export function listTechnologies(db: DrizzleDB) {
-  return db.select().from(schema.technologies).all();
+export async function listTechnologies(db: DrizzleDB) {
+  return db.select().from(schema.technologies);
 }
 
 /**
@@ -54,8 +52,9 @@ export function listTechnologies(db: DrizzleDB) {
  * @param id - Technology ID
  * @returns Technology or undefined
  */
-export function getTechnologyById(db: DrizzleDB, id: number) {
-  return db.select().from(schema.technologies).where(eq(schema.technologies.id, id)).get();
+export async function getTechnologyById(db: DrizzleDB, id: number) {
+  const [result] = await db.select().from(schema.technologies).where(eq(schema.technologies.id, id));
+  return result;
 }
 
 /**
@@ -65,8 +64,9 @@ export function getTechnologyById(db: DrizzleDB, id: number) {
  * @param name - Technology name
  * @returns Technology or undefined
  */
-export function getTechnologyByName(db: DrizzleDB, name: string) {
-  return db.select().from(schema.technologies).where(eq(schema.technologies.name, name)).get();
+export async function getTechnologyByName(db: DrizzleDB, name: string) {
+  const [result] = await db.select().from(schema.technologies).where(eq(schema.technologies.name, name));
+  return result;
 }
 
 /**
@@ -76,16 +76,16 @@ export function getTechnologyByName(db: DrizzleDB, name: string) {
  * @param data - Technology data
  * @returns Created technology
  */
-export function createTechnology(db: DrizzleDB, data: CreateTechnologyData) {
-  db.insert(schema.technologies)
+export async function createTechnology(db: DrizzleDB, data: CreateTechnologyData) {
+  const [result] = await db.insert(schema.technologies)
     .values({
       name: data.name,
       icon: data.icon ?? null,
       color: data.color ?? null,
     })
-    .run();
+    .returning();
 
-  return getTechnologyByName(db, data.name)!;
+  return result;
 }
 
 /**
@@ -96,8 +96,8 @@ export function createTechnology(db: DrizzleDB, data: CreateTechnologyData) {
  * @param data - Update data
  * @returns Updated technology or undefined
  */
-export function updateTechnology(db: DrizzleDB, id: number, data: UpdateTechnologyData) {
-  const existing = getTechnologyById(db, id);
+export async function updateTechnology(db: DrizzleDB, id: number, data: UpdateTechnologyData) {
+  const existing = await getTechnologyById(db, id);
   if (!existing) return undefined;
 
   const updates: Record<string, unknown> = {};
@@ -106,10 +106,9 @@ export function updateTechnology(db: DrizzleDB, id: number, data: UpdateTechnolo
   if (data.color !== undefined) updates.color = data.color;
 
   if (Object.keys(updates).length > 0) {
-    db.update(schema.technologies)
+    await db.update(schema.technologies)
       .set(updates)
-      .where(eq(schema.technologies.id, id))
-      .run();
+      .where(eq(schema.technologies.id, id));
   }
 
   return getTechnologyById(db, id);
@@ -122,12 +121,11 @@ export function updateTechnology(db: DrizzleDB, id: number, data: UpdateTechnolo
  * @param id - Technology ID
  * @returns True if referenced
  */
-export function isTechnologyReferenced(db: DrizzleDB, id: number) {
-  const result = db
-    .select({ count: sql<number>`count(*)` })
+export async function isTechnologyReferenced(db: DrizzleDB, id: number) {
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(schema.projectTechnologies)
-    .where(eq(schema.projectTechnologies.technologyId, id))
-    .get();
+    .where(eq(schema.projectTechnologies.technologyId, id));
 
   return (result?.count ?? 0) > 0;
 }
@@ -139,12 +137,12 @@ export function isTechnologyReferenced(db: DrizzleDB, id: number) {
  * @param id - Technology ID
  * @returns True if deleted, false if referenced
  */
-export function deleteTechnology(db: DrizzleDB, id: number): boolean {
-  if (isTechnologyReferenced(db, id)) {
+export async function deleteTechnology(db: DrizzleDB, id: number): Promise<boolean> {
+  if (await isTechnologyReferenced(db, id)) {
     return false;
   }
 
-  db.delete(schema.technologies).where(eq(schema.technologies.id, id)).run();
+  await db.delete(schema.technologies).where(eq(schema.technologies.id, id));
   return true;
 }
 
@@ -155,14 +153,13 @@ export function deleteTechnology(db: DrizzleDB, id: number): boolean {
  * @param id - Technology ID
  * @returns True if deleted
  */
-export function deleteTechnologyWithCascade(db: DrizzleDB, id: number): boolean {
+export async function deleteTechnologyWithCascade(db: DrizzleDB, id: number): Promise<boolean> {
   // Delete all project_technologies records for this technology
-  db.delete(schema.projectTechnologies)
-    .where(eq(schema.projectTechnologies.technologyId, id))
-    .run();
+  await db.delete(schema.projectTechnologies)
+    .where(eq(schema.projectTechnologies.technologyId, id));
 
   // Delete the technology
-  db.delete(schema.technologies).where(eq(schema.technologies.id, id)).run();
+  await db.delete(schema.technologies).where(eq(schema.technologies.id, id));
   return true;
 }
 
@@ -174,8 +171,8 @@ export function deleteTechnologyWithCascade(db: DrizzleDB, id: number): boolean 
  * @param db - Drizzle database instance
  * @returns Array of tags
  */
-export function listTags(db: DrizzleDB) {
-  return db.select().from(schema.tags).all();
+export async function listTags(db: DrizzleDB) {
+  return db.select().from(schema.tags);
 }
 
 /**
@@ -185,8 +182,9 @@ export function listTags(db: DrizzleDB) {
  * @param id - Tag ID
  * @returns Tag or undefined
  */
-export function getTagById(db: DrizzleDB, id: number) {
-  return db.select().from(schema.tags).where(eq(schema.tags.id, id)).get();
+export async function getTagById(db: DrizzleDB, id: number) {
+  const [result] = await db.select().from(schema.tags).where(eq(schema.tags.id, id));
+  return result;
 }
 
 /**
@@ -196,8 +194,9 @@ export function getTagById(db: DrizzleDB, id: number) {
  * @param slug - Tag slug
  * @returns Tag or undefined
  */
-export function getTagBySlug(db: DrizzleDB, slug: string) {
-  return db.select().from(schema.tags).where(eq(schema.tags.slug, slug)).get();
+export async function getTagBySlug(db: DrizzleDB, slug: string) {
+  const [result] = await db.select().from(schema.tags).where(eq(schema.tags.slug, slug));
+  return result;
 }
 
 /**
@@ -207,15 +206,15 @@ export function getTagBySlug(db: DrizzleDB, slug: string) {
  * @param data - Tag data
  * @returns Created tag
  */
-export function createTag(db: DrizzleDB, data: CreateTagData) {
-  db.insert(schema.tags)
+export async function createTag(db: DrizzleDB, data: CreateTagData) {
+  const [result] = await db.insert(schema.tags)
     .values({
       name: data.name,
       slug: data.slug,
     })
-    .run();
+    .returning();
 
-  return getTagBySlug(db, data.slug)!;
+  return result;
 }
 
 /**
@@ -226,8 +225,8 @@ export function createTag(db: DrizzleDB, data: CreateTagData) {
  * @param data - Update data
  * @returns Updated tag or undefined
  */
-export function updateTag(db: DrizzleDB, id: number, data: UpdateTagData) {
-  const existing = getTagById(db, id);
+export async function updateTag(db: DrizzleDB, id: number, data: UpdateTagData) {
+  const existing = await getTagById(db, id);
   if (!existing) return undefined;
 
   const updates: Record<string, unknown> = {};
@@ -235,10 +234,9 @@ export function updateTag(db: DrizzleDB, id: number, data: UpdateTagData) {
   if (data.slug !== undefined) updates.slug = data.slug;
 
   if (Object.keys(updates).length > 0) {
-    db.update(schema.tags)
+    await db.update(schema.tags)
       .set(updates)
-      .where(eq(schema.tags.id, id))
-      .run();
+      .where(eq(schema.tags.id, id));
   }
 
   return getTagById(db, id);
@@ -251,12 +249,11 @@ export function updateTag(db: DrizzleDB, id: number, data: UpdateTagData) {
  * @param id - Tag ID
  * @returns True if referenced
  */
-export function isTagReferenced(db: DrizzleDB, id: number) {
-  const result = db
-    .select({ count: sql<number>`count(*)` })
+export async function isTagReferenced(db: DrizzleDB, id: number) {
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(schema.newsTags)
-    .where(eq(schema.newsTags.tagId, id))
-    .get();
+    .where(eq(schema.newsTags.tagId, id));
 
   return (result?.count ?? 0) > 0;
 }
@@ -268,12 +265,12 @@ export function isTagReferenced(db: DrizzleDB, id: number) {
  * @param id - Tag ID
  * @returns True if deleted, false if referenced
  */
-export function deleteTag(db: DrizzleDB, id: number): boolean {
-  if (isTagReferenced(db, id)) {
+export async function deleteTag(db: DrizzleDB, id: number): Promise<boolean> {
+  if (await isTagReferenced(db, id)) {
     return false;
   }
 
-  db.delete(schema.tags).where(eq(schema.tags.id, id)).run();
+  await db.delete(schema.tags).where(eq(schema.tags.id, id));
   return true;
 }
 
@@ -284,13 +281,12 @@ export function deleteTag(db: DrizzleDB, id: number): boolean {
  * @param id - Tag ID
  * @returns True if deleted
  */
-export function deleteTagWithCascade(db: DrizzleDB, id: number): boolean {
+export async function deleteTagWithCascade(db: DrizzleDB, id: number): Promise<boolean> {
   // Delete all news_tags records for this tag
-  db.delete(schema.newsTags)
-    .where(eq(schema.newsTags.tagId, id))
-    .run();
+  await db.delete(schema.newsTags)
+    .where(eq(schema.newsTags.tagId, id));
 
   // Delete the tag
-  db.delete(schema.tags).where(eq(schema.tags.id, id)).run();
+  await db.delete(schema.tags).where(eq(schema.tags.id, id));
   return true;
 }

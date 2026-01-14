@@ -123,6 +123,38 @@
         "refactoring": {
           "label": "Refactoring-Geschwindigkeit"
         }
+      },
+      "learningCurve": {
+        "title": "Lernkurve",
+        "subtitle": "Anpassung und Produktivitat im Zeitverlauf",
+        "xAxis": "Zeit (Monate)",
+        "yAxis": "Produktivitat %"
+      },
+      "metricsTitle": "Leistungsmetriken",
+      "timeSavings": {
+        "title": "Zeitersparnis pro Projekt",
+        "subtitle": "Geschatzte Stunden fur durchschnittliches Projekt",
+        "phases": {
+          "analysis": "Analyse",
+          "development": "Entwicklung",
+          "testing": "Testing",
+          "deploy": "Deployment",
+          "maintenance": "Wartung"
+        },
+        "hours": "Stunden",
+        "saved": "Ersparnis",
+        "totalSaved": "Gesamtersparnis"
+      },
+      "timeDistribution": {
+        "title": "Zeitverteilung",
+        "subtitle": "Wie die Arbeitszeit verteilt wird",
+        "activities": {
+          "coding": "Code-Entwicklung",
+          "clientCalls": "Kundengesprache",
+          "documentation": "Dokumentation",
+          "learning": "Weiterbildung"
+        },
+        "moreClientTime": "mehr Zeit fur Kunden"
       }
     }
   },
@@ -140,6 +172,33 @@
       "oldest": "Alteste",
       "title": "Titel"
     },
+    "pagination": {
+      "page": "Seite",
+      "of": "von",
+      "previous": "Vorherige",
+      "next": "Nachste"
+    }
+  },
+  "materials": {
+    "filterByCategory": "Nach Kategorie filtern",
+    "search": "Suchen",
+    "searchPlaceholder": "Materialien suchen...",
+    "sortBy": "Sortieren nach",
+    "sort": {
+      "newest": "Neueste",
+      "oldest": "Alteste",
+      "title": "Titel"
+    },
+    "category": {
+      "all": "Alle",
+      "guide": "Anleitungen",
+      "template": "Vorlagen",
+      "resource": "Ressourcen",
+      "tool": "Werkzeuge"
+    },
+    "downloadFile": "Datei herunterladen",
+    "fileSize": "Dateigroe",
+    "noResults": "Keine Materialien gefunden",
     "pagination": {
       "page": "Seite",
       "of": "von",

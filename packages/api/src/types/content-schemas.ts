@@ -31,6 +31,10 @@ export type SortOrder = (typeof SORT_ORDERS)[number];
 export const PROJECT_SORT_OPTIONS = ['newest', 'oldest', 'title'] as const;
 export type ProjectSortOption = (typeof PROJECT_SORT_OPTIONS)[number];
 
+/** Material sort options for public API */
+export const MATERIAL_SORT_OPTIONS = ['newest', 'oldest', 'title'] as const;
+export type MaterialSortOption = (typeof MATERIAL_SORT_OPTIONS)[number];
+
 /**
  * Content status enum schema.
  * Validates draft/published/archived status values.
@@ -80,6 +84,14 @@ export const ProjectSortOptionSchema = Type.Union(
   { description: 'Sort option for project listing' }
 );
 
+/**
+ * Material sort option enum schema (for public API).
+ */
+export const MaterialSortOptionSchema = Type.Union(
+  MATERIAL_SORT_OPTIONS.map((opt) => Type.Literal(opt)),
+  { description: 'Sort option for material listing' }
+);
+
 /** URL schema - uses pattern for basic validation */
 export const UrlSchema = Type.String({
   pattern: '^https?://',
@@ -107,11 +119,17 @@ export type ProjectQuery = Static<typeof ProjectQuerySchema>;
 
 /**
  * Material list query schema.
- * Extends ListQuerySchema with category filter.
+ * Extends ListQuerySchema with category filter, search, and sorting.
  */
 export const MaterialQuerySchema = Type.Object({
   ...ListQuerySchema.properties,
   category: Type.Optional(MaterialCategorySchema),
+  search: Type.Optional(
+    Type.String({
+      description: 'Search term to filter by title or description',
+    })
+  ),
+  sortBy: Type.Optional(MaterialSortOptionSchema),
 });
 export type MaterialQuery = Static<typeof MaterialQuerySchema>;
 
@@ -362,6 +380,40 @@ export const AssignTagsBodySchema = Type.Object({
   tagIds: Type.Array(IdSchema, { minItems: 0 }),
 });
 export type AssignTagsBody = Static<typeof AssignTagsBodySchema>;
+
+/**
+ * Gallery media item schema with display order.
+ */
+export const GalleryMediaItemSchema = Type.Object({
+  mediaId: IdSchema,
+  displayOrder: Type.Integer({ minimum: 0 }),
+});
+export type GalleryMediaItem = Static<typeof GalleryMediaItemSchema>;
+
+/**
+ * Assign gallery media to project body schema.
+ */
+export const AssignGalleryMediaBodySchema = Type.Object({
+  mediaItems: Type.Array(GalleryMediaItemSchema, { minItems: 0 }),
+});
+export type AssignGalleryMediaBody = Static<typeof AssignGalleryMediaBodySchema>;
+
+/**
+ * Update gallery order body schema.
+ */
+export const UpdateGalleryOrderBodySchema = Type.Object({
+  mediaItems: Type.Array(GalleryMediaItemSchema, { minItems: 0 }),
+});
+export type UpdateGalleryOrderBody = Static<typeof UpdateGalleryOrderBodySchema>;
+
+/**
+ * Media ID parameter for gallery operations.
+ */
+export const GalleryMediaIdParamSchema = Type.Object({
+  id: Type.String({ pattern: '^[0-9]+$' }),
+  mediaId: Type.String({ pattern: '^[0-9]+$' }),
+});
+export type GalleryMediaIdParam = Static<typeof GalleryMediaIdParamSchema>;
 
 /**
  * Technology/tag ID parameter for junction operations.

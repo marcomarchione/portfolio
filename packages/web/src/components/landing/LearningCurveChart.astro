@@ -1,0 +1,229 @@
+---
+/**
+ * LearningCurveChart Component
+ *
+ * Visual comparison of learning and adaptation curves over time
+ * for traditional software development vs agent-assisted development.
+ * Shows how agent development accelerates the learning curve.
+ *
+ * @example
+ * <LearningCurveChart lang="en" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+
+// Time points (months)
+const timePoints = [0, 1, 2, 3, 4, 5, 6];
+
+// Traditional developer learning curve (slower, linear growth)
+const traditionalCurve = [5, 15, 28, 40, 52, 62, 70];
+
+// Agent developer learning curve (faster, exponential-like growth)
+const agentCurve = [10, 35, 58, 75, 85, 92, 95];
+
+// SVG dimensions
+const width = 320;
+const height = 200;
+const padding = { top: 20, right: 20, bottom: 40, left: 45 };
+const chartWidth = width - padding.left - padding.right;
+const chartHeight = height - padding.top - padding.bottom;
+
+// Scale functions
+const xScale = (index: number) => padding.left + (index / (timePoints.length - 1)) * chartWidth;
+const yScale = (value: number) => padding.top + chartHeight - (value / 100) * chartHeight;
+
+// Generate path data
+const generatePath = (data: number[]) => {
+  return data.map((value, index) => {
+    const x = xScale(index);
+    const y = yScale(value);
+    return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+};
+
+const traditionalPath = generatePath(traditionalCurve);
+const agentPath = generatePath(agentCurve);
+
+// Y-axis labels
+const yLabels = [0, 25, 50, 75, 100];
+---
+
+<div class="h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 md:p-5 [.light_&]:bg-[#EBE4D8] [.light_&]:border-[#E5DED4]">
+  <!-- Chart Title -->
+  <h3 class="text-base font-semibold text-white [.light_&]:text-neutral-900 mb-1 text-center">
+    {t(lang, 'landing.comparison.learningCurve.title')}
+  </h3>
+  <p class="text-xs text-neutral-400 [.light_&]:text-neutral-600 mb-3 text-center">
+    {t(lang, 'landing.comparison.learningCurve.subtitle')}
+  </p>
+
+  <!-- Legend -->
+  <div class="flex flex-wrap justify-center gap-4 mb-3 pb-2 border-b border-white/10 [.light_&]:border-[#E5DED4]">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-1 rounded bg-gradient-to-r from-neutral-600 to-neutral-500 [.light_&]:from-neutral-400 [.light_&]:to-neutral-300" />
+      <span class="text-sm text-neutral-400 [.light_&]:text-neutral-600">
+        {t(lang, 'landing.comparison.traditional')}
+      </span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-1 rounded bg-gradient-to-r from-primary-500 to-accent-500 [.light_&]:from-terra-500 [.light_&]:to-terra-400" />
+      <span class="text-sm text-primary-400 [.light_&]:text-terra-600 font-medium">
+        {t(lang, 'landing.comparison.agent')}
+      </span>
+    </div>
+  </div>
+
+  <!-- SVG Chart -->
+  <div class="flex justify-center">
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      class="w-full max-w-[320px] h-auto"
+      role="img"
+      aria-label={t(lang, 'landing.comparison.learningCurve.title')}
+    >
+      <!-- Grid lines -->
+      {yLabels.map((label) => (
+        <line
+          x1={padding.left}
+          y1={yScale(label)}
+          x2={width - padding.right}
+          y2={yScale(label)}
+          stroke="currentColor"
+          stroke-opacity="0.1"
+          stroke-dasharray="4 4"
+          class="text-white [.light_&]:text-neutral-900"
+        />
+      ))}
+
+      <!-- Y-axis labels -->
+      {yLabels.map((label) => (
+        <text
+          x={padding.left - 8}
+          y={yScale(label) + 4}
+          text-anchor="end"
+          class="text-[10px] fill-neutral-500 [.light_&]:fill-neutral-600"
+        >
+          {label}%
+        </text>
+      ))}
+
+      <!-- X-axis labels (months) -->
+      {timePoints.map((month, index) => (
+        <text
+          x={xScale(index)}
+          y={height - padding.bottom + 20}
+          text-anchor="middle"
+          class="text-[10px] fill-neutral-500 [.light_&]:fill-neutral-600"
+        >
+          {month}m
+        </text>
+      ))}
+
+      <!-- Y-axis title -->
+      <text
+        x={12}
+        y={height / 2}
+        text-anchor="middle"
+        transform={`rotate(-90, 12, ${height / 2})`}
+        class="text-[10px] fill-neutral-500 [.light_&]:fill-neutral-600"
+      >
+        {t(lang, 'landing.comparison.learningCurve.yAxis')}
+      </text>
+
+      <!-- X-axis title -->
+      <text
+        x={width / 2}
+        y={height - 5}
+        text-anchor="middle"
+        class="text-[10px] fill-neutral-500 [.light_&]:fill-neutral-600"
+      >
+        {t(lang, 'landing.comparison.learningCurve.xAxis')}
+      </text>
+
+      <!-- Traditional curve -->
+      <path
+        d={traditionalPath}
+        fill="none"
+        stroke="url(#traditionalGradient)"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="animate-draw-line"
+        style="--line-length: 400"
+      />
+
+      <!-- Agent curve -->
+      <path
+        d={agentPath}
+        fill="none"
+        stroke="url(#agentGradient)"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="animate-draw-line"
+        style="--line-length: 400"
+      />
+
+      <!-- Data points - Traditional -->
+      {traditionalCurve.map((value, index) => (
+        <circle
+          cx={xScale(index)}
+          cy={yScale(value)}
+          r="4"
+          class="fill-neutral-500 [.light_&]:fill-neutral-400"
+        />
+      ))}
+
+      <!-- Data points - Agent -->
+      {agentCurve.map((value, index) => (
+        <circle
+          cx={xScale(index)}
+          cy={yScale(value)}
+          r="4"
+          class="fill-primary-500 [.light_&]:fill-terra-500"
+        />
+      ))}
+
+      <!-- Gradient definitions -->
+      <defs>
+        <linearGradient id="traditionalGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#525252" class="[.light_&]:stop-color-[#a3a3a3]" />
+          <stop offset="100%" stop-color="#737373" class="[.light_&]:stop-color-[#d4d4d4]" />
+        </linearGradient>
+        <linearGradient id="agentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#3d7eff" class="[.light_&]:stop-color-[#B45309]" />
+          <stop offset="100%" stop-color="#8b5cf6" class="[.light_&]:stop-color-[#D97706]" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+</div>
+
+<style>
+  @keyframes drawLine {
+    from {
+      stroke-dashoffset: var(--line-length);
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .animate-draw-line {
+    stroke-dasharray: var(--line-length);
+    stroke-dashoffset: var(--line-length);
+    animation: drawLine 1.5s ease-out forwards;
+  }
+
+  /* Trigger animation when in view */
+  :global(.in-view) .animate-draw-line {
+    animation: drawLine 1.5s ease-out forwards;
+  }
+</style>

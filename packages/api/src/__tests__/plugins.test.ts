@@ -5,23 +5,23 @@
  */
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
 import { Elysia } from 'elysia';
+import type postgres from 'postgres';
 import { createDatabasePlugin } from '../plugins/database';
 import { createSwaggerPlugin } from '../plugins/swagger';
 import { createTestDatabase, closeDatabase } from '../db/test-utils';
-import type { Database } from 'bun:sqlite';
 
 describe('Database Plugin', () => {
-  let sqlite: Database;
+  let client: ReturnType<typeof postgres>;
   let db: ReturnType<typeof createTestDatabase>['db'];
 
   beforeAll(() => {
     const testDb = createTestDatabase();
-    sqlite = testDb.sqlite;
+    client = testDb.client;
     db = testDb.db;
   });
 
-  afterAll(() => {
-    closeDatabase(sqlite);
+  afterAll(async () => {
+    await closeDatabase(client);
   });
 
   test('injects db into route context', async () => {

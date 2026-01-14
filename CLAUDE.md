@@ -64,7 +64,7 @@ bun run dev:local     # Run all packages locally
 
 ```
 packages/
-├── api/      # Elysia REST API + SQLite/Drizzle
+├── api/      # Elysia REST API + PostgreSQL/Drizzle
 ├── admin/    # React + Vite admin panel
 ├── web/      # Astro public website
 └── shared/   # TypeScript types and constants
@@ -119,7 +119,7 @@ Exports types and constants used by all packages:
 
 ### Testing
 
-Tests use in-memory SQLite databases for isolation.
+Tests use PostgreSQL test database for isolation.
 
 ```typescript
 import { createTestApp, createTestAppWithAuth } from '../test-utils';
@@ -143,8 +143,12 @@ authApp.cleanup();
 API environment variables in `packages/api/.env`:
 - `JWT_SECRET` - Min 32 chars
 - `ADMIN_PASSWORD_HASH` - bcrypt hash
-- `DATABASE_PATH` - SQLite file path
+- `DATABASE_URL` - PostgreSQL connection URL
 - `CORS_ORIGINS` - Comma-separated origins
+
+## Deployment
+
+Deploy on [Railway](https://railway.app). See [DEPLOY.md](./DEPLOY.md) for details.
 
 ## Commit Conventions
 

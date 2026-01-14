@@ -2,6 +2,27 @@
 # Usage: docker-compose -f docker-compose.dev.yml up
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: marcomarchione-postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=portfolio
+      - POSTGRES_PASSWORD=portfolio_dev
+      - POSTGRES_DB=portfolio
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network-dev
+
   # Backend API with hot reload
   api:
     build:
@@ -13,16 +34,27 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - DATABASE_PATH=/app/packages/api/data/data.db
+      - DATABASE_URL=postgres://portfolio:portfolio_dev@postgres:5432/portfolio
       - CORS_ORIGINS=http://localhost:5173,http://localhost:4321
       - JWT_SECRET=development-secret-that-is-at-least-32-characters-long
       - ADMIN_PASSWORD_HASH=$$2b$$10$$O48OroMeFReJfvFv7CSKKOH7Mbh/kPLpbX6z1Cot9nFXQLs1kcN3e
+      # Storage configuration (local or r2)
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-local}
+      - UPLOADS_PATH=/app/packages/api/uploads
+      # R2 configuration (required when STORAGE_BACKEND=r2)
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
     volumes:
       - ./packages/shared:/app/packages/shared
       - ./packages/api:/app/packages/api
-      - api-data-dev:/app/packages/api/data
       - api-uploads-dev:/app/packages/api/uploads
       - /app/packages/api/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network-dev
 
@@ -68,7 +100,7 @@ services:
       - app-network-dev
 
 volumes:
-  api-data-dev:
+  postgres-data-dev:
   api-uploads-dev:
 
 networks:

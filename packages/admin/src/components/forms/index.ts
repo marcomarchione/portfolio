@@ -9,6 +9,8 @@ export { DateField } from './DateField';
 export type { DateFieldProps } from './DateField';
 export { FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
+export { GallerySelector } from './GallerySelector';
+export type { GalleryItem, GallerySelectorProps } from './GallerySelector';
 export { IconPicker } from './IconPicker';
 export type { IconPickerProps } from './IconPicker';
 export { ItemSelector } from './ItemSelector';

@@ -3,14 +3,12 @@
  *
  * Project-specific database operations including joins with technologies.
  */
-import { eq, and, sql, desc, asc, inArray, like } from 'drizzle-orm';
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import { eq, and, sql, desc, asc, inArray, like, ilike } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
 import type { ContentStatus, Language, ProjectStatus } from '../schema';
 import { getContentById, type ListContentOptions, type ContentSortField, type SortOrder } from './content';
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Options for listing projects */
 export interface ListProjectsOptions extends ListContentOptions {
@@ -61,8 +59,8 @@ export interface GalleryImage {
  * @param projectId - Project ID (from projects table, not content_base)
  * @returns Array of gallery images ordered by displayOrder
  */
-export function getProjectGalleryImages(db: DrizzleDB, projectId: number): GalleryImage[] {
-  const results = db
+export async function getProjectGalleryImages(db: DrizzleDB, projectId: number): Promise<GalleryImage[]> {
+  const results = await db
     .select({
       id: schema.media.id,
       storageKey: schema.media.storageKey,
@@ -72,8 +70,7 @@ export function getProjectGalleryImages(db: DrizzleDB, projectId: number): Galle
     .from(schema.projectMedia)
     .innerJoin(schema.media, eq(schema.projectMedia.mediaId, schema.media.id))
     .where(eq(schema.projectMedia.projectId, projectId))
-    .orderBy(asc(schema.projectMedia.displayOrder))
-    .all();
+    .orderBy(asc(schema.projectMedia.displayOrder));
 
   return results.map((r) => ({
     id: r.id,
@@ -91,8 +88,8 @@ export function getProjectGalleryImages(db: DrizzleDB, projectId: number): Galle
  * @param lang - Language code
  * @returns Project with translation or null
  */
-export function getProjectWithTranslation(db: DrizzleDB, slug: string, lang: Language) {
-  const result = db
+export async function getProjectWithTranslation(db: DrizzleDB, slug: string, lang: Language) {
+  const [result] = await db
     .select({
       content: schema.contentBase,
       project: schema.projects,
@@ -107,25 +104,24 @@ export function getProjectWithTranslation(db: DrizzleDB, slug: string, lang: Lan
         eq(schema.contentTranslations.lang, lang)
       )
     )
-    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, 'project')))
-    .get();
+    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, 'project')));
 
   if (!result) return null;
 
   // Get technologies for project
-  const technologies = db
+  const techResults = await db
     .select({ technology: schema.technologies })
     .from(schema.projectTechnologies)
     .innerJoin(
       schema.technologies,
       eq(schema.projectTechnologies.technologyId, schema.technologies.id)
     )
-    .where(eq(schema.projectTechnologies.projectId, result.project.id))
-    .all()
-    .map((r) => r.technology);
+    .where(eq(schema.projectTechnologies.projectId, result.project.id));
+
+  const technologies = techResults.map((r) => r.technology);
 
   // Get gallery images for project
-  const galleryImages = getProjectGalleryImages(db, result.project.id);
+  const galleryImages = await getProjectGalleryImages(db, result.project.id);
 
   return {
     ...result.content,
@@ -143,37 +139,35 @@ export function getProjectWithTranslation(db: DrizzleDB, slug: string, lang: Lan
  * @param id - Content ID
  * @returns Project with all translations or null
  */
-export function getProjectWithAllTranslations(db: DrizzleDB, id: number) {
-  const content = getContentById(db, id);
+export async function getProjectWithAllTranslations(db: DrizzleDB, id: number) {
+  const content = await getContentById(db, id);
   if (!content || content.type !== 'project') return null;
 
-  const project = db
+  const [project] = await db
     .select()
     .from(schema.projects)
-    .where(eq(schema.projects.contentId, id))
-    .get();
+    .where(eq(schema.projects.contentId, id));
 
   if (!project) return null;
 
-  const translations = db
+  const translations = await db
     .select()
     .from(schema.contentTranslations)
-    .where(eq(schema.contentTranslations.contentId, id))
-    .all();
+    .where(eq(schema.contentTranslations.contentId, id));
 
-  const technologies = db
+  const techResults = await db
     .select({ technology: schema.technologies })
     .from(schema.projectTechnologies)
     .innerJoin(
       schema.technologies,
       eq(schema.projectTechnologies.technologyId, schema.technologies.id)
     )
-    .where(eq(schema.projectTechnologies.projectId, project.id))
-    .all()
-    .map((r) => r.technology);
+    .where(eq(schema.projectTechnologies.projectId, project.id));
+
+  const technologies = techResults.map((r) => r.technology);
 
   // Get gallery images for project
-  const galleryImages = getProjectGalleryImages(db, project.id);
+  const galleryImages = await getProjectGalleryImages(db, project.id);
 
   // Return with content.id as the primary id (not project.id)
   return {
@@ -233,7 +227,7 @@ function buildSortClause(
  * @param options - List options
  * @returns Array of projects with translations
  */
-export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
+export async function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
   const {
     limit = 20,
     offset = 0,
@@ -267,19 +261,18 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
 
   // Filter by technology if provided
   if (technology) {
-    const tech = db
+    const [tech] = await db
       .select()
       .from(schema.technologies)
-      .where(eq(schema.technologies.name, technology))
-      .get();
+      .where(eq(schema.technologies.name, technology));
 
     if (tech) {
-      const projectIds = db
+      const projectIdsResults = await db
         .select({ projectId: schema.projectTechnologies.projectId })
         .from(schema.projectTechnologies)
-        .where(eq(schema.projectTechnologies.technologyId, tech.id))
-        .all()
-        .map((r) => r.projectId);
+        .where(eq(schema.projectTechnologies.technologyId, tech.id));
+
+      const projectIds = projectIdsResults.map((r) => r.projectId);
 
       if (projectIds.length > 0) {
         conditions.push(inArray(schema.projects.id, projectIds));
@@ -297,10 +290,10 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
   if (needsItalianJoin) {
     // Query with Italian translation join for search and title sort
     if (search) {
-      conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+      conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
     }
 
-    const results = db
+    const results = await db
       .select({
         content: schema.contentBase,
         project: schema.projects,
@@ -317,8 +310,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
       .where(and(...conditions))
       .orderBy(...buildSortClause(sortBy, sortOrder, true, featuredFirst))
       .limit(limit)
-      .offset(offset)
-      .all();
+      .offset(offset);
 
     return results.map((r) => ({
       ...r.content,
@@ -328,7 +320,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
   }
 
   // Standard query without Italian join
-  const results = db
+  const results = await db
     .select({
       content: schema.contentBase,
       project: schema.projects,
@@ -338,8 +330,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
     .where(and(...conditions))
     .orderBy(...buildSortClause(sortBy, sortOrder, false, featuredFirst))
     .limit(limit)
-    .offset(offset)
-    .all();
+    .offset(offset);
 
   return results.map((r) => ({
     ...r.content,
@@ -355,7 +346,7 @@ export function listProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
  * @param options - List options
  * @returns Total count
  */
-export function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
+export async function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) {
   const { status, featured, publishedOnly = false, technology, projectStatus, search } = options;
 
   const conditions: SQL[] = [eq(schema.contentBase.type, 'project')];
@@ -377,19 +368,18 @@ export function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) 
 
   // Filter by technology if provided
   if (technology) {
-    const tech = db
+    const [tech] = await db
       .select()
       .from(schema.technologies)
-      .where(eq(schema.technologies.name, technology))
-      .get();
+      .where(eq(schema.technologies.name, technology));
 
     if (tech) {
-      const projectIds = db
+      const projectIdsResults = await db
         .select({ projectId: schema.projectTechnologies.projectId })
         .from(schema.projectTechnologies)
-        .where(eq(schema.projectTechnologies.technologyId, tech.id))
-        .all()
-        .map((r) => r.projectId);
+        .where(eq(schema.projectTechnologies.technologyId, tech.id));
+
+      const projectIds = projectIdsResults.map((r) => r.projectId);
 
       if (projectIds.length > 0) {
         conditions.push(inArray(schema.projects.id, projectIds));
@@ -403,10 +393,10 @@ export function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) 
 
   // If searching, need to join Italian translations
   if (search) {
-    conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+    conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
 
-    const result = db
-      .select({ count: sql<number>`count(*)` })
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
       .from(schema.contentBase)
       .innerJoin(schema.projects, eq(schema.contentBase.id, schema.projects.contentId))
       .leftJoin(
@@ -416,18 +406,16 @@ export function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) 
           eq(schema.contentTranslations.lang, 'it')
         )
       )
-      .where(and(...conditions))
-      .get();
+      .where(and(...conditions));
 
     return result?.count ?? 0;
   }
 
-  const result = db
-    .select({ count: sql<number>`count(*)` })
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(schema.contentBase)
     .innerJoin(schema.projects, eq(schema.contentBase.id, schema.projects.contentId))
-    .where(and(...conditions))
-    .get();
+    .where(and(...conditions));
 
   return result?.count ?? 0;
 }
@@ -439,12 +427,12 @@ export function countProjects(db: DrizzleDB, options: ListProjectsOptions = {}) 
  * @param data - Project data
  * @returns Created project with content ID
  */
-export function createProject(db: DrizzleDB, data: CreateProjectData) {
+export async function createProject(db: DrizzleDB, data: CreateProjectData) {
   const now = new Date();
   const status = data.status ?? 'draft';
 
   // Insert content_base
-  db.insert(schema.contentBase)
+  const [content] = await db.insert(schema.contentBase)
     .values({
       type: 'project',
       slug: data.slug,
@@ -454,16 +442,10 @@ export function createProject(db: DrizzleDB, data: CreateProjectData) {
       updatedAt: now,
       publishedAt: status === 'published' ? now : null,
     })
-    .run();
-
-  const content = db
-    .select()
-    .from(schema.contentBase)
-    .where(eq(schema.contentBase.slug, data.slug))
-    .get()!;
+    .returning();
 
   // Insert project extension
-  db.insert(schema.projects)
+  const [project] = await db.insert(schema.projects)
     .values({
       contentId: content.id,
       githubUrl: data.githubUrl ?? null,
@@ -472,13 +454,7 @@ export function createProject(db: DrizzleDB, data: CreateProjectData) {
       startDate: data.startDate ?? null,
       endDate: data.endDate ?? null,
     })
-    .run();
-
-  const project = db
-    .select()
-    .from(schema.projects)
-    .where(eq(schema.projects.contentId, content.id))
-    .get()!;
+    .returning();
 
   // Return with content.id as the primary id (not project.id)
   return {
@@ -499,9 +475,9 @@ export function createProject(db: DrizzleDB, data: CreateProjectData) {
  * @param data - Update data
  * @returns Updated project or null
  */
-export function updateProject(db: DrizzleDB, id: number, data: UpdateProjectData) {
+export async function updateProject(db: DrizzleDB, id: number, data: UpdateProjectData) {
   const now = new Date();
-  const content = getContentById(db, id);
+  const content = await getContentById(db, id);
   if (!content || content.type !== 'project') return null;
 
   // Update content_base
@@ -515,17 +491,15 @@ export function updateProject(db: DrizzleDB, id: number, data: UpdateProjectData
   }
   if (data.featured !== undefined) contentUpdates.featured = data.featured;
 
-  db.update(schema.contentBase)
+  await db.update(schema.contentBase)
     .set(contentUpdates)
-    .where(eq(schema.contentBase.id, id))
-    .run();
+    .where(eq(schema.contentBase.id, id));
 
   // Update project extension
-  const project = db
+  const [project] = await db
     .select()
     .from(schema.projects)
-    .where(eq(schema.projects.contentId, id))
-    .get();
+    .where(eq(schema.projects.contentId, id));
 
   if (project) {
     const projectUpdates: Record<string, unknown> = {};
@@ -536,10 +510,9 @@ export function updateProject(db: DrizzleDB, id: number, data: UpdateProjectData
     if (data.endDate !== undefined) projectUpdates.endDate = data.endDate;
 
     if (Object.keys(projectUpdates).length > 0) {
-      db.update(schema.projects)
+      await db.update(schema.projects)
         .set(projectUpdates)
-        .where(eq(schema.projects.id, project.id))
-        .run();
+        .where(eq(schema.projects.id, project.id));
     }
   }
 

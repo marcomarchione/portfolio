@@ -3,14 +3,12 @@
  *
  * Material-specific database operations.
  */
-import { eq, and, sql, desc, asc, like } from 'drizzle-orm';
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import { eq, and, sql, desc, asc, like, ilike } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
 import type { ContentStatus, Language, MaterialCategory } from '../schema';
 import { getContentById, type ListContentOptions, type ContentSortField, type SortOrder } from './content';
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Options for listing materials */
 export interface ListMaterialsOptions extends ListContentOptions {
@@ -45,8 +43,8 @@ export interface UpdateMaterialData {
  * @param lang - Language code
  * @returns Material with translation or null
  */
-export function getMaterialWithTranslation(db: DrizzleDB, slug: string, lang: Language) {
-  const result = db
+export async function getMaterialWithTranslation(db: DrizzleDB, slug: string, lang: Language) {
+  const [result] = await db
     .select({
       content: schema.contentBase,
       material: schema.materials,
@@ -61,8 +59,7 @@ export function getMaterialWithTranslation(db: DrizzleDB, slug: string, lang: La
         eq(schema.contentTranslations.lang, lang)
       )
     )
-    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, 'material')))
-    .get();
+    .where(and(eq(schema.contentBase.slug, slug), eq(schema.contentBase.type, 'material')));
 
   if (!result) return null;
 
@@ -80,23 +77,21 @@ export function getMaterialWithTranslation(db: DrizzleDB, slug: string, lang: La
  * @param id - Content ID
  * @returns Material with all translations or null
  */
-export function getMaterialWithAllTranslations(db: DrizzleDB, id: number) {
-  const content = getContentById(db, id);
+export async function getMaterialWithAllTranslations(db: DrizzleDB, id: number) {
+  const content = await getContentById(db, id);
   if (!content || content.type !== 'material') return null;
 
-  const material = db
+  const [material] = await db
     .select()
     .from(schema.materials)
-    .where(eq(schema.materials.contentId, id))
-    .get();
+    .where(eq(schema.materials.contentId, id));
 
   if (!material) return null;
 
-  const translations = db
+  const translations = await db
     .select()
     .from(schema.contentTranslations)
-    .where(eq(schema.contentTranslations.contentId, id))
-    .all();
+    .where(eq(schema.contentTranslations.contentId, id));
 
   // Return with content.id as the primary id (not material.id)
   return {
@@ -138,7 +133,7 @@ function buildSortClause(
  * @param options - List options
  * @returns Array of materials
  */
-export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}) {
+export async function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}) {
   const {
     limit = 20,
     offset = 0,
@@ -172,10 +167,10 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
 
   if (needsItalianJoin) {
     if (search) {
-      conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+      conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
     }
 
-    const results = db
+    const results = await db
       .select({
         content: schema.contentBase,
         material: schema.materials,
@@ -192,8 +187,7 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
       .where(and(...conditions))
       .orderBy(...buildSortClause(sortBy, sortOrder, true))
       .limit(limit)
-      .offset(offset)
-      .all();
+      .offset(offset);
 
     return results.map((r) => ({
       ...r.content,
@@ -202,7 +196,7 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
     }));
   }
 
-  const results = db
+  const results = await db
     .select({
       content: schema.contentBase,
       material: schema.materials,
@@ -212,8 +206,7 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
     .where(and(...conditions))
     .orderBy(...buildSortClause(sortBy, sortOrder, false))
     .limit(limit)
-    .offset(offset)
-    .all();
+    .offset(offset);
 
   return results.map((r) => ({
     ...r.content,
@@ -229,7 +222,7 @@ export function listMaterials(db: DrizzleDB, options: ListMaterialsOptions = {})
  * @param options - List options
  * @returns Total count
  */
-export function countMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}) {
+export async function countMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}) {
   const { status, featured, publishedOnly = false, category, search } = options;
 
   const conditions: SQL[] = [eq(schema.contentBase.type, 'material')];
@@ -249,10 +242,10 @@ export function countMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}
   }
 
   if (search) {
-    conditions.push(like(schema.contentTranslations.title, `%${search}%`));
+    conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
 
-    const result = db
-      .select({ count: sql<number>`count(*)` })
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
       .from(schema.contentBase)
       .innerJoin(schema.materials, eq(schema.contentBase.id, schema.materials.contentId))
       .leftJoin(
@@ -262,18 +255,16 @@ export function countMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}
           eq(schema.contentTranslations.lang, 'it')
         )
       )
-      .where(and(...conditions))
-      .get();
+      .where(and(...conditions));
 
     return result?.count ?? 0;
   }
 
-  const result = db
-    .select({ count: sql<number>`count(*)` })
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(schema.contentBase)
     .innerJoin(schema.materials, eq(schema.contentBase.id, schema.materials.contentId))
-    .where(and(...conditions))
-    .get();
+    .where(and(...conditions));
 
   return result?.count ?? 0;
 }
@@ -285,12 +276,12 @@ export function countMaterials(db: DrizzleDB, options: ListMaterialsOptions = {}
  * @param data - Material data
  * @returns Created material
  */
-export function createMaterial(db: DrizzleDB, data: CreateMaterialData) {
+export async function createMaterial(db: DrizzleDB, data: CreateMaterialData) {
   const now = new Date();
   const status = data.status ?? 'draft';
 
   // Insert content_base
-  db.insert(schema.contentBase)
+  const [content] = await db.insert(schema.contentBase)
     .values({
       type: 'material',
       slug: data.slug,
@@ -300,29 +291,17 @@ export function createMaterial(db: DrizzleDB, data: CreateMaterialData) {
       updatedAt: now,
       publishedAt: status === 'published' ? now : null,
     })
-    .run();
-
-  const content = db
-    .select()
-    .from(schema.contentBase)
-    .where(eq(schema.contentBase.slug, data.slug))
-    .get()!;
+    .returning();
 
   // Insert material extension
-  db.insert(schema.materials)
+  const [material] = await db.insert(schema.materials)
     .values({
       contentId: content.id,
       category: data.category,
       downloadUrl: data.downloadUrl,
       fileSize: data.fileSize ?? null,
     })
-    .run();
-
-  const material = db
-    .select()
-    .from(schema.materials)
-    .where(eq(schema.materials.contentId, content.id))
-    .get()!;
+    .returning();
 
   // Return with content.id as the primary id (not material.id)
   return {
@@ -341,9 +320,9 @@ export function createMaterial(db: DrizzleDB, data: CreateMaterialData) {
  * @param data - Update data
  * @returns Updated material or null
  */
-export function updateMaterial(db: DrizzleDB, id: number, data: UpdateMaterialData) {
+export async function updateMaterial(db: DrizzleDB, id: number, data: UpdateMaterialData) {
   const now = new Date();
-  const content = getContentById(db, id);
+  const content = await getContentById(db, id);
   if (!content || content.type !== 'material') return null;
 
   // Update content_base
@@ -357,17 +336,15 @@ export function updateMaterial(db: DrizzleDB, id: number, data: UpdateMaterialDa
   }
   if (data.featured !== undefined) contentUpdates.featured = data.featured;
 
-  db.update(schema.contentBase)
+  await db.update(schema.contentBase)
     .set(contentUpdates)
-    .where(eq(schema.contentBase.id, id))
-    .run();
+    .where(eq(schema.contentBase.id, id));
 
   // Update material extension
-  const material = db
+  const [material] = await db
     .select()
     .from(schema.materials)
-    .where(eq(schema.materials.contentId, id))
-    .get();
+    .where(eq(schema.materials.contentId, id));
 
   if (material) {
     const materialUpdates: Record<string, unknown> = {};
@@ -376,10 +353,9 @@ export function updateMaterial(db: DrizzleDB, id: number, data: UpdateMaterialDa
     if (data.fileSize !== undefined) materialUpdates.fileSize = data.fileSize;
 
     if (Object.keys(materialUpdates).length > 0) {
-      db.update(schema.materials)
+      await db.update(schema.materials)
         .set(materialUpdates)
-        .where(eq(schema.materials.id, material.id))
-        .run();
+        .where(eq(schema.materials.id, material.id));
     }
   }
 

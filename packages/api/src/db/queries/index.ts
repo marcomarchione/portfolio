@@ -84,6 +84,9 @@ export {
   removeTag,
   getProjectByContentId,
   getNewsByContentId,
+  assignProjectMedia,
+  removeProjectMedia,
+  updateProjectMediaOrder,
 } from './relations';
 
 // Lookup table queries

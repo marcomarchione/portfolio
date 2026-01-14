@@ -4,7 +4,7 @@
  * Stores multilingual content for each content_base record.
  * Supports 4 languages: Italian, English, Spanish, German.
  */
-import { sqliteTable, text, integer, index, unique } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, serial, integer, index, unique } from 'drizzle-orm/pg-core';
 import { contentBase } from './content-base';
 
 /** Supported languages for translations */
@@ -17,11 +17,11 @@ export type Language = (typeof LANGUAGES)[number];
  * Stores translated content for each language per content item.
  * One translation per language is allowed per content_base record.
  */
-export const contentTranslations = sqliteTable(
+export const contentTranslations = pgTable(
   'content_translations',
   {
     /** Auto-incrementing primary key */
-    id: integer('id').primaryKey({ autoIncrement: true }),
+    id: serial('id').primaryKey(),
 
     /** Foreign key to content_base with CASCADE DELETE */
     contentId: integer('content_id')

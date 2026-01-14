@@ -6,7 +6,7 @@ Personal portfolio website with CMS backend, admin panel, and public frontend.
 
 | Package | Technology |
 |---------|------------|
-| **api** | [Bun](https://bun.sh/) + [Elysia](https://elysiajs.com/) + [Drizzle ORM](https://orm.drizzle.team/) + SQLite |
+| **api** | [Bun](https://bun.sh/) + [Elysia](https://elysiajs.com/) + [Drizzle ORM](https://orm.drizzle.team/) + PostgreSQL |
 | **admin** | React + Vite + TanStack Query + Tailwind CSS |
 | **web** | [Astro](https://astro.build/) + React + Tailwind CSS |
 | **shared** | TypeScript types and constants |
@@ -81,6 +81,7 @@ bun run prod:down
 
 | Service | Port | Description |
 |---------|------|-------------|
+| postgres | 5432 | PostgreSQL Database |
 | api | 3000 | Backend REST API |
 | admin | 5173 | Admin Panel |
 | web | 4321 | Public Website |
@@ -135,7 +136,7 @@ ADMIN_PASSWORD_HASH=$2b$10$your-generated-hash
 ```env
 NODE_ENV=development
 PORT=3000
-DATABASE_PATH=./data.db
+DATABASE_URL=postgres://portfolio:portfolio_dev@localhost:5432/portfolio
 CORS_ORIGINS=http://localhost:5173,http://localhost:4321
 JWT_SECRET=your-secret-at-least-32-characters-long
 ADMIN_PASSWORD_HASH=$2b$10$your-bcrypt-hash
@@ -196,6 +197,16 @@ PUBLIC_API_URL=http://localhost:3000
 - `POST /api/v1/admin/media/upload`
 
 API documentation available at `http://localhost:3000/api/docs` (dev mode).
+
+## Deployment
+
+This project is configured for deployment on [Railway](https://railway.app).
+
+See [DEPLOY.md](./DEPLOY.md) for detailed deployment instructions including:
+- PostgreSQL database setup
+- Environment variables configuration
+- Domain configuration
+- Volume setup for media storage
 
 ## Testing
 

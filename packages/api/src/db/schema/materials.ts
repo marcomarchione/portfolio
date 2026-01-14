@@ -4,7 +4,7 @@
  * Type-specific extension for downloadable materials.
  * One-to-one relationship with content_base.
  */
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, serial, integer, index } from 'drizzle-orm/pg-core';
 import { contentBase } from './content-base';
 
 /** Valid material categories */
@@ -17,11 +17,11 @@ export type MaterialCategory = (typeof MATERIAL_CATEGORIES)[number];
  * Stores material-specific fields extending content_base.
  * Each material must have exactly one corresponding content_base record.
  */
-export const materials = sqliteTable(
+export const materials = pgTable(
   'materials',
   {
     /** Auto-incrementing primary key */
-    id: integer('id').primaryKey({ autoIncrement: true }),
+    id: serial('id').primaryKey(),
 
     /** Foreign key to content_base with UNIQUE constraint for 1:1 relationship */
     contentId: integer('content_id')

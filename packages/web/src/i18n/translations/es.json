@@ -123,6 +123,38 @@
         "refactoring": {
           "label": "Velocidad de Refactoring"
         }
+      },
+      "learningCurve": {
+        "title": "Curva de Aprendizaje",
+        "subtitle": "Adaptacion y productividad en el tiempo",
+        "xAxis": "Tiempo (meses)",
+        "yAxis": "Productividad %"
+      },
+      "metricsTitle": "Metricas de Rendimiento",
+      "timeSavings": {
+        "title": "Ahorro de Tiempo por Proyecto",
+        "subtitle": "Horas estimadas para proyecto promedio",
+        "phases": {
+          "analysis": "Analisis",
+          "development": "Desarrollo",
+          "testing": "Testing",
+          "deploy": "Deploy",
+          "maintenance": "Mantenimiento"
+        },
+        "hours": "horas",
+        "saved": "ahorro",
+        "totalSaved": "Ahorro total"
+      },
+      "timeDistribution": {
+        "title": "Distribucion del Tiempo",
+        "subtitle": "Como se distribuye el tiempo de trabajo",
+        "activities": {
+          "coding": "Desarrollo de Codigo",
+          "clientCalls": "Llamadas con Cliente",
+          "documentation": "Documentacion",
+          "learning": "Formacion"
+        },
+        "moreClientTime": "mas tiempo dedicado a los clientes"
       }
     }
   },
@@ -140,6 +172,33 @@
       "oldest": "Mas antiguos",
       "title": "Titulo"
     },
+    "pagination": {
+      "page": "Pagina",
+      "of": "de",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    }
+  },
+  "materials": {
+    "filterByCategory": "Filtrar por categoria",
+    "search": "Buscar",
+    "searchPlaceholder": "Buscar materiales...",
+    "sortBy": "Ordenar por",
+    "sort": {
+      "newest": "Mas recientes",
+      "oldest": "Mas antiguos",
+      "title": "Titulo"
+    },
+    "category": {
+      "all": "Todos",
+      "guide": "Guias",
+      "template": "Plantillas",
+      "resource": "Recursos",
+      "tool": "Herramientas"
+    },
+    "downloadFile": "Descargar archivo",
+    "fileSize": "Tamano del archivo",
+    "noResults": "No se encontraron materiales",
     "pagination": {
       "page": "Pagina",
       "of": "de",

@@ -37,7 +37,7 @@ class ConflictError extends ApiError {
 /**
  * Formats a technology for API response.
  */
-function formatTechnologyResponse(technology: ReturnType<typeof getTechnologyById>) {
+function formatTechnologyResponse(technology: Awaited<ReturnType<typeof getTechnologyById>>) {
   if (!technology) return null;
   return {
     id: technology.id,
@@ -56,7 +56,7 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
     '/',
     async ({ db: rawDb }) => {
       const db = rawDb as DrizzleDB;
-      const technologies = listTechnologies(db);
+      const technologies = await listTechnologies(db);
       return createResponse(technologies.map(formatTechnologyResponse).filter(Boolean));
     },
     {
@@ -72,7 +72,7 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
     async ({ params, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
-      const technology = getTechnologyById(db, id);
+      const technology = await getTechnologyById(db, id);
 
       if (!technology) {
         throw new NotFoundError('Technology not found');
@@ -93,7 +93,7 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
     '/',
     async ({ body, db: rawDb, set }) => {
       const db = rawDb as DrizzleDB;
-      const technology = createTechnology(db, {
+      const technology = await createTechnology(db, {
         name: body.name,
         icon: body.icon,
         color: body.color,
@@ -117,7 +117,7 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const technology = updateTechnology(db, id, {
+      const technology = await updateTechnology(db, id, {
         name: body.name,
         icon: body.icon,
         color: body.color,
@@ -147,26 +147,26 @@ export const adminTechnologiesRoutes: any = new Elysia({ name: 'admin-technologi
       const force = query.force === 'true';
 
       // Check if technology exists
-      const technology = getTechnologyById(db, id);
+      const technology = await getTechnologyById(db, id);
       if (!technology) {
         throw new NotFoundError('Technology not found');
       }
 
       // If force=true, use cascade delete
       if (force) {
-        deleteTechnologyWithCascade(db, id);
+        await deleteTechnologyWithCascade(db, id);
         return createResponse({ message: 'Technology deleted successfully (with cascade)', id });
       }
 
       // Otherwise, check if referenced and fail if so
-      if (isTechnologyReferenced(db, id)) {
+      if (await isTechnologyReferenced(db, id)) {
         throw new ConflictError('Technology is referenced by one or more projects', {
           technologyId: id,
         });
       }
 
       // Delete
-      deleteTechnology(db, id);
+      await deleteTechnology(db, id);
 
       return createResponse({ message: 'Technology deleted successfully', id });
     },

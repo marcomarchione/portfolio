@@ -19,7 +19,7 @@ export const publicTechnologiesRoutes = new Elysia({
   '/',
   async (ctx: any) => {
     const db = ctx.db as DrizzleDB;
-    const technologies = listTechnologies(db);
+    const technologies = await listTechnologies(db);
     return createResponse(technologies);
   },
   {

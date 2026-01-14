@@ -4,7 +4,7 @@
  * Integration tests covering full lifecycles, error handling, and edge cases.
  * These tests fill gaps identified in Task Group 6.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import {
   createTestAppWithAuth,
   testAuthJsonRequest,
@@ -16,13 +16,17 @@ describe('Content CRUD Integration Tests', () => {
   let testApp: AuthTestApp;
   let token: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     token = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   describe('Full project lifecycle', () => {

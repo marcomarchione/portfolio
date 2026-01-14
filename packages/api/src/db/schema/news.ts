@@ -4,7 +4,7 @@
  * Type-specific extension for news articles.
  * One-to-one relationship with content_base.
  */
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, serial, integer } from 'drizzle-orm/pg-core';
 import { contentBase } from './content-base';
 
 /**
@@ -13,9 +13,9 @@ import { contentBase } from './content-base';
  * Stores news-specific fields extending content_base.
  * Each news article must have exactly one corresponding content_base record.
  */
-export const news = sqliteTable('news', {
+export const news = pgTable('news', {
   /** Auto-incrementing primary key */
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  id: serial('id').primaryKey(),
 
   /** Foreign key to content_base with UNIQUE constraint for 1:1 relationship */
   contentId: integer('content_id')

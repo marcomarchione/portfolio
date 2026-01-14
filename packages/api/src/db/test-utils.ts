@@ -2,83 +2,64 @@
  * Database Test Utilities
  *
  * Provides helper functions for testing database operations.
- * Includes in-memory database initialization, reset functions, and seeding utilities.
+ * Uses PostgreSQL with connection pooling for test isolation.
  */
-import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
-import { eq } from 'drizzle-orm';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import postgres from 'postgres';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { eq, sql } from 'drizzle-orm';
 import * as schema from './schema';
 
-// Path to migrations directory (relative to this file)
-const MIGRATIONS_DIR = join(import.meta.dir, 'migrations');
+type DrizzleDB = PostgresJsDatabase<typeof schema>;
 
-type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
+/** Default test database URL */
+const TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL ??
+  process.env.DATABASE_URL ??
+  'postgres://portfolio:portfolio_dev@localhost:5433/portfolio';
 
 /**
- * Creates an in-memory test database with all tables created.
- * Applies all migrations in order and enables foreign keys.
+ * Creates a test database connection.
+ * Uses the test database URL from environment or defaults to dev database.
  *
- * @returns Object containing SQLite connection and Drizzle instance
+ * @returns Object containing postgres client and Drizzle instance
  */
-export function createTestDatabase(): { sqlite: Database; db: DrizzleDB } {
-  const sqlite = new Database(':memory:');
+export function createTestDatabase(): { client: ReturnType<typeof postgres>; db: DrizzleDB } {
+  const client = postgres(TEST_DATABASE_URL, { max: 1 });
+  const db = drizzle(client, { schema });
 
-  // Enable foreign keys
-  sqlite.exec('PRAGMA foreign_keys = ON');
-  sqlite.exec('PRAGMA synchronous = NORMAL');
-
-  // Get all migration files sorted by name
-  const migrationFiles = readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith('.sql'))
-    .sort();
-
-  // Apply each migration in order
-  for (const file of migrationFiles) {
-    const migrationSql = readFileSync(join(MIGRATIONS_DIR, file), 'utf-8');
-    const statements = migrationSql
-      .split('--> statement-breakpoint')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    for (const statement of statements) {
-      sqlite.exec(statement);
-    }
-  }
-
-  const db = drizzle(sqlite, { schema });
-
-  return { sqlite, db };
+  return { client, db };
 }
 
 /**
- * Resets all tables in the database by deleting all rows.
- * Respects foreign key constraints by deleting in correct order.
+ * Resets all tables in the database by truncating them.
+ * Uses TRUNCATE CASCADE to handle foreign key constraints.
  *
- * @param sqlite - SQLite database connection
+ * @param db - Drizzle database instance
  */
-export function resetDatabase(sqlite: Database): void {
-  // Delete in order respecting foreign keys
-  sqlite.exec('DELETE FROM news_tags');
-  sqlite.exec('DELETE FROM project_technologies');
-  sqlite.exec('DELETE FROM news');
-  sqlite.exec('DELETE FROM materials');
-  sqlite.exec('DELETE FROM projects');
-  sqlite.exec('DELETE FROM content_translations');
-  sqlite.exec('DELETE FROM content_base');
-  sqlite.exec('DELETE FROM technologies');
-  sqlite.exec('DELETE FROM tags');
-  sqlite.exec('DELETE FROM media');
+export async function resetDatabase(db: DrizzleDB): Promise<void> {
+  // Truncate all tables in correct order with CASCADE
+  await db.execute(sql`TRUNCATE TABLE
+    news_tags,
+    project_technologies,
+    project_media,
+    news,
+    materials,
+    projects,
+    content_translations,
+    content_base,
+    technologies,
+    tags,
+    media
+    RESTART IDENTITY CASCADE`);
 }
 
 /**
  * Closes the database connection and cleans up resources.
  *
- * @param sqlite - SQLite database connection
+ * @param client - postgres.js client instance
  */
-export function closeDatabase(sqlite: Database): void {
-  sqlite.close();
+export async function closeDatabase(client: ReturnType<typeof postgres>): Promise<void> {
+  await client.end();
 }
 
 /**
@@ -110,7 +91,8 @@ export async function seedProject(
   const now = new Date();
 
   // Insert content_base
-  db.insert(schema.contentBase)
+  const [content] = await db
+    .insert(schema.contentBase)
     .values({
       type: 'project',
       slug: options.slug,
@@ -120,50 +102,46 @@ export async function seedProject(
       updatedAt: now,
       publishedAt: options.status === 'published' ? now : null,
     })
-    .run();
-
-  const content = db.select().from(schema.contentBase).all().pop()!;
+    .returning();
 
   // Insert translations
   if (options.translations) {
     for (const trans of options.translations) {
-      db.insert(schema.contentTranslations)
-        .values({
-          contentId: content.id,
-          lang: trans.lang,
-          title: trans.title,
-          description: trans.description,
-          body: trans.body,
-        })
-        .run();
+      await db.insert(schema.contentTranslations).values({
+        contentId: content.id,
+        lang: trans.lang,
+        title: trans.title,
+        description: trans.description,
+        body: trans.body,
+      });
     }
   }
 
   // Insert project extension
-  db.insert(schema.projects)
+  const [project] = await db
+    .insert(schema.projects)
     .values({
       contentId: content.id,
       projectStatus: 'in-progress',
     })
-    .run();
-
-  const project = db.select().from(schema.projects).all().pop()!;
+    .returning();
 
   // Insert technologies and link to project
   const technologyIds: number[] = [];
   if (options.technologies) {
     for (const techName of options.technologies) {
-      // Check if technology already exists using proper Drizzle syntax
-      const existing = db
+      // Check if technology already exists
+      const existing = await db
         .select()
         .from(schema.technologies)
-        .where(eq(schema.technologies.name, techName))
-        .all();
+        .where(eq(schema.technologies.name, techName));
 
       let techId: number;
       if (existing.length === 0) {
-        db.insert(schema.technologies).values({ name: techName }).run();
-        const newTech = db.select().from(schema.technologies).all().pop()!;
+        const [newTech] = await db
+          .insert(schema.technologies)
+          .values({ name: techName })
+          .returning();
         techId = newTech.id;
       } else {
         techId = existing[0].id;
@@ -174,12 +152,10 @@ export async function seedProject(
         technologyIds.push(techId);
 
         // Link to project
-        db.insert(schema.projectTechnologies)
-          .values({
-            projectId: project.id,
-            technologyId: techId,
-          })
-          .run();
+        await db.insert(schema.projectTechnologies).values({
+          projectId: project.id,
+          technologyId: techId,
+        });
       }
     }
   }
@@ -220,7 +196,8 @@ export async function seedNews(
   const now = new Date();
 
   // Insert content_base
-  db.insert(schema.contentBase)
+  const [content] = await db
+    .insert(schema.contentBase)
     .values({
       type: 'news',
       slug: options.slug,
@@ -229,56 +206,49 @@ export async function seedNews(
       updatedAt: now,
       publishedAt: options.status === 'published' ? now : null,
     })
-    .run();
-
-  const content = db.select().from(schema.contentBase).all().pop()!;
+    .returning();
 
   // Insert translations
   if (options.translations) {
     for (const trans of options.translations) {
-      db.insert(schema.contentTranslations)
-        .values({
-          contentId: content.id,
-          lang: trans.lang,
-          title: trans.title,
-          description: trans.description,
-          body: trans.body,
-        })
-        .run();
+      await db.insert(schema.contentTranslations).values({
+        contentId: content.id,
+        lang: trans.lang,
+        title: trans.title,
+        description: trans.description,
+        body: trans.body,
+      });
     }
   }
 
   // Insert news extension
-  db.insert(schema.news)
+  const [newsItem] = await db
+    .insert(schema.news)
     .values({
       contentId: content.id,
       readingTime: options.readingTime ?? 5,
     })
-    .run();
-
-  const newsItem = db.select().from(schema.news).all().pop()!;
+    .returning();
 
   // Insert tags
   const tagIds: number[] = [];
   if (options.tags) {
     for (const tagData of options.tags) {
-      db.insert(schema.tags)
+      const [newTag] = await db
+        .insert(schema.tags)
         .values({
           name: tagData.name,
           slug: tagData.slug,
         })
-        .run();
+        .returning();
 
-      const newTag = db.select().from(schema.tags).all().pop()!;
       tagIds.push(newTag.id);
 
       // Link to news
-      db.insert(schema.newsTags)
-        .values({
-          newsId: newsItem.id,
-          tagId: newTag.id,
-        })
-        .run();
+      await db.insert(schema.newsTags).values({
+        newsId: newsItem.id,
+        tagId: newTag.id,
+      });
     }
   }
 
@@ -317,7 +287,8 @@ export async function seedMaterial(
   const now = new Date();
 
   // Insert content_base
-  db.insert(schema.contentBase)
+  const [content] = await db
+    .insert(schema.contentBase)
     .values({
       type: 'material',
       slug: options.slug,
@@ -326,35 +297,30 @@ export async function seedMaterial(
       updatedAt: now,
       publishedAt: options.status === 'published' ? now : null,
     })
-    .run();
-
-  const content = db.select().from(schema.contentBase).all().pop()!;
+    .returning();
 
   // Insert translations
   if (options.translations) {
     for (const trans of options.translations) {
-      db.insert(schema.contentTranslations)
-        .values({
-          contentId: content.id,
-          lang: trans.lang,
-          title: trans.title,
-          description: trans.description,
-        })
-        .run();
+      await db.insert(schema.contentTranslations).values({
+        contentId: content.id,
+        lang: trans.lang,
+        title: trans.title,
+        description: trans.description,
+      });
     }
   }
 
   // Insert material extension
-  db.insert(schema.materials)
+  const [material] = await db
+    .insert(schema.materials)
     .values({
       contentId: content.id,
       category: options.category,
       downloadUrl: options.downloadUrl,
       fileSize: options.fileSize,
     })
-    .run();
-
-  const material = db.select().from(schema.materials).all().pop()!;
+    .returning();
 
   return {
     contentId: content.id,
@@ -381,7 +347,8 @@ export async function seedMedia(
 ): Promise<{
   mediaId: number;
 }> {
-  db.insert(schema.media)
+  const [mediaItem] = await db
+    .insert(schema.media)
     .values({
       filename: options.filename,
       mimeType: options.mimeType,
@@ -390,9 +357,7 @@ export async function seedMedia(
       altText: options.altText,
       createdAt: new Date(),
     })
-    .run();
-
-  const mediaItem = db.select().from(schema.media).all().pop()!;
+    .returning();
 
   return {
     mediaId: mediaItem.id,

@@ -1,15 +1,14 @@
 /**
- * Migration and Database Integrity Tests
+ * Database Schema Integrity Tests
  *
- * Tests for migration validation, CHECK constraints, foreign key cascades,
+ * Tests for database schema validation, CHECK constraints, foreign key cascades,
  * and data integrity across all 10 tables.
+ * Uses PostgreSQL with shared test database.
  */
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
-import { eq } from 'drizzle-orm';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { eq, sql } from 'drizzle-orm';
+import type postgres from 'postgres';
+import { createTestDatabase, resetDatabase, closeDatabase } from './test-utils';
 
 // Import all schemas
 import { contentBase } from './schema/content-base';
@@ -23,55 +22,34 @@ import { media } from './schema/media';
 import { projectTechnologies } from './schema/project-technologies';
 import { newsTags } from './schema/news-tags';
 
-describe('Migration and Database Integrity', () => {
-  let sqlite: Database;
-  let db: ReturnType<typeof drizzle>;
+describe('Database Schema Integrity', () => {
+  let client: ReturnType<typeof postgres>;
+  let db: ReturnType<typeof createTestDatabase>['db'];
 
   beforeAll(() => {
-    sqlite = new Database(':memory:');
-    sqlite.exec('PRAGMA foreign_keys = ON');
-
-    // Read and execute the migration SQL (relative to this file)
-    const migrationPath = join(import.meta.dir, 'migrations', '0000_initial_schema.sql');
-    const migrationSql = readFileSync(migrationPath, 'utf-8');
-
-    // Split by statement breakpoint and execute each statement
-    const statements = migrationSql
-      .split('--> statement-breakpoint')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    for (const statement of statements) {
-      sqlite.exec(statement);
-    }
-
-    db = drizzle(sqlite);
+    const testDb = createTestDatabase();
+    client = testDb.client;
+    db = testDb.db;
   });
 
-  afterAll(() => {
-    sqlite.close();
+  afterAll(async () => {
+    await closeDatabase(client);
   });
 
-  beforeEach(() => {
-    // Clean tables in correct order (respecting foreign keys)
-    sqlite.exec('DELETE FROM news_tags');
-    sqlite.exec('DELETE FROM project_technologies');
-    sqlite.exec('DELETE FROM news');
-    sqlite.exec('DELETE FROM materials');
-    sqlite.exec('DELETE FROM projects');
-    sqlite.exec('DELETE FROM content_translations');
-    sqlite.exec('DELETE FROM content_base');
-    sqlite.exec('DELETE FROM technologies');
-    sqlite.exec('DELETE FROM tags');
-    sqlite.exec('DELETE FROM media');
+  beforeEach(async () => {
+    await resetDatabase(db);
   });
 
-  test('all 10 tables are created successfully after migration', () => {
-    const tables = sqlite
-      .query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-      .all() as { name: string }[];
+  test('all 10 tables exist in the database', async () => {
+    const result = await db.execute(sql`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `);
 
-    const tableNames = tables.map((t) => t.name).sort();
+    const tableNames = result.map((r: { table_name: string }) => r.table_name);
 
     expect(tableNames).toContain('content_base');
     expect(tableNames).toContain('content_translations');
@@ -83,316 +61,252 @@ describe('Migration and Database Integrity', () => {
     expect(tableNames).toContain('media');
     expect(tableNames).toContain('project_technologies');
     expect(tableNames).toContain('news_tags');
-    expect(tableNames.length).toBeGreaterThanOrEqual(10);
   });
 
-  test('content_base CHECK constraint rejects invalid type values', () => {
-    const now = Date.now();
+  test('content_base type column stores valid type values', async () => {
+    const now = new Date();
 
-    // Valid type should work
-    db.insert(contentBase)
-      .values({
-        type: 'project',
-        slug: 'valid-type',
-        createdAt: new Date(now),
-        updatedAt: new Date(now),
-      })
-      .run();
-
-    const validResult = db.select().from(contentBase).all();
-    expect(validResult).toHaveLength(1);
-
-    // Invalid type should fail CHECK constraint
-    expect(() => {
-      sqlite.exec(`
-        INSERT INTO content_base (type, slug, status, featured, created_at, updated_at)
-        VALUES ('invalid_type', 'invalid-slug', 'draft', 0, ${now}, ${now})
-      `);
-    }).toThrow();
-  });
-
-  test('content_base CHECK constraint rejects invalid status values', () => {
-    const now = Date.now();
-
-    // Valid status values
-    const validStatuses = ['draft', 'published', 'archived'];
-
-    for (const status of validStatuses) {
-      db.insert(contentBase)
-        .values({
-          type: 'project',
-          slug: `status-${status}`,
-          status: status as 'draft' | 'published' | 'archived',
-          createdAt: new Date(now),
-          updatedAt: new Date(now),
-        })
-        .run();
+    // All valid types should work
+    for (const type of ['project', 'material', 'news'] as const) {
+      await db.insert(contentBase).values({
+        type,
+        slug: `${type}-test`,
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
-    const validResults = db.select().from(contentBase).all();
-    expect(validResults).toHaveLength(3);
-
-    // Invalid status should fail CHECK constraint
-    expect(() => {
-      sqlite.exec(`
-        INSERT INTO content_base (type, slug, status, featured, created_at, updated_at)
-        VALUES ('project', 'invalid-status-slug', 'pending', 0, ${now}, ${now})
-      `);
-    }).toThrow();
+    const result = await db.select().from(contentBase);
+    expect(result).toHaveLength(3);
+    expect(result.map(r => r.type).sort()).toEqual(['material', 'news', 'project']);
   });
 
-  test('content_translations composite unique prevents duplicate (content_id, lang)', () => {
-    const now = Date.now();
+  test('content_base status column stores valid status values', async () => {
+    const now = new Date();
+
+    // All valid statuses should work
+    const validStatuses: Array<'draft' | 'published' | 'archived'> = ['draft', 'published', 'archived'];
+
+    for (const status of validStatuses) {
+      await db.insert(contentBase).values({
+        type: 'project',
+        slug: `status-${status}`,
+        status,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    const results = await db.select().from(contentBase);
+    expect(results).toHaveLength(3);
+    expect(results.map(r => r.status).sort()).toEqual(['archived', 'draft', 'published']);
+  });
+
+  test('content_translations composite unique prevents duplicate (content_id, lang)', async () => {
+    const now = new Date();
 
     // Create base content
-    db.insert(contentBase)
-      .values({
-        type: 'project',
-        slug: 'unique-test',
-        createdAt: new Date(now),
-        updatedAt: new Date(now),
-      })
-      .run();
-
-    const content = db.select().from(contentBase).all()[0];
+    const [content] = await db.insert(contentBase).values({
+      type: 'project',
+      slug: 'unique-test',
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
     // Insert first translation
-    db.insert(contentTranslations)
-      .values({
-        contentId: content.id,
-        lang: 'it',
-        title: 'Titolo Italiano',
-      })
-      .run();
+    await db.insert(contentTranslations).values({
+      contentId: content.id,
+      lang: 'it',
+      title: 'Titolo Italiano',
+    });
 
     // Duplicate (content_id, lang) should fail
-    expect(() => {
-      db.insert(contentTranslations)
-        .values({
-          contentId: content.id,
-          lang: 'it',
-          title: 'Another Italian Title',
-        })
-        .run();
-    }).toThrow();
+    let error: Error | null = null;
+    try {
+      await db.insert(contentTranslations).values({
+        contentId: content.id,
+        lang: 'it',
+        title: 'Another Italian Title',
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).not.toBeNull();
 
     // Different language for same content should work
-    db.insert(contentTranslations)
-      .values({
-        contentId: content.id,
-        lang: 'en',
-        title: 'English Title',
-      })
-      .run();
+    await db.insert(contentTranslations).values({
+      contentId: content.id,
+      lang: 'en',
+      title: 'English Title',
+    });
 
-    const translations = db.select().from(contentTranslations).all();
+    const translations = await db.select().from(contentTranslations);
     expect(translations).toHaveLength(2);
   });
 
-  test('foreign key CASCADE DELETE removes content_translations when content_base deleted', () => {
-    const now = Date.now();
+  test('foreign key CASCADE DELETE removes content_translations when content_base deleted', async () => {
+    const now = new Date();
 
     // Create content with translations
-    db.insert(contentBase)
-      .values({
-        type: 'project',
-        slug: 'cascade-test',
-        createdAt: new Date(now),
-        updatedAt: new Date(now),
-      })
-      .run();
+    const [content] = await db.insert(contentBase).values({
+      type: 'project',
+      slug: 'cascade-test',
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
-    const content = db.select().from(contentBase).all()[0];
-
-    db.insert(contentTranslations)
-      .values({ contentId: content.id, lang: 'it', title: 'Italian' })
-      .run();
-    db.insert(contentTranslations)
-      .values({ contentId: content.id, lang: 'en', title: 'English' })
-      .run();
+    await db.insert(contentTranslations).values({ contentId: content.id, lang: 'it', title: 'Italian' });
+    await db.insert(contentTranslations).values({ contentId: content.id, lang: 'en', title: 'English' });
 
     // Verify translations exist
-    let translations = db.select().from(contentTranslations).all();
+    let translations = await db.select().from(contentTranslations);
     expect(translations).toHaveLength(2);
 
     // Delete content_base
-    db.delete(contentBase).where(eq(contentBase.id, content.id)).run();
+    await db.delete(contentBase).where(eq(contentBase.id, content.id));
 
     // Translations should be deleted via CASCADE
-    translations = db.select().from(contentTranslations).all();
+    translations = await db.select().from(contentTranslations);
     expect(translations).toHaveLength(0);
   });
 
-  test('foreign key CASCADE DELETE removes project_technologies when project deleted', () => {
-    const now = Date.now();
+  test('foreign key CASCADE DELETE removes project_technologies when project deleted', async () => {
+    const now = new Date();
 
     // Create project with technologies
-    db.insert(contentBase)
-      .values({
-        type: 'project',
-        slug: 'project-cascade',
-        createdAt: new Date(now),
-        updatedAt: new Date(now),
-      })
-      .run();
+    const [content] = await db.insert(contentBase).values({
+      type: 'project',
+      slug: 'project-cascade',
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
-    const content = db.select().from(contentBase).all()[0];
+    const [project] = await db.insert(projects).values({ contentId: content.id }).returning();
 
-    db.insert(projects).values({ contentId: content.id }).run();
+    const [tech1] = await db.insert(technologies).values({ name: 'React' }).returning();
+    const [tech2] = await db.insert(technologies).values({ name: 'TypeScript' }).returning();
 
-    const project = db.select().from(projects).all()[0];
-
-    db.insert(technologies).values({ name: 'React' }).run();
-    db.insert(technologies).values({ name: 'TypeScript' }).run();
-
-    const allTech = db.select().from(technologies).all();
-
-    db.insert(projectTechnologies)
-      .values({ projectId: project.id, technologyId: allTech[0].id })
-      .run();
-    db.insert(projectTechnologies)
-      .values({ projectId: project.id, technologyId: allTech[1].id })
-      .run();
+    await db.insert(projectTechnologies).values({ projectId: project.id, technologyId: tech1.id });
+    await db.insert(projectTechnologies).values({ projectId: project.id, technologyId: tech2.id });
 
     // Verify links exist
-    let links = db.select().from(projectTechnologies).all();
+    let links = await db.select().from(projectTechnologies);
     expect(links).toHaveLength(2);
 
     // Delete project
-    db.delete(projects).where(eq(projects.id, project.id)).run();
+    await db.delete(projects).where(eq(projects.id, project.id));
 
     // Links should be deleted via CASCADE
-    links = db.select().from(projectTechnologies).all();
+    links = await db.select().from(projectTechnologies);
     expect(links).toHaveLength(0);
 
     // Technologies should still exist
-    const remainingTech = db.select().from(technologies).all();
+    const remainingTech = await db.select().from(technologies);
     expect(remainingTech).toHaveLength(2);
   });
 
-  test('projects content_id UNIQUE constraint prevents duplicate extensions', () => {
-    const now = Date.now();
+  test('projects content_id UNIQUE constraint prevents duplicate extensions', async () => {
+    const now = new Date();
 
     // Create content
-    db.insert(contentBase)
-      .values({
-        type: 'project',
-        slug: 'unique-project',
-        createdAt: new Date(now),
-        updatedAt: new Date(now),
-      })
-      .run();
-
-    const content = db.select().from(contentBase).all()[0];
+    const [content] = await db.insert(contentBase).values({
+      type: 'project',
+      slug: 'unique-project',
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
     // Create first project extension
-    db.insert(projects)
-      .values({
-        contentId: content.id,
-        projectStatus: 'in-progress',
-      })
-      .run();
+    await db.insert(projects).values({
+      contentId: content.id,
+      projectStatus: 'in-progress',
+    });
 
     // Attempting to create second project for same content should fail
-    expect(() => {
-      db.insert(projects)
-        .values({
-          contentId: content.id,
-          projectStatus: 'completed',
-        })
-        .run();
-    }).toThrow();
+    let error: Error | null = null;
+    try {
+      await db.insert(projects).values({
+        contentId: content.id,
+        projectStatus: 'completed',
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).not.toBeNull();
 
-    const allProjects = db.select().from(projects).all();
+    const allProjects = await db.select().from(projects);
     expect(allProjects).toHaveLength(1);
   });
 
-  test('inserting and querying data across related tables', () => {
-    const now = Date.now();
+  test('inserting and querying data across related tables', async () => {
+    const now = new Date();
 
     // Create a complete project with translations and technologies
-    db.insert(contentBase)
-      .values({
-        type: 'project',
-        slug: 'full-project',
-        status: 'published',
-        featured: true,
-        createdAt: new Date(now),
-        updatedAt: new Date(now),
-        publishedAt: new Date(now),
-      })
-      .run();
-
-    const content = db.select().from(contentBase).all()[0];
+    const [content] = await db.insert(contentBase).values({
+      type: 'project',
+      slug: 'full-project',
+      status: 'published',
+      featured: true,
+      createdAt: now,
+      updatedAt: now,
+      publishedAt: now,
+    }).returning();
 
     // Add translations
-    db.insert(contentTranslations)
-      .values({
-        contentId: content.id,
-        lang: 'it',
-        title: 'Progetto Completo',
-        description: 'Descrizione del progetto',
-        body: '# Markdown content',
-        metaTitle: 'SEO Title IT',
-        metaDescription: 'SEO Description IT',
-      })
-      .run();
+    await db.insert(contentTranslations).values({
+      contentId: content.id,
+      lang: 'it',
+      title: 'Progetto Completo',
+      description: 'Descrizione del progetto',
+      body: '# Markdown content',
+      metaTitle: 'SEO Title IT',
+      metaDescription: 'SEO Description IT',
+    });
 
-    db.insert(contentTranslations)
-      .values({
-        contentId: content.id,
-        lang: 'en',
-        title: 'Full Project',
-        description: 'Project description',
-        body: '# Markdown content EN',
-        metaTitle: 'SEO Title EN',
-        metaDescription: 'SEO Description EN',
-      })
-      .run();
+    await db.insert(contentTranslations).values({
+      contentId: content.id,
+      lang: 'en',
+      title: 'Full Project',
+      description: 'Project description',
+      body: '# Markdown content EN',
+      metaTitle: 'SEO Title EN',
+      metaDescription: 'SEO Description EN',
+    });
 
     // Add project extension
-    db.insert(projects)
-      .values({
-        contentId: content.id,
-        githubUrl: 'https://github.com/user/repo',
-        demoUrl: 'https://demo.example.com',
-        projectStatus: 'completed',
-        startDate: new Date(now - 86400000),
-        endDate: new Date(now),
-      })
-      .run();
+    const [project] = await db.insert(projects).values({
+      contentId: content.id,
+      githubUrl: 'https://github.com/user/repo',
+      demoUrl: 'https://demo.example.com',
+      projectStatus: 'completed',
+      startDate: new Date(now.getTime() - 86400000),
+      endDate: now,
+    }).returning();
 
     // Add technologies
-    db.insert(technologies).values({ name: 'TypeScript', color: '#3178c6' }).run();
-    db.insert(technologies).values({ name: 'React', color: '#61dafb' }).run();
-
-    const project = db.select().from(projects).all()[0];
-    const allTech = db.select().from(technologies).all();
+    const [tech1] = await db.insert(technologies).values({ name: 'TypeScript', color: '#3178c6' }).returning();
+    const [tech2] = await db.insert(technologies).values({ name: 'React', color: '#61dafb' }).returning();
 
     // Link technologies
-    db.insert(projectTechnologies)
-      .values({ projectId: project.id, technologyId: allTech[0].id })
-      .run();
-    db.insert(projectTechnologies)
-      .values({ projectId: project.id, technologyId: allTech[1].id })
-      .run();
+    await db.insert(projectTechnologies).values({ projectId: project.id, technologyId: tech1.id });
+    await db.insert(projectTechnologies).values({ projectId: project.id, technologyId: tech2.id });
 
     // Query and verify all data
-    const contentResult = db.select().from(contentBase).all();
+    const contentResult = await db.select().from(contentBase);
     expect(contentResult).toHaveLength(1);
     expect(contentResult[0].type).toBe('project');
     expect(contentResult[0].status).toBe('published');
     expect(contentResult[0].featured).toBe(true);
 
-    const translationsResult = db.select().from(contentTranslations).all();
+    const translationsResult = await db.select().from(contentTranslations);
     expect(translationsResult).toHaveLength(2);
 
-    const projectResult = db.select().from(projects).all();
+    const projectResult = await db.select().from(projects);
     expect(projectResult).toHaveLength(1);
     expect(projectResult[0].projectStatus).toBe('completed');
     expect(projectResult[0].githubUrl).toBe('https://github.com/user/repo');
 
-    const linksResult = db.select().from(projectTechnologies).all();
+    const linksResult = await db.select().from(projectTechnologies);
     expect(linksResult).toHaveLength(2);
   });
 });

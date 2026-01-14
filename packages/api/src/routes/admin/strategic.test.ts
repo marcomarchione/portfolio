@@ -3,7 +3,7 @@
  *
  * Additional tests covering edge cases and integration scenarios.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import {
   createTestAppWithAuth,
   testAuthJsonRequest,
@@ -16,13 +16,17 @@ describe('Dashboard Integration', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('stats correctly count mixed content types and statuses', async () => {
@@ -99,13 +103,17 @@ describe('Search Edge Cases', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('case-insensitive search works correctly', async () => {
@@ -171,13 +179,17 @@ describe('Sorting Edge Cases', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('ascending sort by createdAt returns oldest first', async () => {
@@ -217,13 +229,17 @@ describe('Archive Edge Cases', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('archiving a project changes its status to archived', async () => {

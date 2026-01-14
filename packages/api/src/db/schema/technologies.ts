@@ -4,7 +4,7 @@
  * Standalone lookup table for technology tags on projects.
  * Used for tagging projects with technologies/frameworks.
  */
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, serial } from 'drizzle-orm/pg-core';
 
 /**
  * Technologies Table
@@ -12,9 +12,9 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
  * Stores technology definitions that can be associated with projects.
  * Referenced by the project_technologies junction table.
  */
-export const technologies = sqliteTable('technologies', {
+export const technologies = pgTable('technologies', {
   /** Auto-incrementing primary key */
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  id: serial('id').primaryKey(),
 
   /** Technology name (must be unique) */
   name: text('name').notNull().unique(),

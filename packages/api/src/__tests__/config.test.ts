@@ -19,11 +19,11 @@ describe('Configuration Module', () => {
     process.env = originalEnv;
   });
 
-  test('loads environment variables with defaults (NODE_ENV, PORT, DATABASE_PATH)', async () => {
+  test('loads environment variables with defaults (NODE_ENV, PORT, DATABASE_URL)', async () => {
     // Clear specific env vars to test defaults
     delete process.env.NODE_ENV;
     delete process.env.PORT;
-    delete process.env.DATABASE_PATH;
+    delete process.env.DATABASE_URL;
     delete process.env.CORS_ORIGINS;
 
     // Import loadConfig function and test directly
@@ -32,7 +32,7 @@ describe('Configuration Module', () => {
 
     expect(config.NODE_ENV).toBe('development');
     expect(config.PORT).toBe(3000);
-    expect(config.DATABASE_PATH).toBe('./data.db');
+    expect(config.DATABASE_URL).toBe('postgres://portfolio:portfolio_dev@localhost:5432/portfolio');
   });
 
   test('parses CORS_ORIGINS from comma-separated string to array', async () => {

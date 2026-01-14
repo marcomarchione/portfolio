@@ -4,11 +4,9 @@
  * Database operations for media table.
  */
 import { eq, and, isNull, isNotNull, lt, sql, desc, like } from 'drizzle-orm';
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
 import type { Media, NewMedia } from '../schema';
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /** Options for listing media */
 export interface ListMediaOptions {
@@ -32,14 +30,8 @@ export interface ListDeletedMediaOptions {
  * @param data - Media data to insert
  * @returns Inserted media record
  */
-export function insertMedia(db: DrizzleDB, data: NewMedia): Media {
-  db.insert(schema.media).values(data).run();
-
-  const media = db
-    .select()
-    .from(schema.media)
-    .where(eq(schema.media.storageKey, data.storageKey))
-    .get();
+export async function insertMedia(db: DrizzleDB, data: NewMedia): Promise<Media> {
+  const [media] = await db.insert(schema.media).values(data).returning();
 
   if (!media) {
     throw new Error('Failed to insert media');
@@ -57,22 +49,23 @@ export function insertMedia(db: DrizzleDB, data: NewMedia): Media {
  * @param includeDeleted - Whether to include soft-deleted records
  * @returns Media record or undefined
  */
-export function getMediaById(
+export async function getMediaById(
   db: DrizzleDB,
   id: number,
   includeDeleted: boolean = false
-): Media | undefined {
+): Promise<Media | undefined> {
   const conditions = [eq(schema.media.id, id)];
 
   if (!includeDeleted) {
     conditions.push(isNull(schema.media.deletedAt));
   }
 
-  return db
+  const [result] = await db
     .select()
     .from(schema.media)
-    .where(and(...conditions))
-    .get();
+    .where(and(...conditions));
+
+  return result;
 }
 
 /**
@@ -82,7 +75,7 @@ export function getMediaById(
  * @param options - List options
  * @returns Array of media records
  */
-export function listMedia(db: DrizzleDB, options: ListMediaOptions = {}): Media[] {
+export async function listMedia(db: DrizzleDB, options: ListMediaOptions = {}): Promise<Media[]> {
   const { limit = 20, offset = 0, mimeType, includeDeleted = false } = options;
 
   const conditions = [];
@@ -97,18 +90,22 @@ export function listMedia(db: DrizzleDB, options: ListMediaOptions = {}): Media[
     conditions.push(like(schema.media.mimeType, likePattern));
   }
 
-  const query = db
+  if (conditions.length > 0) {
+    return db
+      .select()
+      .from(schema.media)
+      .where(and(...conditions))
+      .orderBy(desc(schema.media.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  return db
     .select()
     .from(schema.media)
     .orderBy(desc(schema.media.createdAt))
     .limit(limit)
     .offset(offset);
-
-  if (conditions.length > 0) {
-    return query.where(and(...conditions)).all();
-  }
-
-  return query.all();
 }
 
 /**
@@ -119,7 +116,7 @@ export function listMedia(db: DrizzleDB, options: ListMediaOptions = {}): Media[
  * @param options - List options
  * @returns Array of soft-deleted media records
  */
-export function listDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions = {}): Media[] {
+export async function listDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions = {}): Promise<Media[]> {
   const { limit = 20, offset = 0, mimeType } = options;
 
   const conditions = [isNotNull(schema.media.deletedAt)];
@@ -136,8 +133,7 @@ export function listDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions
     .where(and(...conditions))
     .orderBy(desc(schema.media.deletedAt))
     .limit(limit)
-    .offset(offset)
-    .all();
+    .offset(offset);
 }
 
 /**
@@ -147,7 +143,7 @@ export function listDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions
  * @param options - List options
  * @returns Total count of soft-deleted records
  */
-export function countDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions = {}): number {
+export async function countDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOptions = {}): Promise<number> {
   const { mimeType } = options;
 
   const conditions = [isNotNull(schema.media.deletedAt)];
@@ -158,11 +154,10 @@ export function countDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOption
     conditions.push(like(schema.media.mimeType, likePattern));
   }
 
-  const result = db
-    .select({ count: sql<number>`count(*)` })
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(schema.media)
-    .where(and(...conditions))
-    .get();
+    .where(and(...conditions));
 
   return result?.count ?? 0;
 }
@@ -174,7 +169,7 @@ export function countDeletedMedia(db: DrizzleDB, options: ListDeletedMediaOption
  * @param options - List options
  * @returns Total count
  */
-export function countMedia(db: DrizzleDB, options: ListMediaOptions = {}): number {
+export async function countMedia(db: DrizzleDB, options: ListMediaOptions = {}): Promise<number> {
   const { mimeType, includeDeleted = false } = options;
 
   const conditions = [];
@@ -189,14 +184,15 @@ export function countMedia(db: DrizzleDB, options: ListMediaOptions = {}): numbe
     conditions.push(like(schema.media.mimeType, likePattern));
   }
 
-  const query = db.select({ count: sql<number>`count(*)` }).from(schema.media);
-
   if (conditions.length > 0) {
-    const result = query.where(and(...conditions)).get();
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.media)
+      .where(and(...conditions));
     return result?.count ?? 0;
   }
 
-  const result = query.get();
+  const [result] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.media);
   return result?.count ?? 0;
 }
 
@@ -208,20 +204,19 @@ export function countMedia(db: DrizzleDB, options: ListMediaOptions = {}): numbe
  * @param altText - New alt text value
  * @returns Updated media record or undefined if not found
  */
-export function updateMediaAltText(
+export async function updateMediaAltText(
   db: DrizzleDB,
   id: number,
   altText: string | null
-): Media | undefined {
-  const media = getMediaById(db, id);
+): Promise<Media | undefined> {
+  const media = await getMediaById(db, id);
   if (!media) {
     return undefined;
   }
 
-  db.update(schema.media)
+  await db.update(schema.media)
     .set({ altText })
-    .where(eq(schema.media.id, id))
-    .run();
+    .where(eq(schema.media.id, id));
 
   return getMediaById(db, id);
 }
@@ -234,20 +229,19 @@ export function updateMediaAltText(
  * @param data - Variants and dimensions to update
  * @returns Updated media record or undefined if not found
  */
-export function updateMediaVariants(
+export async function updateMediaVariants(
   db: DrizzleDB,
   id: number,
   data: { variants?: string; width?: number; height?: number }
-): Media | undefined {
-  const media = getMediaById(db, id, true);
+): Promise<Media | undefined> {
+  const media = await getMediaById(db, id, true);
   if (!media) {
     return undefined;
   }
 
-  db.update(schema.media)
+  await db.update(schema.media)
     .set(data)
-    .where(eq(schema.media.id, id))
-    .run();
+    .where(eq(schema.media.id, id));
 
   return getMediaById(db, id, true);
 }
@@ -259,17 +253,16 @@ export function updateMediaVariants(
  * @param id - Media ID
  * @returns Updated media record or undefined if not found
  */
-export function softDeleteMedia(db: DrizzleDB, id: number): Media | undefined {
-  const media = getMediaById(db, id);
+export async function softDeleteMedia(db: DrizzleDB, id: number): Promise<Media | undefined> {
+  const media = await getMediaById(db, id);
   if (!media) {
     return undefined;
   }
 
   const now = new Date();
-  db.update(schema.media)
+  await db.update(schema.media)
     .set({ deletedAt: now })
-    .where(eq(schema.media.id, id))
-    .run();
+    .where(eq(schema.media.id, id));
 
   return getMediaById(db, id, true);
 }
@@ -281,9 +274,9 @@ export function softDeleteMedia(db: DrizzleDB, id: number): Media | undefined {
  * @param id - Media ID
  * @returns Updated media record or undefined if not found/not deleted
  */
-export function restoreMedia(db: DrizzleDB, id: number): Media | undefined {
+export async function restoreMedia(db: DrizzleDB, id: number): Promise<Media | undefined> {
   // Get media including deleted ones
-  const media = getMediaById(db, id, true);
+  const media = await getMediaById(db, id, true);
   if (!media) {
     return undefined;
   }
@@ -293,10 +286,9 @@ export function restoreMedia(db: DrizzleDB, id: number): Media | undefined {
     return undefined;
   }
 
-  db.update(schema.media)
+  await db.update(schema.media)
     .set({ deletedAt: null })
-    .where(eq(schema.media.id, id))
-    .run();
+    .where(eq(schema.media.id, id));
 
   return getMediaById(db, id);
 }
@@ -309,7 +301,7 @@ export function restoreMedia(db: DrizzleDB, id: number): Media | undefined {
  * @param daysOld - Minimum age in days for deletedAt
  * @returns Array of expired media records
  */
-export function getExpiredSoftDeletedMedia(db: DrizzleDB, daysOld: number = 30): Media[] {
+export async function getExpiredSoftDeletedMedia(db: DrizzleDB, daysOld: number = 30): Promise<Media[]> {
   const threshold = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000);
 
   return db
@@ -318,10 +310,9 @@ export function getExpiredSoftDeletedMedia(db: DrizzleDB, daysOld: number = 30):
     .where(
       and(
         lt(schema.media.deletedAt, threshold),
-        sql`${schema.media.deletedAt} IS NOT NULL`
+        isNotNull(schema.media.deletedAt)
       )
-    )
-    .all();
+    );
 }
 
 /**
@@ -332,13 +323,13 @@ export function getExpiredSoftDeletedMedia(db: DrizzleDB, daysOld: number = 30):
  * @param id - Media ID
  * @returns true if record existed and was deleted
  */
-export function permanentlyDeleteMedia(db: DrizzleDB, id: number): boolean {
+export async function permanentlyDeleteMedia(db: DrizzleDB, id: number): Promise<boolean> {
   // Check if media exists before deleting
-  const media = getMediaById(db, id, true);
+  const media = await getMediaById(db, id, true);
   if (!media) {
     return false;
   }
 
-  db.delete(schema.media).where(eq(schema.media.id, id)).run();
+  await db.delete(schema.media).where(eq(schema.media.id, id));
   return true;
 }

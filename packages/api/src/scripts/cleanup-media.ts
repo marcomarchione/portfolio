@@ -11,8 +11,8 @@
  *   --days=N    Days threshold for cleanup (default: 30)
  *   --dry-run   Show what would be cleaned without deleting
  */
-import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
 import { cleanupExpiredMedia, getCleanupCount } from '../services/media/cleanup';
 import type { DrizzleDB } from '../db';
@@ -36,32 +36,32 @@ for (const arg of args) {
 }
 
 // Load configuration
-const dbPath = process.env.DATABASE_PATH ?? './data.db';
+const databaseUrl = process.env.DATABASE_URL ?? 'postgres://portfolio:portfolio_dev@localhost:5432/portfolio';
 const uploadsPath = process.env.UPLOADS_PATH ?? './uploads';
 
 console.log('Media Cleanup');
 console.log('=============');
-console.log(`Database: ${dbPath}`);
+console.log(`Database: ${databaseUrl.replace(/:[^:@]+@/, ':****@')}`); // Hide password in logs
 console.log(`Uploads: ${uploadsPath}`);
 console.log(`Threshold: ${daysOld} days`);
 console.log(`Mode: ${dryRun ? 'Dry run' : 'Live'}`);
 console.log('');
 
 // Initialize database
-let sqlite: Database;
+let client: ReturnType<typeof postgres>;
 try {
-  sqlite = new Database(dbPath);
+  client = postgres(databaseUrl);
 } catch (error) {
-  console.error(`Failed to open database: ${error}`);
+  console.error(`Failed to connect to database: ${error}`);
   process.exit(1);
 }
 
-const db = drizzle(sqlite, { schema }) as unknown as DrizzleDB;
+const db = drizzle(client, { schema }) as DrizzleDB;
 
 // Run cleanup or dry-run
 try {
   if (dryRun) {
-    const count = getCleanupCount(db, daysOld);
+    const count = await getCleanupCount(db, daysOld);
     console.log(`Would clean up ${count} media records`);
   } else {
     const result = await cleanupExpiredMedia(db, uploadsPath, daysOld);
@@ -86,7 +86,7 @@ try {
   console.error('Cleanup failed:', error);
   process.exit(1);
 } finally {
-  sqlite.close();
+  await client.end();
 }
 
 console.log('\nDone.');

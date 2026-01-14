@@ -4,7 +4,7 @@
  * Tests complete request lifecycle and integration between components.
  * Fills coverage gaps identified in Task Group 5.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import { Elysia, t } from 'elysia';
 import { createTestApp, type TestApp } from '../test-utils';
 import { errorHandler } from '../middleware/error-handler';
@@ -15,17 +15,21 @@ import { createTestDatabase, closeDatabase } from '../db/test-utils';
 describe('Complete Request Lifecycle', () => {
   let testApp: TestApp;
 
-  beforeEach(() => {
+  beforeAll(() => {
     testApp = createTestApp();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('TypeBox validation errors produce correct 400 responses', async () => {
     // Create app with TypeBox validated route
-    const { sqlite, db } = createTestDatabase();
+    const { client, db } = createTestDatabase();
     const app = new Elysia()
       .use(errorHandler)
       .use(createDatabasePlugin(db))
@@ -55,7 +59,7 @@ describe('Complete Request Lifecycle', () => {
     expect(body.path).toBe('/test-validation');
     expect(body.timestamp).toBeDefined();
 
-    closeDatabase(sqlite);
+    await closeDatabase(client);
   });
 
   test('unknown routes return 404 with structured error', async () => {
@@ -71,7 +75,7 @@ describe('Complete Request Lifecycle', () => {
   });
 
   test('error response includes correct path and timestamp', async () => {
-    const { sqlite, db } = createTestDatabase();
+    const { client, db } = createTestDatabase();
     const app = new Elysia()
       .use(errorHandler)
       .use(createDatabasePlugin(db))
@@ -93,7 +97,7 @@ describe('Complete Request Lifecycle', () => {
     expect(responseTime >= beforeTime).toBe(true);
     expect(responseTime <= afterTime).toBe(true);
 
-    closeDatabase(sqlite);
+    await closeDatabase(client);
   });
 });
 
@@ -124,7 +128,7 @@ describe('CORS Preflight Requests', () => {
     );
     expect(response.headers.get('Access-Control-Allow-Credentials')).toBe('true');
 
-    testApp.cleanup();
+    await testApp.cleanup();
   });
 
   test('CORS rejects requests from unknown origins', async () => {
@@ -145,7 +149,7 @@ describe('CORS Preflight Requests', () => {
     const allowOrigin = response.headers.get('Access-Control-Allow-Origin');
     expect(allowOrigin).not.toBe('https://malicious-site.com');
 
-    testApp.cleanup();
+    await testApp.cleanup();
   });
 });
 
@@ -162,7 +166,7 @@ describe('Health Check Edge Cases', () => {
     const body = await response.json();
     expect(body.error).toBe('VALIDATION_ERROR');
 
-    testApp.cleanup();
+    await testApp.cleanup();
   });
 });
 
@@ -188,6 +192,6 @@ describe('API Prefix Verification', () => {
     );
     expect(noPrefix.status).toBe(404);
 
-    testApp.cleanup();
+    await testApp.cleanup();
   });
 });

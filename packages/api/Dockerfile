@@ -1,5 +1,6 @@
 # API Dockerfile
-# Uses Bun runtime for the Elysia backend
+# Uses Bun runtime for the Elysia backend with PostgreSQL
+# Build from repo root with: docker build -f packages/api/Dockerfile .
 
 FROM oven/bun:1.3 AS base
 WORKDIR /app
@@ -27,21 +28,26 @@ ENV NODE_ENV=production
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 elysia
-USER elysia
 
+# Copy application files
 COPY --from=builder --chown=elysia:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=elysia:nodejs /app/packages/shared ./packages/shared
 COPY --from=builder --chown=elysia:nodejs /app/packages/api ./packages/api
 COPY --from=builder --chown=elysia:nodejs /app/package.json ./
 
-# Create data directory for SQLite
-RUN mkdir -p /app/packages/api/data && chown elysia:nodejs /app/packages/api/data
+# Create uploads directory for media files
+# For Railway: mount persistent volume at /app/uploads
+RUN mkdir -p /app/uploads && \
+    chown -R elysia:nodejs /app/uploads
+
+USER elysia
 
 WORKDIR /app/packages/api
 
 EXPOSE 3000
 
-ENV PORT=3000
-ENV DATABASE_PATH=/app/packages/api/data/data.db
+# Railway sets PORT automatically, default to 3000 for local
+ENV PORT=${PORT:-3000}
+ENV UPLOADS_PATH=/app/uploads
 
 CMD ["bun", "run", "src/index.ts"]

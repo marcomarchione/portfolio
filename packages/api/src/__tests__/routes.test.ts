@@ -3,18 +3,22 @@
  *
  * Tests health check endpoints and server initialization.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import { createTestApp, type TestApp } from '../test-utils';
 
 describe('Health Check Endpoint', () => {
   let testApp: TestApp;
 
-  beforeEach(() => {
+  beforeAll(() => {
     testApp = createTestApp();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('GET /api/v1/health returns 200 with status ok and timestamp', async () => {

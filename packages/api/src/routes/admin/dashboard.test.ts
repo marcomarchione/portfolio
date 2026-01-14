@@ -3,7 +3,7 @@
  *
  * Tests for dashboard statistics and recent items endpoints.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import {
   createTestAppWithAuth,
   testAuthJsonRequest,
@@ -16,13 +16,17 @@ describe('Admin Dashboard Routes', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   describe('GET /api/v1/admin/dashboard/stats', () => {

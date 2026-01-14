@@ -26,7 +26,7 @@ import type { DrizzleDB } from '../../db';
 /**
  * Formats a news item for API response.
  */
-function formatNewsResponse(newsItem: NonNullable<ReturnType<typeof getNewsWithTranslation>>) {
+function formatNewsResponse(newsItem: NonNullable<Awaited<ReturnType<typeof getNewsWithTranslation>>>) {
   return {
     id: newsItem.id,
     type: newsItem.type,
@@ -77,41 +77,43 @@ export const publicNewsRoutes = new Elysia({ name: 'public-news', prefix: '/news
         publishedOnly: true,
       };
 
-      const newsItems = listNews(db, options);
-      const total = countNews(db, options);
+      const newsItems = await listNews(db, options);
+      const total = await countNews(db, options);
 
       // Get translations and tags for each news item
-      const newsWithTranslations = newsItems.map((newsItem) => {
-        const translation = getTranslation(db, newsItem.id, lang);
-        const newsRecord = getNewsByContentId(db, newsItem.id);
-        const tags = newsRecord ? getNewsTags(db, newsRecord.id) : [];
+      const newsWithTranslations = await Promise.all(
+        newsItems.map(async (newsItem) => {
+          const translation = await getTranslation(db, newsItem.id, lang);
+          const newsRecord = await getNewsByContentId(db, newsItem.id);
+          const tags = newsRecord ? await getNewsTags(db, newsRecord.id) : [];
 
-        return {
-          id: newsItem.id,
-          type: newsItem.type,
-          slug: newsItem.slug,
-          status: newsItem.status,
-          featured: newsItem.featured,
-          createdAt: newsItem.createdAt.toISOString(),
-          updatedAt: newsItem.updatedAt.toISOString(),
-          publishedAt: newsItem.publishedAt?.toISOString() ?? null,
-          coverImage: newsItem.coverImage,
-          readingTime: newsItem.readingTime,
-          translation: translation
-            ? {
-                id: translation.id,
-                contentId: translation.contentId,
-                lang: translation.lang,
-                title: translation.title,
-                description: translation.description,
-                body: translation.body,
-                metaTitle: translation.metaTitle,
-                metaDescription: translation.metaDescription,
-              }
-            : null,
-          tags,
-        };
-      });
+          return {
+            id: newsItem.id,
+            type: newsItem.type,
+            slug: newsItem.slug,
+            status: newsItem.status,
+            featured: newsItem.featured,
+            createdAt: newsItem.createdAt.toISOString(),
+            updatedAt: newsItem.updatedAt.toISOString(),
+            publishedAt: newsItem.publishedAt?.toISOString() ?? null,
+            coverImage: newsItem.coverImage,
+            readingTime: newsItem.readingTime,
+            translation: translation
+              ? {
+                  id: translation.id,
+                  contentId: translation.contentId,
+                  lang: translation.lang,
+                  title: translation.title,
+                  description: translation.description,
+                  body: translation.body,
+                  metaTitle: translation.metaTitle,
+                  metaDescription: translation.metaDescription,
+                }
+              : null,
+            tags,
+          };
+        })
+      );
 
       return createPaginatedResponse(newsWithTranslations, total, offset, limit);
     },
@@ -130,7 +132,7 @@ export const publicNewsRoutes = new Elysia({ name: 'public-news', prefix: '/news
     async (ctx: any) => {
       const db = ctx.db as DrizzleDB;
       const lang = (ctx.query.lang ?? 'it') as Language;
-      const newsItem = getNewsWithTranslation(db, ctx.params.slug, lang);
+      const newsItem = await getNewsWithTranslation(db, ctx.params.slug, lang);
 
       if (!newsItem || newsItem.status !== 'published') {
         throw new NotFoundError('News article not found');

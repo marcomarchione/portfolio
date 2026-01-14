@@ -4,7 +4,7 @@
  * Type-specific extension for project content.
  * One-to-one relationship with content_base.
  */
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, serial, integer, timestamp, index } from 'drizzle-orm/pg-core';
 import { contentBase } from './content-base';
 
 /** Valid project statuses */
@@ -17,11 +17,11 @@ export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
  * Stores project-specific fields extending content_base.
  * Each project must have exactly one corresponding content_base record.
  */
-export const projects = sqliteTable(
+export const projects = pgTable(
   'projects',
   {
     /** Auto-incrementing primary key */
-    id: integer('id').primaryKey({ autoIncrement: true }),
+    id: serial('id').primaryKey(),
 
     /** Foreign key to content_base with UNIQUE constraint for 1:1 relationship */
     contentId: integer('content_id')
@@ -40,11 +40,11 @@ export const projects = sqliteTable(
       .notNull()
       .default('in-progress'),
 
-    /** Unix timestamp when project started */
-    startDate: integer('start_date', { mode: 'timestamp_ms' }),
+    /** Timestamp when project started */
+    startDate: timestamp('start_date'),
 
-    /** Unix timestamp when project was completed */
-    endDate: integer('end_date', { mode: 'timestamp_ms' }),
+    /** Timestamp when project was completed */
+    endDate: timestamp('end_date'),
   },
   (table) => [index('idx_projects_status').on(table.projectStatus)]
 );

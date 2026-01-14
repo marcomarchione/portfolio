@@ -1,68 +1,51 @@
 /**
  * Database Connection Module
  *
- * Initializes SQLite database with Drizzle ORM using bun:sqlite driver.
- * Applies recommended SQLite pragmas for performance and data integrity.
+ * Initializes PostgreSQL database with Drizzle ORM using postgres.js driver.
  */
-import { Database } from 'bun:sqlite';
-import { drizzle, type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import postgres from 'postgres';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from './schema';
 
 /** Type alias for the Drizzle database instance */
-export type DrizzleDB = BunSQLiteDatabase<typeof schema>;
+export type DrizzleDB = PostgresJsDatabase<typeof schema>;
 
-/** Default database file path */
-const DATABASE_PATH = process.env.DATABASE_PATH ?? './data.db';
+/** Default database URL */
+const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://portfolio:portfolio_dev@localhost:5432/portfolio';
 
 /**
- * Creates and configures a SQLite database connection with optimized pragmas.
+ * Creates and configures a PostgreSQL database connection.
  *
- * @param dbPath - Path to the SQLite database file (defaults to ./data.db)
+ * @param connectionString - PostgreSQL connection URL
  * @returns Configured Drizzle database instance
  */
-export function createDatabase(dbPath: string = DATABASE_PATH) {
-  const sqlite = new Database(dbPath);
-
-  // Apply SQLite pragmas for optimal performance and data integrity
-  // WAL mode: Better concurrent read performance
-  sqlite.exec('PRAGMA journal_mode = WAL');
-
-  // Enable foreign key enforcement
-  sqlite.exec('PRAGMA foreign_keys = ON');
-
-  // Balance between safety and speed
-  sqlite.exec('PRAGMA synchronous = NORMAL');
-
-  return drizzle(sqlite, { schema });
+export function createDatabase(connectionString: string = DATABASE_URL): DrizzleDB {
+  const client = postgres(connectionString);
+  return drizzle(client, { schema });
 }
 
 /**
- * Creates an in-memory database for testing purposes.
- * Applies the same pragmas as the file-based database.
+ * Creates a database connection for testing purposes.
+ * Uses a separate test database or the provided connection string.
  *
- * @returns Configured Drizzle database instance using in-memory SQLite
+ * @param connectionString - PostgreSQL connection URL for testing
+ * @returns Configured Drizzle database instance
  */
-export function createTestDatabase() {
-  const sqlite = new Database(':memory:');
-
-  sqlite.exec('PRAGMA foreign_keys = ON');
-  sqlite.exec('PRAGMA synchronous = NORMAL');
-
-  return drizzle(sqlite, { schema });
+export function createTestDatabase(connectionString?: string): DrizzleDB {
+  const testUrl = connectionString ?? process.env.TEST_DATABASE_URL ?? DATABASE_URL;
+  const client = postgres(testUrl);
+  return drizzle(client, { schema });
 }
 
 /**
- * Gets the raw SQLite connection from a Drizzle database instance.
- * Useful for running raw SQL queries or checking pragmas.
+ * Gets a raw postgres.js client for direct SQL execution.
+ * Useful for running raw SQL queries or migrations.
+ *
+ * @param connectionString - PostgreSQL connection URL
+ * @returns postgres.js client instance
  */
-export function getRawConnection(dbPath: string = DATABASE_PATH): Database {
-  const sqlite = new Database(dbPath);
-
-  sqlite.exec('PRAGMA journal_mode = WAL');
-  sqlite.exec('PRAGMA foreign_keys = ON');
-  sqlite.exec('PRAGMA synchronous = NORMAL');
-
-  return sqlite;
+export function getRawConnection(connectionString: string = DATABASE_URL) {
+  return postgres(connectionString);
 }
 
 // Default database instance for application use

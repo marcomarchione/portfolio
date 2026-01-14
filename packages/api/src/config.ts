@@ -19,14 +19,26 @@ import { join } from 'path';
 /** Supported environment types */
 export type NodeEnv = 'development' | 'production';
 
+/** Storage backend type */
+export type StorageBackend = 'local' | 'r2';
+
+/** R2 configuration */
+export interface R2Config {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucketName: string;
+  publicUrl: string;
+}
+
 /** Configuration interface for all environment variables */
 export interface Config {
   /** Current environment */
   NODE_ENV: NodeEnv;
   /** Server port */
   PORT: number;
-  /** Path to SQLite database file */
-  DATABASE_PATH: string;
+  /** PostgreSQL database connection URL */
+  DATABASE_URL: string;
   /** Allowed CORS origins */
   CORS_ORIGINS: string[];
   /** Secret for signing JWTs (minimum 32 characters) */
@@ -39,6 +51,10 @@ export interface Config {
   JWT_REFRESH_EXPIRY: string;
   /** Path for uploaded media files (default: "./uploads") */
   UPLOADS_PATH: string;
+  /** Storage backend: 'local' or 'r2' */
+  STORAGE_BACKEND: StorageBackend;
+  /** R2 configuration (required when STORAGE_BACKEND is 'r2') */
+  R2_CONFIG: R2Config | null;
 }
 
 /**
@@ -222,6 +238,35 @@ function parseUploadsPath(value: string | undefined): string {
 }
 
 /**
+ * Parses the STORAGE_BACKEND environment variable.
+ *
+ * @param value - Storage backend value
+ * @returns Validated storage backend
+ */
+function parseStorageBackend(value: string | undefined): StorageBackend {
+  if (value === 'r2') return 'r2';
+  return 'local';
+}
+
+/**
+ * Parses R2 configuration from environment variables.
+ * Returns null if any required variable is missing.
+ */
+function parseR2Config(): R2Config | null {
+  const accountId = getEnv('R2_ACCOUNT_ID');
+  const accessKeyId = getEnv('R2_ACCESS_KEY_ID');
+  const secretAccessKey = getEnv('R2_SECRET_ACCESS_KEY');
+  const bucketName = getEnv('R2_BUCKET_NAME');
+  const publicUrl = getEnv('R2_PUBLIC_URL');
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucketName || !publicUrl) {
+    return null;
+  }
+
+  return { accountId, accessKeyId, secretAccessKey, bucketName, publicUrl };
+}
+
+/**
  * Loads and validates all environment configuration.
  * Throws an error if critical validation fails.
  *
@@ -231,7 +276,7 @@ export function loadConfig(): Config {
   const NODE_ENV = parseNodeEnv(getEnv('NODE_ENV'));
   const isProduction = NODE_ENV === 'production';
   const PORT = parsePort(getEnv('PORT'));
-  const DATABASE_PATH = getEnv('DATABASE_PATH') ?? './data.db';
+  const DATABASE_URL = getEnv('DATABASE_URL') ?? 'postgres://portfolio:portfolio_dev@localhost:5432/portfolio';
   const additionalOrigins = parseOrigins(getEnv('CORS_ORIGINS'));
 
   // Default allowed origins
@@ -249,16 +294,30 @@ export function loadConfig(): Config {
   // Parse media configuration
   const UPLOADS_PATH = parseUploadsPath(getEnv('UPLOADS_PATH'));
 
+  // Parse storage configuration
+  const STORAGE_BACKEND = parseStorageBackend(getEnv('STORAGE_BACKEND'));
+  const R2_CONFIG = parseR2Config();
+
+  // Validate R2 configuration if R2 backend is selected
+  if (STORAGE_BACKEND === 'r2' && !R2_CONFIG) {
+    throw new Error(
+      'R2 storage backend selected but R2 configuration is missing. ' +
+        'Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, and R2_PUBLIC_URL.'
+    );
+  }
+
   return {
     NODE_ENV,
     PORT,
-    DATABASE_PATH,
+    DATABASE_URL,
     CORS_ORIGINS,
     JWT_SECRET,
     ADMIN_PASSWORD_HASH,
     JWT_ACCESS_EXPIRY,
     JWT_REFRESH_EXPIRY,
     UPLOADS_PATH,
+    STORAGE_BACKEND,
+    R2_CONFIG,
   };
 }
 

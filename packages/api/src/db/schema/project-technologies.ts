@@ -3,7 +3,7 @@
  *
  * Many-to-many relationship between projects and technologies.
  */
-import { sqliteTable, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, integer, primaryKey, index } from 'drizzle-orm/pg-core';
 import { projects } from './projects';
 import { technologies } from './technologies';
 
@@ -13,7 +13,7 @@ import { technologies } from './technologies';
  * Links projects to their associated technologies.
  * Uses composite primary key on (project_id, technology_id).
  */
-export const projectTechnologies = sqliteTable(
+export const projectTechnologies = pgTable(
   'project_technologies',
   {
     /** Foreign key to projects table */

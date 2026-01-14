@@ -37,7 +37,7 @@ import type { DrizzleDB } from '../../db';
  * Formats a news item for admin API response.
  */
 function formatAdminNewsResponse(
-  newsItem: NonNullable<ReturnType<typeof getNewsWithAllTranslations>>
+  newsItem: NonNullable<Awaited<ReturnType<typeof getNewsWithAllTranslations>>>
 ) {
   return {
     id: newsItem.id,
@@ -90,17 +90,19 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
         sortOrder,
       };
 
-      const newsItems = listNews(db, options);
-      const total = countNews(db, options);
+      const newsItems = await listNews(db, options);
+      const total = await countNews(db, options);
 
       // Get all translations for each news item
-      const newsWithAllTranslations = newsItems.map((newsItem) => {
-        const fullNews = getNewsWithAllTranslations(db, newsItem.id);
-        if (!fullNews) return null;
-        return formatAdminNewsResponse(fullNews);
-      }).filter(Boolean);
+      const newsWithAllTranslations = await Promise.all(
+        newsItems.map(async (newsItem) => {
+          const fullNews = await getNewsWithAllTranslations(db, newsItem.id);
+          if (!fullNews) return null;
+          return formatAdminNewsResponse(fullNews);
+        })
+      );
 
-      return createPaginatedResponse(newsWithAllTranslations, total, offset, limit);
+      return createPaginatedResponse(newsWithAllTranslations.filter(Boolean), total, offset, limit);
     },
     {
       query: AdminListQuerySchema,
@@ -117,7 +119,7 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
     async ({ params, db: rawDb }) => {
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
-      const newsItem = getNewsWithAllTranslations(db, id);
+      const newsItem = await getNewsWithAllTranslations(db, id);
 
       if (!newsItem) {
         throw new NotFoundError('News not found');
@@ -138,7 +140,7 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
     '/',
     async ({ body, db: rawDb, set }) => {
       const db = rawDb as DrizzleDB;
-      const newsItem = createNews(db, {
+      const newsItem = await createNews(db, {
         slug: body.slug,
         coverImage: body.coverImage,
         readingTime: body.readingTime,
@@ -165,7 +167,7 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const newsItem = updateNews(db, id, {
+      const newsItem = await updateNews(db, id, {
         slug: body.slug,
         coverImage: body.coverImage,
         readingTime: body.readingTime,
@@ -198,12 +200,12 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
       const lang = params.lang as Language;
 
       // Verify news exists
-      const newsItem = getNewsWithAllTranslations(db, id);
+      const newsItem = await getNewsWithAllTranslations(db, id);
       if (!newsItem) {
         throw new NotFoundError('News not found');
       }
 
-      const translation = upsertTranslation(db, id, lang, {
+      const translation = await upsertTranslation(db, id, lang, {
         title: body.title,
         description: body.description,
         body: body.body,
@@ -239,13 +241,13 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
       const db = rawDb as DrizzleDB;
       const id = parseInt(params.id, 10);
 
-      const archived = archiveContent(db, id);
+      const archived = await archiveContent(db, id);
       if (!archived) {
         throw new NotFoundError('News not found');
       }
 
       // Get updated news with all translations
-      const newsItem = getNewsWithAllTranslations(db, id);
+      const newsItem = await getNewsWithAllTranslations(db, id);
       if (!newsItem) {
         throw new NotFoundError('News not found');
       }
@@ -268,16 +270,16 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
       const id = parseInt(params.id, 10);
 
       // Get news record
-      const newsRecord = getNewsByContentId(db, id);
+      const newsRecord = await getNewsByContentId(db, id);
       if (!newsRecord) {
         throw new NotFoundError('News not found');
       }
 
       // Assign tags
-      assignTags(db, newsRecord.id, body.tagIds);
+      await assignTags(db, newsRecord.id, body.tagIds);
 
       // Get updated news
-      const newsItem = getNewsWithAllTranslations(db, id);
+      const newsItem = await getNewsWithAllTranslations(db, id);
       if (!newsItem) {
         throw new NotFoundError('News not found');
       }
@@ -303,16 +305,16 @@ export const adminNewsRoutes: any = new Elysia({ name: 'admin-news', prefix: '/n
       const tagId = parseInt(params.tagId, 10);
 
       // Get news record
-      const newsRecord = getNewsByContentId(db, id);
+      const newsRecord = await getNewsByContentId(db, id);
       if (!newsRecord) {
         throw new NotFoundError('News not found');
       }
 
       // Remove tag
-      removeTag(db, newsRecord.id, tagId);
+      await removeTag(db, newsRecord.id, tagId);
 
       // Get updated news
-      const newsItem = getNewsWithAllTranslations(db, id);
+      const newsItem = await getNewsWithAllTranslations(db, id);
       if (!newsItem) {
         throw new NotFoundError('News not found');
       }

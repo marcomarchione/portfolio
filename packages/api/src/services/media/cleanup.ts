@@ -4,14 +4,12 @@
  * Handles cleanup of soft-deleted media files after retention period.
  * Deletes physical files and database records for expired soft-deleted media.
  */
-import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
-import * as schema from '../../db/schema';
+import type { DrizzleDB } from '../../db';
 import {
   getExpiredSoftDeletedMedia,
   permanentlyDeleteMedia,
 } from '../../db/queries';
 import { deleteFile } from './upload-service';
-import type { MediaVariants } from '../../db/schema';
 
 /** Result of a cleanup operation */
 export interface CleanupResult {
@@ -26,8 +24,6 @@ export interface CleanupResult {
     error: string;
   }>;
 }
-
-type DrizzleDB = BunSQLiteDatabase<typeof schema>;
 
 /**
  * Cleans up expired soft-deleted media files.
@@ -50,7 +46,7 @@ export async function cleanupExpiredMedia(
   };
 
   // Get expired soft-deleted media
-  const expiredMedia = getExpiredSoftDeletedMedia(db, daysOld);
+  const expiredMedia = await getExpiredSoftDeletedMedia(db, daysOld);
 
   if (expiredMedia.length === 0) {
     return result;
@@ -64,7 +60,7 @@ export async function cleanupExpiredMedia(
       await deleteFile(uploadsPath, media.storageKey, true);
 
       // Delete database record
-      const deleted = permanentlyDeleteMedia(db, media.id);
+      const deleted = await permanentlyDeleteMedia(db, media.id);
 
       if (deleted) {
         result.cleaned++;
@@ -99,7 +95,7 @@ export async function cleanupExpiredMedia(
  * @param daysOld - Minimum age in days for deletedAt (default: 30)
  * @returns Number of records that would be cleaned up
  */
-export function getCleanupCount(db: DrizzleDB, daysOld: number = 30): number {
-  const expiredMedia = getExpiredSoftDeletedMedia(db, daysOld);
+export async function getCleanupCount(db: DrizzleDB, daysOld: number = 30): Promise<number> {
+  const expiredMedia = await getExpiredSoftDeletedMedia(db, daysOld);
   return expiredMedia.length;
 }

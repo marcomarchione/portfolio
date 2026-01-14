@@ -1,6 +1,6 @@
 # Database Schema
 
-This directory contains the SQLite database schema for the marcomarchione.it CMS, implemented using Drizzle ORM.
+This directory contains the PostgreSQL database schema for the marcomarchione.it CMS, implemented using Drizzle ORM.
 
 ## Directory Structure
 
@@ -19,6 +19,7 @@ src/db/
 │   ├── media.ts          # Media library table
 │   ├── project-technologies.ts  # Junction table
 │   └── news-tags.ts      # Junction table
+├── queries/              # Query functions by domain
 ├── relations.ts          # Drizzle relations definitions
 ├── migrations/           # SQL migration files
 └── test-utils.ts         # Testing utilities
@@ -61,10 +62,10 @@ content_base (shared metadata)
 import { createDatabase, db } from '@/db';
 
 // Use the default database instance
-const allContent = db.select().from(contentBase).all();
+const allContent = await db.select().from(contentBase);
 
 // Or create a custom connection
-const customDb = createDatabase('./custom-path.db');
+const customDb = createDatabase('postgres://user:pass@localhost:5432/mydb');
 ```
 
 ### Inserting Content
@@ -76,29 +77,27 @@ import { contentBase, contentTranslations, projects } from '@/db/schema';
 // Create a project with translations
 const now = new Date();
 
-db.insert(contentBase).values({
+const [content] = await db.insert(contentBase).values({
   type: 'project',
   slug: 'my-project',
   status: 'draft',
   createdAt: now,
   updatedAt: now,
-}).run();
+}).returning();
 
-const content = db.select().from(contentBase).all().pop()!;
-
-db.insert(contentTranslations).values({
+await db.insert(contentTranslations).values({
   contentId: content.id,
   lang: 'en',
   title: 'My Project',
   description: 'A great project',
   body: '# Markdown content',
-}).run();
+});
 
-db.insert(projects).values({
+await db.insert(projects).values({
   contentId: content.id,
   githubUrl: 'https://github.com/user/repo',
   projectStatus: 'in-progress',
-}).run();
+});
 ```
 
 ### Querying with Joins
@@ -109,7 +108,7 @@ import { contentBase, contentTranslations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 // Get published projects with English translations
-const publishedProjects = db
+const publishedProjects = await db
   .select({
     slug: contentBase.slug,
     title: contentTranslations.title,
@@ -123,8 +122,7 @@ const publishedProjects = db
       eq(contentBase.status, 'published'),
       eq(contentTranslations.lang, 'en')
     )
-  )
-  .all();
+  );
 ```
 
 ### Working with Many-to-Many Relations
@@ -136,12 +134,11 @@ import { eq } from 'drizzle-orm';
 
 // Get technologies for a project
 const projectId = 1;
-const projectTech = db
+const projectTech = await db
   .select({ name: technologies.name, color: technologies.color })
   .from(projectTechnologies)
   .innerJoin(technologies, eq(projectTechnologies.technologyId, technologies.id))
-  .where(eq(projectTechnologies.projectId, projectId))
-  .all();
+  .where(eq(projectTechnologies.projectId, projectId));
 ```
 
 ## Migration Workflow
@@ -162,47 +159,63 @@ Apply pending migrations to the database:
 bun run db:migrate
 ```
 
+### Push Schema (Development)
+
+For development, push schema directly without migrations:
+
+```bash
+bun run db:push
+# Or with Docker
+bun run db:push:docker
+```
+
 ### Open Drizzle Studio
 
 For visual database exploration:
 
 ```bash
 bun run db:studio
+# Or with Docker
+bun run db:studio:docker
 ```
 
-## SQLite Pragmas
+## PostgreSQL Connection
 
-The database connection automatically applies these pragmas:
+The database uses `postgres.js` driver with connection pooling. Connection is configured via `DATABASE_URL`:
 
-- `PRAGMA journal_mode = WAL` - Better concurrent read performance
-- `PRAGMA foreign_keys = ON` - Enforce referential integrity
-- `PRAGMA synchronous = NORMAL` - Balance safety and speed
+```env
+DATABASE_URL=postgres://user:password@localhost:5432/portfolio
+```
+
+For Railway deployment, use the provided `DATABASE_URL` from the PostgreSQL service.
 
 ## Testing
 
-Use the test utilities for isolated testing:
+Use the test utilities for isolated testing with PostgreSQL:
 
 ```typescript
 import { createTestDatabase, resetDatabase, closeDatabase } from '@/db/test-utils';
+import type postgres from 'postgres';
 
 describe('My Tests', () => {
-  let sqlite, db;
+  let client: ReturnType<typeof postgres>;
+  let db: ReturnType<typeof createTestDatabase>['db'];
 
   beforeAll(() => {
     const testDb = createTestDatabase();
-    sqlite = testDb.sqlite;
+    client = testDb.client;
     db = testDb.db;
   });
 
-  beforeEach(() => {
-    resetDatabase(sqlite);
+  beforeEach(async () => {
+    await resetDatabase(db);
   });
 
-  afterAll(() => {
-    closeDatabase(sqlite);
+  afterAll(async () => {
+    await closeDatabase(client);
   });
 
-  test('my test', () => {
+  test('my test', async () => {
     // Test code here
   });
 });

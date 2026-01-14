@@ -3,7 +3,7 @@
  *
  * Tests for public read-only endpoints for projects, materials, news, and technologies.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import {
   createTestApp,
   testJsonRequest,
@@ -25,20 +25,24 @@ import {
 describe('Public Content Endpoints', () => {
   let testApp: TestApp;
 
-  beforeEach(() => {
+  beforeAll(() => {
     testApp = createTestApp();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   describe('GET /projects', () => {
     test('returns only published content', async () => {
       // Create projects with different statuses
-      createProject(testApp.db, { slug: 'draft-project', status: 'draft' });
-      createProject(testApp.db, { slug: 'published-project', status: 'published' });
-      createProject(testApp.db, { slug: 'archived-project', status: 'archived' });
+      await createProject(testApp.db, { slug: 'draft-project', status: 'draft' });
+      await createProject(testApp.db, { slug: 'published-project', status: 'published' });
+      await createProject(testApp.db, { slug: 'archived-project', status: 'archived' });
 
       const { status, body } = await testJsonRequest<{
         data: Array<{ slug: string; status: string }>;
@@ -52,12 +56,12 @@ describe('Public Content Endpoints', () => {
     });
 
     test('returns projects with translations for requested language', async () => {
-      const project = createProject(testApp.db, { slug: 'test-project', status: 'published' });
-      upsertTranslation(testApp.db, project.id, 'en', {
+      const project = await createProject(testApp.db, { slug: 'test-project', status: 'published' });
+      await upsertTranslation(testApp.db, project.id, 'en', {
         title: 'English Title',
         description: 'English description',
       });
-      upsertTranslation(testApp.db, project.id, 'it', {
+      await upsertTranslation(testApp.db, project.id, 'it', {
         title: 'Titolo Italiano',
         description: 'Descrizione italiana',
       });
@@ -78,11 +82,11 @@ describe('Public Content Endpoints', () => {
 
   describe('GET /projects/:slug', () => {
     test('returns correct translation with ?lang= parameter', async () => {
-      const project = createProject(testApp.db, { slug: 'lang-test', status: 'published' });
-      upsertTranslation(testApp.db, project.id, 'en', {
+      const project = await createProject(testApp.db, { slug: 'lang-test', status: 'published' });
+      await upsertTranslation(testApp.db, project.id, 'en', {
         title: 'English Project',
       });
-      upsertTranslation(testApp.db, project.id, 'es', {
+      await upsertTranslation(testApp.db, project.id, 'es', {
         title: 'Proyecto en Espanol',
       });
 
@@ -96,7 +100,7 @@ describe('Public Content Endpoints', () => {
     });
 
     test('returns 404 for non-published project', async () => {
-      createProject(testApp.db, { slug: 'draft-only', status: 'draft' });
+      await createProject(testApp.db, { slug: 'draft-only', status: 'draft' });
 
       const { status, body } = await testJsonRequest<{ error: string }>(
         testApp.app,
@@ -120,13 +124,13 @@ describe('Public Content Endpoints', () => {
 
   describe('GET /materials', () => {
     test('with ?category= filter', async () => {
-      createMaterial(testApp.db, {
+      await createMaterial(testApp.db, {
         slug: 'guide-1',
         category: 'guide',
         downloadUrl: 'https://example.com/guide1.pdf',
         status: 'published',
       });
-      createMaterial(testApp.db, {
+      await createMaterial(testApp.db, {
         slug: 'template-1',
         category: 'template',
         downloadUrl: 'https://example.com/template1.zip',
@@ -149,7 +153,7 @@ describe('Public Content Endpoints', () => {
     test('with pagination (limit/offset)', async () => {
       // Create 5 news items
       for (let i = 1; i <= 5; i++) {
-        createNews(testApp.db, { slug: `news-${i}`, status: 'published' });
+        await createNews(testApp.db, { slug: `news-${i}`, status: 'published' });
       }
 
       // First page
@@ -182,11 +186,11 @@ describe('Public Content Endpoints', () => {
     });
 
     test('includes tags in response', async () => {
-      const newsItem = createNews(testApp.db, { slug: 'tagged-news', status: 'published' });
-      const tag1 = createTag(testApp.db, { name: 'JavaScript', slug: 'javascript' });
-      const tag2 = createTag(testApp.db, { name: 'Tutorial', slug: 'tutorial' });
-      const newsRecord = getNewsByContentId(testApp.db, newsItem.id)!;
-      assignTags(testApp.db, newsRecord.id, [tag1.id, tag2.id]);
+      const newsItem = await createNews(testApp.db, { slug: 'tagged-news', status: 'published' });
+      const tag1 = await createTag(testApp.db, { name: 'JavaScript', slug: 'javascript' });
+      const tag2 = await createTag(testApp.db, { name: 'Tutorial', slug: 'tutorial' });
+      const newsRecord = await getNewsByContentId(testApp.db, newsItem.id);
+      await assignTags(testApp.db, newsRecord!.id, [tag1.id, tag2.id]);
 
       const { status, body } = await testJsonRequest<{
         data: { tags: Array<{ name: string; slug: string }> };
@@ -201,9 +205,9 @@ describe('Public Content Endpoints', () => {
 
   describe('GET /technologies', () => {
     test('returns all technologies', async () => {
-      createTechnology(testApp.db, { name: 'React', color: '#61dafb' });
-      createTechnology(testApp.db, { name: 'Vue', color: '#42b883' });
-      createTechnology(testApp.db, { name: 'Angular', color: '#dd0031' });
+      await createTechnology(testApp.db, { name: 'React', color: '#61dafb' });
+      await createTechnology(testApp.db, { name: 'Vue', color: '#42b883' });
+      await createTechnology(testApp.db, { name: 'Angular', color: '#dd0031' });
 
       const { status, body } = await testJsonRequest<{
         data: Array<{ id: number; name: string; color: string | null }>;
@@ -221,13 +225,13 @@ describe('Public Content Endpoints', () => {
 
   describe('GET /projects with technology filter', () => {
     test('filters by technology name', async () => {
-      const tech = createTechnology(testApp.db, { name: 'React' });
+      const tech = await createTechnology(testApp.db, { name: 'React' });
 
-      const project1 = createProject(testApp.db, { slug: 'react-app', status: 'published' });
-      const project2 = createProject(testApp.db, { slug: 'vue-app', status: 'published' });
+      const project1 = await createProject(testApp.db, { slug: 'react-app', status: 'published' });
+      await createProject(testApp.db, { slug: 'vue-app', status: 'published' });
 
-      const projectRecord = getProjectByContentId(testApp.db, project1.id)!;
-      assignTechnologies(testApp.db, projectRecord.id, [tech.id]);
+      const projectRecord = await getProjectByContentId(testApp.db, project1.id);
+      await assignTechnologies(testApp.db, projectRecord!.id, [tech.id]);
 
       const { status, body } = await testJsonRequest<{
         data: Array<{ slug: string }>;

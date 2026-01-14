@@ -3,7 +3,7 @@
  *
  * Tests for force delete functionality with cascade deletion.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll, afterEach } from 'bun:test';
 import {
   createTestAppWithAuth,
   testAuthJsonRequest,
@@ -17,13 +17,17 @@ describe('Force Delete Technologies', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('force delete technology removes project_technologies junction records', async () => {
@@ -38,11 +42,10 @@ describe('Force Delete Technologies', () => {
     const techId = technologyIds[0];
 
     // Verify technology is referenced
-    const refsBefore = testApp.db
+    const refsBefore = await testApp.db
       .select()
       .from(schema.projectTechnologies)
-      .where(eq(schema.projectTechnologies.technologyId, techId))
-      .all();
+      .where(eq(schema.projectTechnologies.technologyId, techId));
     expect(refsBefore.length).toBeGreaterThan(0);
 
     // Force delete the technology
@@ -59,20 +62,18 @@ describe('Force Delete Technologies', () => {
     expect(body.data.message).toContain('deleted');
 
     // Verify junction records are removed
-    const refsAfter = testApp.db
+    const refsAfter = await testApp.db
       .select()
       .from(schema.projectTechnologies)
-      .where(eq(schema.projectTechnologies.technologyId, techId))
-      .all();
+      .where(eq(schema.projectTechnologies.technologyId, techId));
     expect(refsAfter.length).toBe(0);
 
     // Verify technology is deleted
-    const tech = testApp.db
+    const techResult = await testApp.db
       .select()
       .from(schema.technologies)
-      .where(eq(schema.technologies.id, techId))
-      .get();
-    expect(tech).toBeUndefined();
+      .where(eq(schema.technologies.id, techId));
+    expect(techResult.length).toBe(0);
   });
 
   test('force=true bypasses reference check for technologies', async () => {
@@ -85,11 +86,11 @@ describe('Force Delete Technologies', () => {
     });
 
     // Get the technology ID
-    const tech = testApp.db
+    const techResult = await testApp.db
       .select()
       .from(schema.technologies)
-      .where(eq(schema.technologies.name, 'TypeScript'))
-      .get();
+      .where(eq(schema.technologies.name, 'TypeScript'));
+    const tech = techResult[0];
 
     // Without force, should get 409 Conflict
     const { status: normalStatus } = await testAuthJsonRequest<unknown>(
@@ -122,11 +123,11 @@ describe('Force Delete Technologies', () => {
       technologies: ['Vue'],
     });
 
-    const tech = testApp.db
+    const techResult = await testApp.db
       .select()
       .from(schema.technologies)
-      .where(eq(schema.technologies.name, 'Vue'))
-      .get();
+      .where(eq(schema.technologies.name, 'Vue'));
+    const tech = techResult[0];
 
     // Default (no force param) should return 409
     const { status, body } = await testAuthJsonRequest<{
@@ -148,13 +149,17 @@ describe('Force Delete Tags', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   test('force delete tag removes news_tags junction records', async () => {
@@ -169,11 +174,10 @@ describe('Force Delete Tags', () => {
     const tagId = tagIds[0];
 
     // Verify tag is referenced
-    const refsBefore = testApp.db
+    const refsBefore = await testApp.db
       .select()
       .from(schema.newsTags)
-      .where(eq(schema.newsTags.tagId, tagId))
-      .all();
+      .where(eq(schema.newsTags.tagId, tagId));
     expect(refsBefore.length).toBeGreaterThan(0);
 
     // Force delete the tag
@@ -190,20 +194,18 @@ describe('Force Delete Tags', () => {
     expect(body.data.message).toContain('deleted');
 
     // Verify junction records are removed
-    const refsAfter = testApp.db
+    const refsAfter = await testApp.db
       .select()
       .from(schema.newsTags)
-      .where(eq(schema.newsTags.tagId, tagId))
-      .all();
+      .where(eq(schema.newsTags.tagId, tagId));
     expect(refsAfter.length).toBe(0);
 
     // Verify tag is deleted
-    const tag = testApp.db
+    const tagResult = await testApp.db
       .select()
       .from(schema.tags)
-      .where(eq(schema.tags.id, tagId))
-      .get();
-    expect(tag).toBeUndefined();
+      .where(eq(schema.tags.id, tagId));
+    expect(tagResult.length).toBe(0);
   });
 
   test('force=false (default) preserves existing 409 Conflict behavior for tags', async () => {
@@ -215,11 +217,11 @@ describe('Force Delete Tags', () => {
       tags: [{ name: 'Tutorial', slug: 'tutorial' }],
     });
 
-    const tag = testApp.db
+    const tagResult = await testApp.db
       .select()
       .from(schema.tags)
-      .where(eq(schema.tags.slug, 'tutorial'))
-      .get();
+      .where(eq(schema.tags.slug, 'tutorial'));
+    const tag = tagResult[0];
 
     // Default (no force param) should return 409
     const { status, body } = await testAuthJsonRequest<{

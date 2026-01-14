@@ -19,7 +19,7 @@ export const adminDashboardRoutes: any = new Elysia({ name: 'admin-dashboard', p
     '/stats',
     async ({ db: rawDb }) => {
       const db = rawDb as DrizzleDB;
-      const stats = getContentStatistics(db);
+      const stats = await getContentStatistics(db);
 
       return createResponse(stats);
     },
@@ -37,7 +37,7 @@ export const adminDashboardRoutes: any = new Elysia({ name: 'admin-dashboard', p
     async ({ db: rawDb, query }) => {
       const db = rawDb as DrizzleDB;
       const limit = query.limit ?? 10;
-      const recentItems = getRecentItems(db, limit);
+      const recentItems = await getRecentItems(db, limit);
 
       // Format dates for API response
       const formattedItems = recentItems.map((item) => ({

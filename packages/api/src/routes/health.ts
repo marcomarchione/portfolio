@@ -48,7 +48,7 @@ export const healthRoutes = new Elysia({ name: 'health-routes' }).get(
     if (query.db === 'true') {
       try {
         // Simple query to test database connectivity using Drizzle's sql template
-        db.get(sql`SELECT 1 as test`);
+        await db.execute(sql`SELECT 1 as test`);
         response.database = {
           connected: true,
         };

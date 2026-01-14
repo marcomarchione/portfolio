@@ -3,14 +3,18 @@
  * DeveloperComparisonChart Component
  *
  * Visual comparison between traditional software developer and agent developer.
- * Shows 5 metrics with animated bar charts.
+ * Layout:
+ * - Top: Time Savings (full width)
+ * - Bottom: Time Distribution (left) | Learning Curve (right)
  *
  * @example
  * <DeveloperComparisonChart lang="en" />
  */
 import type { Language } from '@marcomarchione/shared';
 import SectionHeading from '../ui/SectionHeading.astro';
-import ComparisonBar from './ComparisonBar.astro';
+import LearningCurveChart from './LearningCurveChart.astro';
+import TimeSavingsChart from './TimeSavingsChart.astro';
+import TimeDistributionChart from './TimeDistributionChart.astro';
 import { t } from '../../i18n/utils';
 
 export interface Props {
@@ -19,75 +23,39 @@ export interface Props {
 }
 
 const { lang } = Astro.props;
-
-const metrics = [
-  {
-    labelKey: 'landing.comparison.metrics.codeSpeed.label',
-    traditional: 40,
-    agent: 85
-  },
-  {
-    labelKey: 'landing.comparison.metrics.debugging.label',
-    traditional: 50,
-    agent: 90
-  },
-  {
-    labelKey: 'landing.comparison.metrics.documentation.label',
-    traditional: 45,
-    agent: 95
-  },
-  {
-    labelKey: 'landing.comparison.metrics.testing.label',
-    traditional: 55,
-    agent: 88
-  },
-  {
-    labelKey: 'landing.comparison.metrics.refactoring.label',
-    traditional: 35,
-    agent: 80
-  }
-];
 ---
 
-<section id="comparison" class="py-16 md:py-24 px-4">
+<section id="comparison" class="py-8 md:py-12 px-4">
   <div class="container mx-auto">
-    <div class="text-center mb-12">
-      <SectionHeading level={2} class="text-white [.light_&]:text-neutral-900 mb-4">
+    <div class="text-center mb-6">
+      <SectionHeading level={2} class="text-white [.light_&]:text-neutral-900 mb-2">
         {t(lang, 'landing.comparison.title')}
       </SectionHeading>
-      <p class="text-neutral-400 [.light_&]:text-neutral-600 max-w-2xl mx-auto">
+      <p class="text-neutral-400 [.light_&]:text-neutral-600 max-w-2xl mx-auto text-sm">
         {t(lang, 'landing.comparison.subtitle')}
       </p>
     </div>
 
-    <div class="max-w-2xl mx-auto">
-      <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 md:p-8 [.light_&]:bg-[#EBE4D8] [.light_&]:border-[#E5DED4]">
-        <!-- Legend -->
-        <div class="flex flex-wrap gap-6 mb-8 pb-6 border-b border-white/10 [.light_&]:border-[#E5DED4]">
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 rounded bg-gradient-to-r from-neutral-600 to-neutral-500 [.light_&]:from-neutral-400 [.light_&]:to-neutral-300" />
-            <span class="text-sm text-neutral-400 [.light_&]:text-neutral-600">
-              {t(lang, 'landing.comparison.traditional')}
-            </span>
-          </div>
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 rounded bg-gradient-to-r from-primary-500 to-accent-500 [.light_&]:from-terra-500 [.light_&]:to-terra-400" />
-            <span class="text-sm text-primary-400 [.light_&]:text-terra-600 font-medium">
-              {t(lang, 'landing.comparison.agent')}
-            </span>
+    <div class="flex flex-col gap-4 max-w-6xl mx-auto">
+      <!-- Top: Time Savings (full width) -->
+      <div class="w-full">
+        <TimeSavingsChart lang={lang} />
+      </div>
+
+      <!-- Bottom row: Time Distribution (left) | Learning Curve (right) -->
+      <div class="flex flex-col lg:flex-row gap-4 items-stretch">
+        <!-- Time Distribution -->
+        <div class="flex-1 w-full flex">
+          <div class="w-full">
+            <TimeDistributionChart lang={lang} />
           </div>
         </div>
 
-        <!-- Metrics -->
-        <div class="space-y-6">
-          {metrics.map((metric, index) => (
-            <ComparisonBar
-              label={t(lang, metric.labelKey)}
-              traditionalValue={metric.traditional}
-              agentValue={metric.agent}
-              index={index}
-            />
-          ))}
+        <!-- Learning Curve -->
+        <div class="flex-1 w-full flex">
+          <div class="w-full">
+            <LearningCurveChart lang={lang} />
+          </div>
         </div>
       </div>
     </div>

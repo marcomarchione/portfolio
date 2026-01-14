@@ -123,6 +123,38 @@
         "refactoring": {
           "label": "Velocita di Refactoring"
         }
+      },
+      "learningCurve": {
+        "title": "Curva di Apprendimento",
+        "subtitle": "Adattamento e produttivita nel tempo",
+        "xAxis": "Tempo (mesi)",
+        "yAxis": "Produttivita %"
+      },
+      "metricsTitle": "Metriche di Performance",
+      "timeSavings": {
+        "title": "Risparmio Tempo per Progetto",
+        "subtitle": "Ore stimate per progetto medio",
+        "phases": {
+          "analysis": "Analisi",
+          "development": "Sviluppo",
+          "testing": "Testing",
+          "deploy": "Deploy",
+          "maintenance": "Manutenzione"
+        },
+        "hours": "ore",
+        "saved": "risparmio",
+        "totalSaved": "Risparmio totale"
+      },
+      "timeDistribution": {
+        "title": "Distribuzione del Tempo",
+        "subtitle": "Come viene impiegato il tempo lavorativo",
+        "activities": {
+          "coding": "Sviluppo Codice",
+          "clientCalls": "Call con il Cliente",
+          "documentation": "Documentazione",
+          "learning": "Formazione"
+        },
+        "moreClientTime": "tempo in piu dedicato al cliente"
       }
     }
   },
@@ -140,6 +172,33 @@
       "oldest": "Meno recenti",
       "title": "Titolo"
     },
+    "pagination": {
+      "page": "Pagina",
+      "of": "di",
+      "previous": "Precedente",
+      "next": "Successiva"
+    }
+  },
+  "materials": {
+    "filterByCategory": "Filtra per categoria",
+    "search": "Cerca",
+    "searchPlaceholder": "Cerca materiali...",
+    "sortBy": "Ordina per",
+    "sort": {
+      "newest": "Piu recenti",
+      "oldest": "Meno recenti",
+      "title": "Titolo"
+    },
+    "category": {
+      "all": "Tutti",
+      "guide": "Guide",
+      "template": "Template",
+      "resource": "Risorse",
+      "tool": "Strumenti"
+    },
+    "downloadFile": "Scarica file",
+    "fileSize": "Dimensione",
+    "noResults": "Nessun materiale trovato",
     "pagination": {
       "page": "Pagina",
       "of": "di",

@@ -1,0 +1,158 @@
+---
+/**
+ * TimeSavingsChart Component
+ *
+ * Visual comparison of time spent on project phases between
+ * traditional software development and agent-assisted development.
+ * Full-width layout with summary statistics and horizontal bars.
+ *
+ * @example
+ * <TimeSavingsChart lang="en" />
+ */
+import type { Language } from '@marcomarchione/shared';
+import { t } from '../../i18n/utils';
+
+export interface Props {
+  /** Current language code */
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+
+const phases = [
+  { key: 'analysis', traditional: 16, agent: 8 },
+  { key: 'development', traditional: 40, agent: 16 },
+  { key: 'testing', traditional: 20, agent: 6 },
+  { key: 'deploy', traditional: 8, agent: 3 },
+  { key: 'maintenance', traditional: 16, agent: 6 }
+];
+
+const maxHours = 40; // Scale reference
+const totalTraditional = phases.reduce((sum, p) => sum + p.traditional, 0);
+const totalAgent = phases.reduce((sum, p) => sum + p.agent, 0);
+const totalSavings = Math.round((1 - totalAgent / totalTraditional) * 100);
+const hoursSaved = totalTraditional - totalAgent;
+---
+
+<div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 md:p-5 [.light_&]:bg-[#EBE4D8] [.light_&]:border-[#E5DED4]">
+  <!-- Header with title and summary stats -->
+  <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-4">
+    <!-- Title -->
+    <div class="lg:flex-1">
+      <h3 class="text-lg font-semibold text-white [.light_&]:text-neutral-900 mb-1">
+        {t(lang, 'landing.comparison.timeSavings.title')}
+      </h3>
+      <p class="text-xs text-neutral-400 [.light_&]:text-neutral-600">
+        {t(lang, 'landing.comparison.timeSavings.subtitle')}
+      </p>
+    </div>
+
+    <!-- Total savings percentage -->
+    <div class="time-savings-stat animate-on-scroll bg-green-500/10 [.light_&]:bg-green-100 rounded-lg p-3 text-center min-w-[80px]">
+      <div class="text-2xl font-bold text-green-400 [.light_&]:text-green-600">
+        -{totalSavings}%
+      </div>
+      <div class="text-xs text-neutral-400 [.light_&]:text-neutral-600">
+        {t(lang, 'landing.comparison.timeSavings.totalSaved')}
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="flex flex-wrap justify-start gap-4 mb-3 pb-2 border-b border-white/10 [.light_&]:border-[#E5DED4]">
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 rounded bg-neutral-600 [.light_&]:bg-neutral-400" />
+      <span class="text-sm text-neutral-400 [.light_&]:text-neutral-600">
+        {t(lang, 'landing.comparison.traditional')}
+      </span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 rounded bg-gradient-to-r from-primary-500 to-accent-500 [.light_&]:from-terra-500 [.light_&]:to-terra-400" />
+      <span class="text-sm text-primary-400 [.light_&]:text-terra-600 font-medium">
+        {t(lang, 'landing.comparison.agent')}
+      </span>
+    </div>
+  </div>
+
+  <!-- Phases - single column -->
+  <div class="space-y-2">
+    {phases.map((phase, index) => {
+      const traditionalWidth = (phase.traditional / maxHours) * 100;
+      const agentWidth = (phase.agent / maxHours) * 100;
+      const savings = Math.round((1 - phase.agent / phase.traditional) * 100);
+
+      return (
+        <div class="time-savings-row animate-on-scroll" style={`--stagger-delay: ${index * 0.05}s`}>
+          <!-- Phase label and savings badge -->
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs font-medium text-neutral-300 [.light_&]:text-neutral-700">
+              {t(lang, `landing.comparison.timeSavings.phases.${phase.key}`)}
+            </span>
+            <span class="text-xs font-semibold text-green-400 [.light_&]:text-green-600">
+              -{savings}%
+            </span>
+          </div>
+
+          <!-- Overlapping bars container -->
+          <div class="relative h-6">
+            <!-- Traditional bar (background) -->
+            <div
+              class="absolute inset-y-0 left-0 bg-neutral-600/50 [.light_&]:bg-neutral-400/50 rounded-md time-savings-bar"
+              style={`--target-width: ${traditionalWidth}%`}
+            >
+              <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400 [.light_&]:text-neutral-500 font-medium">
+                {phase.traditional}h
+              </span>
+            </div>
+
+            <!-- Agent bar (foreground, overlapping) -->
+            <div
+              class="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-500 to-accent-500 [.light_&]:from-terra-500 [.light_&]:to-terra-400 rounded-md time-savings-bar"
+              style={`--target-width: ${agentWidth}%; --animation-delay: ${0.3 + index * 0.1}s`}
+            >
+              <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white font-medium">
+                {phase.agent}h
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
+
+<style>
+  .time-savings-stat {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    transition-delay: var(--stagger-delay, 0s);
+  }
+
+  .time-savings-stat.animate-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .time-savings-bar {
+    width: 0;
+    transition: width 1s ease-out;
+    transition-delay: var(--animation-delay, 0s);
+  }
+
+  .time-savings-row.animate-visible .time-savings-bar {
+    width: var(--target-width);
+  }
+
+  .time-savings-row {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    transition-delay: var(--stagger-delay);
+  }
+
+  .time-savings-row.animate-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>

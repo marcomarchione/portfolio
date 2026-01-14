@@ -3,7 +3,7 @@
  *
  * Tests for technologies, tags CRUD and project/news associations.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import {
   createTestAppWithAuth,
   testAuthJsonRequest,
@@ -14,13 +14,17 @@ describe('Admin Lookup and Junction Endpoints', () => {
   let testApp: AuthTestApp;
   let token: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     token = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   describe('POST /admin/technologies', () => {

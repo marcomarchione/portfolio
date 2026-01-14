@@ -11,12 +11,13 @@
  * - Technology tags
  * - Project status badge
  * - Links to demo/GitHub
+ * - Syntax-highlighted code blocks with Shiki
  */
 import { LANGUAGES, type Language, type Technology } from '@marcomarchione/shared';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { t } from '../../../i18n';
 import { getProject, getProjectSlugs, type GalleryImage } from '../../../lib/api';
-import { marked } from 'marked';
+import { parseMarkdown } from '../../../lib/markdown';
 
 // Disable prerendering for SSR - enables dynamic project loading
 export const prerender = false;
@@ -80,9 +81,9 @@ const getStatusClass = (status: string) => {
   }
 };
 
-// Parse markdown body content
+// Parse markdown body content with Shiki syntax highlighting
 const bodyHtml = project.translation?.body
-  ? await marked.parse(project.translation.body)
+  ? await parseMarkdown(project.translation.body)
   : '';
 ---
 

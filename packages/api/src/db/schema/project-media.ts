@@ -4,7 +4,7 @@
  * Many-to-many relationship between projects and media for image galleries.
  * Includes displayOrder for custom ordering of gallery images.
  */
-import { sqliteTable, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, integer, primaryKey, index } from 'drizzle-orm/pg-core';
 import { projects } from './projects';
 import { media } from './media';
 
@@ -15,7 +15,7 @@ import { media } from './media';
  * Uses composite primary key on (project_id, media_id).
  * Display order enables custom ordering of gallery images (0-indexed).
  */
-export const projectMedia = sqliteTable(
+export const projectMedia = pgTable(
   'project_media',
   {
     /** Foreign key to projects table */

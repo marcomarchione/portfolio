@@ -6,46 +6,25 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
 import { Elysia, t } from 'elysia';
 import jwt from '@elysiajs/jwt';
-import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { eq, isNull } from 'drizzle-orm';
 import { mkdir, rm } from 'fs/promises';
+import { createTestDatabase, resetDatabase, closeDatabase } from '../../db/test-utils';
 import * as schema from '../../db/schema';
-
-// Test database SQL - reset autoincrement on delete
-const CREATE_TABLES_SQL = `
-  CREATE TABLE IF NOT EXISTS media (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    filename TEXT NOT NULL,
-    mime_type TEXT NOT NULL,
-    size INTEGER NOT NULL,
-    storage_key TEXT NOT NULL UNIQUE,
-    alt_text TEXT,
-    created_at INTEGER NOT NULL,
-    deleted_at INTEGER,
-    variants TEXT,
-    width INTEGER,
-    height INTEGER
-  );
-  CREATE INDEX IF NOT EXISTS idx_media_created_at ON media(created_at);
-  CREATE INDEX IF NOT EXISTS idx_media_storage_key ON media(storage_key);
-  CREATE INDEX IF NOT EXISTS idx_media_deleted_at ON media(deleted_at);
-`;
 
 const TEST_JWT_SECRET = 'test-secret-that-is-at-least-32-characters-long';
 const TEST_UPLOADS_PATH = './test-uploads';
 
 describe('Admin Media Routes', () => {
-  let sqlite: Database;
-  let db: ReturnType<typeof drizzle>;
+  let db: ReturnType<typeof createTestDatabase>['db'];
+  let client: ReturnType<typeof createTestDatabase>['client'];
   let testApp: any;
   let accessToken: string;
 
   beforeAll(async () => {
     // Set up test database
-    sqlite = new Database(':memory:');
-    sqlite.exec(CREATE_TABLES_SQL);
-    db = drizzle(sqlite);
+    const testDb = createTestDatabase();
+    db = testDb.db;
+    client = testDb.client;
 
     // Create test uploads directory
     await mkdir(TEST_UPLOADS_PATH, { recursive: true });
@@ -114,19 +93,16 @@ describe('Admin Media Routes', () => {
               const storageKey = `2025/01/test-${Date.now()}-${file.name}`;
               const now = new Date();
 
-              database.insert(schema.media).values({
+              const [insertedMedia] = await database.insert(schema.media).values({
                 filename: file.name,
                 mimeType: file.type,
                 size: file.size,
                 storageKey,
                 createdAt: now,
-              }).run();
-
-              const media = database.select().from(schema.media)
-                .where(eq(schema.media.storageKey, storageKey)).get();
+              }).returning();
 
               set.status = 201;
-              return { data: media };
+              return { data: insertedMedia };
             },
             {
               body: t.Object({
@@ -138,9 +114,9 @@ describe('Admin Media Routes', () => {
             const limit = query.limit ? parseInt(query.limit as string) : 20;
             const offset = query.offset ? parseInt(query.offset as string) : 0;
 
-            const results = database.select().from(schema.media)
+            const results = await database.select().from(schema.media)
               .where(isNull(schema.media.deletedAt))
-              .limit(limit).offset(offset).all();
+              .limit(limit).offset(offset);
 
             return {
               data: results,
@@ -154,8 +130,8 @@ describe('Admin Media Routes', () => {
           })
           .get('/:id', async ({ params, db: database, set }) => {
             const id = parseInt(params.id, 10);
-            const media = database.select().from(schema.media)
-              .where(eq(schema.media.id, id)).get();
+            const [media] = await database.select().from(schema.media)
+              .where(eq(schema.media.id, id));
 
             if (!media || media.deletedAt) {
               set.status = 404;
@@ -166,27 +142,27 @@ describe('Admin Media Routes', () => {
           })
           .put('/:id', async ({ params, body, db: database, set }) => {
             const id = parseInt(params.id, 10);
-            const media = database.select().from(schema.media)
-              .where(eq(schema.media.id, id)).get();
+            const [media] = await database.select().from(schema.media)
+              .where(eq(schema.media.id, id));
 
             if (!media || media.deletedAt) {
               set.status = 404;
               return { error: 'Not found', code: 'NOT_FOUND' };
             }
 
-            database.update(schema.media)
+            await database.update(schema.media)
               .set({ altText: (body as { altText?: string }).altText ?? null })
-              .where(eq(schema.media.id, id)).run();
+              .where(eq(schema.media.id, id));
 
-            const updated = database.select().from(schema.media)
-              .where(eq(schema.media.id, id)).get();
+            const [updated] = await database.select().from(schema.media)
+              .where(eq(schema.media.id, id));
 
             return { data: updated };
           })
           .delete('/:id', async ({ params, db: database, set }) => {
             const id = parseInt(params.id, 10);
-            const media = database.select().from(schema.media)
-              .where(eq(schema.media.id, id)).get();
+            const [media] = await database.select().from(schema.media)
+              .where(eq(schema.media.id, id));
 
             if (!media || media.deletedAt) {
               set.status = 404;
@@ -194,9 +170,9 @@ describe('Admin Media Routes', () => {
             }
 
             const deletedAt = new Date();
-            database.update(schema.media)
+            await database.update(schema.media)
               .set({ deletedAt })
-              .where(eq(schema.media.id, id)).run();
+              .where(eq(schema.media.id, id));
 
             return { message: 'Media deleted', id, deletedAt: deletedAt.toISOString() };
           })
@@ -209,7 +185,7 @@ describe('Admin Media Routes', () => {
   });
 
   afterAll(async () => {
-    sqlite.close();
+    await closeDatabase(client);
     try {
       await rm(TEST_UPLOADS_PATH, { recursive: true, force: true });
     } catch {
@@ -217,24 +193,9 @@ describe('Admin Media Routes', () => {
     }
   });
 
-  beforeEach(() => {
-    // Drop and recreate table to reset autoincrement
-    sqlite.exec('DROP TABLE IF EXISTS media');
-    sqlite.exec(`
-      CREATE TABLE media (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        filename TEXT NOT NULL,
-        mime_type TEXT NOT NULL,
-        size INTEGER NOT NULL,
-        storage_key TEXT NOT NULL UNIQUE,
-        alt_text TEXT,
-        created_at INTEGER NOT NULL,
-        deleted_at INTEGER,
-        variants TEXT,
-        width INTEGER,
-        height INTEGER
-      )
-    `);
+  beforeEach(async () => {
+    // Reset database to clean state
+    await resetDatabase(db);
   });
 
   test('POST /api/admin/media requires authentication', async () => {
@@ -289,20 +250,20 @@ describe('Admin Media Routes', () => {
   test('GET /api/admin/media returns paginated list', async () => {
     // Insert test records using Drizzle
     const now = new Date();
-    db.insert(schema.media).values({
+    await db.insert(schema.media).values({
       filename: 'test1.jpg',
       mimeType: 'image/jpeg',
       size: 1024,
       storageKey: '2025/01/test1.jpg',
       createdAt: now,
-    }).run();
-    db.insert(schema.media).values({
+    });
+    await db.insert(schema.media).values({
       filename: 'test2.png',
       mimeType: 'image/png',
       size: 2048,
       storageKey: '2025/01/test2.png',
       createdAt: now,
-    }).run();
+    });
 
     const response = await testApp.handle(new Request('http://test/api/admin/media?limit=10&offset=0', {
       headers: {
@@ -324,7 +285,7 @@ describe('Admin Media Routes', () => {
     const variants = JSON.stringify({
       thumb: { path: '2025/01/test-thumb.webp', width: 400, height: 300 },
     });
-    db.insert(schema.media).values({
+    const [inserted] = await db.insert(schema.media).values({
       filename: 'test.jpg',
       mimeType: 'image/jpeg',
       size: 1024,
@@ -333,14 +294,9 @@ describe('Admin Media Routes', () => {
       variants,
       width: 1920,
       height: 1080,
-    }).run();
+    }).returning();
 
-    // Get the inserted ID
-    const inserted = db.select().from(schema.media).all();
-    expect(inserted.length).toBe(1);
-    const mediaId = inserted[0].id;
-
-    const response = await testApp.handle(new Request(`http://test/api/admin/media/${mediaId}`, {
+    const response = await testApp.handle(new Request(`http://test/api/admin/media/${inserted.id}`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -357,19 +313,15 @@ describe('Admin Media Routes', () => {
 
   test('PUT /api/admin/media/:id updates altText', async () => {
     const now = new Date();
-    db.insert(schema.media).values({
+    const [inserted] = await db.insert(schema.media).values({
       filename: 'test.jpg',
       mimeType: 'image/jpeg',
       size: 1024,
       storageKey: '2025/01/test.jpg',
       createdAt: now,
-    }).run();
+    }).returning();
 
-    // Get the inserted ID
-    const inserted = db.select().from(schema.media).all();
-    const mediaId = inserted[0].id;
-
-    const response = await testApp.handle(new Request(`http://test/api/admin/media/${mediaId}`, {
+    const response = await testApp.handle(new Request(`http://test/api/admin/media/${inserted.id}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -386,19 +338,15 @@ describe('Admin Media Routes', () => {
 
   test('DELETE /api/admin/media/:id sets deletedAt (soft delete)', async () => {
     const now = new Date();
-    db.insert(schema.media).values({
+    const [inserted] = await db.insert(schema.media).values({
       filename: 'test.jpg',
       mimeType: 'image/jpeg',
       size: 1024,
       storageKey: '2025/01/test.jpg',
       createdAt: now,
-    }).run();
+    }).returning();
 
-    // Get the inserted ID
-    const inserted = db.select().from(schema.media).all();
-    const mediaId = inserted[0].id;
-
-    const response = await testApp.handle(new Request(`http://test/api/admin/media/${mediaId}`, {
+    const response = await testApp.handle(new Request(`http://test/api/admin/media/${inserted.id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -409,10 +357,10 @@ describe('Admin Media Routes', () => {
 
     const json = await response.json();
     expect(json.message).toBe('Media deleted');
-    expect(json.id).toBe(mediaId);
+    expect(json.id).toBe(inserted.id);
 
     // Verify soft delete
-    const media = db.select().from(schema.media).where(eq(schema.media.id, mediaId)).get();
+    const [media] = await db.select().from(schema.media).where(eq(schema.media.id, inserted.id));
     expect(media?.deletedAt).not.toBeNull();
   });
 

@@ -3,7 +3,7 @@
  *
  * Centralized storage for all uploaded files and images.
  */
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, serial, integer, timestamp, index } from 'drizzle-orm/pg-core';
 
 /**
  * Variant metadata structure for image variants.
@@ -37,11 +37,11 @@ export interface MediaVariants {
  * Actual files are stored on local VPS filesystem, referenced by storage_key.
  * Files are served at /media/{storage_key} via nginx configuration.
  */
-export const media = sqliteTable(
+export const media = pgTable(
   'media',
   {
     /** Auto-incrementing primary key */
-    id: integer('id').primaryKey({ autoIncrement: true }),
+    id: serial('id').primaryKey(),
 
     /** Original filename */
     filename: text('filename').notNull(),
@@ -58,13 +58,11 @@ export const media = sqliteTable(
     /** Alt text for accessibility */
     altText: text('alt_text'),
 
-    /** Unix timestamp of upload */
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .$defaultFn(() => new Date()),
+    /** Timestamp of upload */
+    createdAt: timestamp('created_at').notNull().defaultNow(),
 
-    /** Unix timestamp of soft-delete (null if not deleted) */
-    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
+    /** Timestamp of soft-delete (null if not deleted) */
+    deletedAt: timestamp('deleted_at'),
 
     /** JSON string containing variant metadata (thumb, medium, large) */
     variants: text('variants'),

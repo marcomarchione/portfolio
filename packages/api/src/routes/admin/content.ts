@@ -50,14 +50,14 @@ const PublishStatusBodySchema = t.Object({
  * Formats content response based on content type.
  * Returns the full content data with all translations.
  */
-function getFormattedContentResponse(
-  db: Parameters<typeof getContentById>[0],
+async function getFormattedContentResponse(
+  db: DrizzleDB,
   contentType: ValidContentType,
   id: number
 ) {
   switch (contentType) {
     case 'projects': {
-      const project = getProjectWithAllTranslations(db, id);
+      const project = await getProjectWithAllTranslations(db, id);
       if (!project) return null;
       return {
         id: project.id,
@@ -87,7 +87,7 @@ function getFormattedContentResponse(
       };
     }
     case 'materials': {
-      const material = getMaterialWithAllTranslations(db, id);
+      const material = await getMaterialWithAllTranslations(db, id);
       if (!material) return null;
       return {
         id: material.id,
@@ -114,7 +114,7 @@ function getFormattedContentResponse(
       };
     }
     case 'news': {
-      const newsItem = getNewsWithAllTranslations(db, id);
+      const newsItem = await getNewsWithAllTranslations(db, id);
       if (!newsItem) return null;
       return {
         id: newsItem.id,
@@ -158,16 +158,16 @@ export const adminContentRoutes: any = new Elysia({ name: 'admin-content' })
       const newStatus = body.status as ContentStatus;
 
       // Verify content exists
-      const content = getContentById(db, id);
+      const content = await getContentById(db, id);
       if (!content) {
         throw new NotFoundError('Content not found');
       }
 
       // Update the content status
-      updateContentStatus(db, id, newStatus);
+      await updateContentStatus(db, id, newStatus);
 
       // Get the formatted response based on content type
-      const formattedContent = getFormattedContentResponse(db, contentType, id);
+      const formattedContent = await getFormattedContentResponse(db, contentType, id);
       if (!formattedContent) {
         throw new NotFoundError('Content not found after update');
       }

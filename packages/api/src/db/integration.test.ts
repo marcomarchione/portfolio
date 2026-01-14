@@ -27,24 +27,24 @@ import {
   projectTechnologies,
   newsTags,
 } from './schema';
-import type { Database } from 'bun:sqlite';
+import type postgres from 'postgres';
 
 describe('Integration Tests', () => {
-  let sqlite: Database;
+  let client: ReturnType<typeof postgres>;
   let db: ReturnType<typeof createTestDatabase>['db'];
 
   beforeAll(() => {
     const testDb = createTestDatabase();
-    sqlite = testDb.sqlite;
+    client = testDb.client;
     db = testDb.db;
   });
 
-  afterAll(() => {
-    closeDatabase(sqlite);
+  afterAll(async () => {
+    await closeDatabase(client);
   });
 
-  beforeEach(() => {
-    resetDatabase(sqlite);
+  beforeEach(async () => {
+    await resetDatabase(db);
   });
 
   test('creates a complete project with translations and technologies (end-to-end)', async () => {
@@ -70,7 +70,7 @@ describe('Integration Tests', () => {
     });
 
     // Verify content_base
-    const contentResult = db.select().from(contentBase).where(eq(contentBase.id, result.contentId)).all();
+    const contentResult = await db.select().from(contentBase).where(eq(contentBase.id, result.contentId));
     expect(contentResult).toHaveLength(1);
     expect(contentResult[0].type).toBe('project');
     expect(contentResult[0].status).toBe('published');
@@ -78,29 +78,27 @@ describe('Integration Tests', () => {
     expect(contentResult[0].publishedAt).not.toBeNull();
 
     // Verify translations
-    const translationsResult = db
+    const translationsResult = await db
       .select()
       .from(contentTranslations)
-      .where(eq(contentTranslations.contentId, result.contentId))
-      .all();
+      .where(eq(contentTranslations.contentId, result.contentId));
     expect(translationsResult).toHaveLength(2);
     expect(translationsResult.find((t) => t.lang === 'it')?.title).toBe('Progetto Completo');
     expect(translationsResult.find((t) => t.lang === 'en')?.title).toBe('Complete Project');
 
     // Verify project extension
-    const projectResult = db.select().from(projects).where(eq(projects.id, result.projectId)).all();
+    const projectResult = await db.select().from(projects).where(eq(projects.id, result.projectId));
     expect(projectResult).toHaveLength(1);
 
     // Verify technologies
-    const techResult = db.select().from(technologies).all();
+    const techResult = await db.select().from(technologies);
     expect(techResult).toHaveLength(3);
 
     // Verify links
-    const linksResult = db
+    const linksResult = await db
       .select()
       .from(projectTechnologies)
-      .where(eq(projectTechnologies.projectId, result.projectId))
-      .all();
+      .where(eq(projectTechnologies.projectId, result.projectId));
     expect(linksResult).toHaveLength(3);
   });
 
@@ -142,30 +140,29 @@ describe('Integration Tests', () => {
     });
 
     // Verify content_base
-    const contentResult = db.select().from(contentBase).where(eq(contentBase.id, result.contentId)).all();
+    const contentResult = await db.select().from(contentBase).where(eq(contentBase.id, result.contentId));
     expect(contentResult).toHaveLength(1);
     expect(contentResult[0].type).toBe('news');
     expect(contentResult[0].status).toBe('published');
 
     // Verify translations (all 4 languages)
-    const translationsResult = db
+    const translationsResult = await db
       .select()
       .from(contentTranslations)
-      .where(eq(contentTranslations.contentId, result.contentId))
-      .all();
+      .where(eq(contentTranslations.contentId, result.contentId));
     expect(translationsResult).toHaveLength(4);
 
     // Verify news extension
-    const newsResult = db.select().from(news).where(eq(news.id, result.newsId)).all();
+    const newsResult = await db.select().from(news).where(eq(news.id, result.newsId));
     expect(newsResult).toHaveLength(1);
     expect(newsResult[0].readingTime).toBe(10);
 
     // Verify tags
-    const tagsResult = db.select().from(tags).all();
+    const tagsResult = await db.select().from(tags);
     expect(tagsResult).toHaveLength(2);
 
     // Verify links
-    const linksResult = db.select().from(newsTags).where(eq(newsTags.newsId, result.newsId)).all();
+    const linksResult = await db.select().from(newsTags).where(eq(newsTags.newsId, result.newsId));
     expect(linksResult).toHaveLength(2);
   });
 
@@ -183,20 +180,19 @@ describe('Integration Tests', () => {
     });
 
     // Verify content_base
-    const contentResult = db.select().from(contentBase).where(eq(contentBase.id, result.contentId)).all();
+    const contentResult = await db.select().from(contentBase).where(eq(contentBase.id, result.contentId));
     expect(contentResult).toHaveLength(1);
     expect(contentResult[0].type).toBe('material');
 
     // Verify translations
-    const translationsResult = db
+    const translationsResult = await db
       .select()
       .from(contentTranslations)
-      .where(eq(contentTranslations.contentId, result.contentId))
-      .all();
+      .where(eq(contentTranslations.contentId, result.contentId));
     expect(translationsResult).toHaveLength(2);
 
     // Verify material extension
-    const materialResult = db.select().from(materials).where(eq(materials.id, result.materialId)).all();
+    const materialResult = await db.select().from(materials).where(eq(materials.id, result.materialId));
     expect(materialResult).toHaveLength(1);
     expect(materialResult[0].category).toBe('guide');
     expect(materialResult[0].downloadUrl).toBe('https://example.com/guide.pdf');
@@ -212,7 +208,7 @@ describe('Integration Tests', () => {
       altText: 'First image',
     });
 
-    const result2 = await seedMedia(db, {
+    await seedMedia(db, {
       filename: 'document.pdf',
       mimeType: 'application/pdf',
       size: 2048,
@@ -220,7 +216,7 @@ describe('Integration Tests', () => {
     });
 
     // Retrieve by storage_key
-    const mediaResult = db.select().from(media).where(eq(media.storageKey, 'uploads/2024/01/image1.png')).all();
+    const mediaResult = await db.select().from(media).where(eq(media.storageKey, 'uploads/2024/01/image1.png'));
 
     expect(mediaResult).toHaveLength(1);
     expect(mediaResult[0].filename).toBe('image1.png');
@@ -230,7 +226,7 @@ describe('Integration Tests', () => {
     expect(mediaResult[0].id).toBe(result1.mediaId);
 
     // Retrieve all media
-    const allMedia = db.select().from(media).all();
+    const allMedia = await db.select().from(media);
     expect(allMedia).toHaveLength(2);
   });
 
@@ -247,7 +243,7 @@ describe('Integration Tests', () => {
     });
 
     // Query with joins: content_base -> content_translations
-    const queryResult = db
+    const queryResult = await db
       .select({
         id: contentBase.id,
         slug: contentBase.slug,
@@ -257,24 +253,23 @@ describe('Integration Tests', () => {
       })
       .from(contentBase)
       .innerJoin(contentTranslations, eq(contentBase.id, contentTranslations.contentId))
-      .where(and(eq(contentBase.slug, 'join-test-project'), eq(contentTranslations.lang, 'en')))
-      .all();
+      .where(and(eq(contentBase.slug, 'join-test-project'), eq(contentTranslations.lang, 'en')));
 
     expect(queryResult).toHaveLength(1);
     expect(queryResult[0].title).toBe('English Title');
     expect(queryResult[0].status).toBe('published');
 
     // Query project with technologies
-    const projectData = db.select().from(projects).all()[0];
+    const projectsData = await db.select().from(projects);
+    const projectData = projectsData[0];
 
-    const techLinks = db
+    const techLinks = await db
       .select({
         techName: technologies.name,
       })
       .from(projectTechnologies)
       .innerJoin(technologies, eq(projectTechnologies.technologyId, technologies.id))
-      .where(eq(projectTechnologies.projectId, projectData.id))
-      .all();
+      .where(eq(projectTechnologies.projectId, projectData.id));
 
     expect(techLinks).toHaveLength(2);
     expect(techLinks.map((t) => t.techName)).toContain('Vue');
@@ -285,17 +280,17 @@ describe('Integration Tests', () => {
     const now = new Date();
 
     // Create content
-    db.insert(contentBase)
+    await db.insert(contentBase)
       .values({
         type: 'project',
         slug: 'timestamp-test',
         status: 'draft',
         createdAt: now,
         updatedAt: now,
-      })
-      .run();
+      });
 
-    const created = db.select().from(contentBase).where(eq(contentBase.slug, 'timestamp-test')).all()[0];
+    const createdResults = await db.select().from(contentBase).where(eq(contentBase.slug, 'timestamp-test'));
+    const created = createdResults[0];
 
     const originalUpdatedAt = created.updatedAt;
 
@@ -303,12 +298,12 @@ describe('Integration Tests', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     const laterTime = new Date();
-    db.update(contentBase)
+    await db.update(contentBase)
       .set({ status: 'published', updatedAt: laterTime, publishedAt: laterTime })
-      .where(eq(contentBase.id, created.id))
-      .run();
+      .where(eq(contentBase.id, created.id));
 
-    const updated = db.select().from(contentBase).where(eq(contentBase.id, created.id)).all()[0];
+    const updatedResults = await db.select().from(contentBase).where(eq(contentBase.id, created.id));
+    const updated = updatedResults[0];
 
     expect(updated.status).toBe('published');
     expect(updated.updatedAt).not.toEqual(originalUpdatedAt);

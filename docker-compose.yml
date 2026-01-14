@@ -1,4 +1,23 @@
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: marcomarchione-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-portfolio}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=${POSTGRES_DB:-portfolio}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portfolio} -d ${POSTGRES_DB:-portfolio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
   # Backend API (Elysia + Bun)
   api:
     build:
@@ -11,22 +30,32 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_PATH=/app/packages/api/data/data.db
-      - CORS_ORIGINS=http://localhost:5173,http://localhost:4321,http://localhost:8080,http://localhost:8081
-      - JWT_SECRET=${JWT_SECRET:-development-secret-that-is-at-least-32-characters-long}
-      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-portfolio}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://localhost:4321}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:?ADMIN_PASSWORD_HASH is required}
       - JWT_ACCESS_EXPIRY=15m
       - JWT_REFRESH_EXPIRY=7d
-      - UPLOADS_PATH=/app/packages/api/uploads
+      # Storage configuration (local or r2)
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-local}
+      - UPLOADS_PATH=/app/uploads
+      # R2 configuration (required when STORAGE_BACKEND=r2)
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
     volumes:
-      - api-data:/app/packages/api/data
-      - api-uploads:/app/packages/api/uploads
+      - api-uploads:/app/uploads
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -66,7 +95,7 @@ services:
       - app-network
 
 volumes:
-  api-data:
+  postgres-data:
     driver: local
   api-uploads:
     driver: local

@@ -123,6 +123,38 @@
         "refactoring": {
           "label": "Refactoring Speed"
         }
+      },
+      "learningCurve": {
+        "title": "Learning Curve",
+        "subtitle": "Adaptation and productivity over time",
+        "xAxis": "Time (months)",
+        "yAxis": "Productivity %"
+      },
+      "metricsTitle": "Performance Metrics",
+      "timeSavings": {
+        "title": "Time Savings per Project",
+        "subtitle": "Estimated hours for average project",
+        "phases": {
+          "analysis": "Analysis",
+          "development": "Development",
+          "testing": "Testing",
+          "deploy": "Deploy",
+          "maintenance": "Maintenance"
+        },
+        "hours": "hours",
+        "saved": "saved",
+        "totalSaved": "Total savings"
+      },
+      "timeDistribution": {
+        "title": "Time Distribution",
+        "subtitle": "How working time is allocated",
+        "activities": {
+          "coding": "Code Development",
+          "clientCalls": "Client Calls",
+          "documentation": "Documentation",
+          "learning": "Learning"
+        },
+        "moreClientTime": "more time dedicated to clients"
       }
     }
   },
@@ -140,6 +172,33 @@
       "oldest": "Oldest",
       "title": "Title"
     },
+    "pagination": {
+      "page": "Page",
+      "of": "of",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "materials": {
+    "filterByCategory": "Filter by category",
+    "search": "Search",
+    "searchPlaceholder": "Search materials...",
+    "sortBy": "Sort by",
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "title": "Title"
+    },
+    "category": {
+      "all": "All",
+      "guide": "Guides",
+      "template": "Templates",
+      "resource": "Resources",
+      "tool": "Tools"
+    },
+    "downloadFile": "Download file",
+    "fileSize": "File size",
+    "noResults": "No materials found",
     "pagination": {
       "page": "Page",
       "of": "of",

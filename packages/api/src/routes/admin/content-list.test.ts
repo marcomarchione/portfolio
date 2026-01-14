@@ -3,7 +3,7 @@
  *
  * Tests for search and sorting functionality in content list endpoints.
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import {
   createTestAppWithAuth,
   testAuthJsonRequest,
@@ -15,13 +15,17 @@ describe('Admin Content List API Extensions', () => {
   let testApp: AuthTestApp;
   let accessToken: string;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     testApp = createTestAppWithAuth();
     accessToken = await testApp.generateAccessToken();
   });
 
-  afterEach(() => {
-    testApp.cleanup();
+  beforeEach(async () => {
+    await testApp.reset();
+  });
+
+  afterAll(async () => {
+    await testApp.cleanup();
   });
 
   describe('GET /api/v1/admin/projects search functionality', () => {
