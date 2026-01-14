@@ -77,6 +77,9 @@ describe('Public Materials API - Search and Sort', () => {
         translations: [{ lang: 'it', title: 'Template Node.js', description: 'Template base per server Node' }],
       });
 
+      // Small delay to ensure database writes are committed
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       // Search for a term only in description
       const { status, body } = await testJsonRequest<{
         data: Array<{ slug: string }>;
