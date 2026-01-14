@@ -3,7 +3,7 @@
  *
  * Material-specific database operations.
  */
-import { eq, and, sql, desc, asc, like, ilike } from 'drizzle-orm';
+import { eq, and, or, sql, desc, asc, like, ilike } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { DrizzleDB } from '../index';
 import * as schema from '../schema';
@@ -167,7 +167,13 @@ export async function listMaterials(db: DrizzleDB, options: ListMaterialsOptions
 
   if (needsItalianJoin) {
     if (search) {
-      conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
+      // Search in both title and description fields
+      conditions.push(
+        or(
+          ilike(schema.contentTranslations.title, `%${search}%`),
+          ilike(schema.contentTranslations.description, `%${search}%`)
+        )!
+      );
     }
 
     const results = await db
@@ -242,7 +248,13 @@ export async function countMaterials(db: DrizzleDB, options: ListMaterialsOption
   }
 
   if (search) {
-    conditions.push(ilike(schema.contentTranslations.title, `%${search}%`));
+    // Search in both title and description fields
+    conditions.push(
+      or(
+        ilike(schema.contentTranslations.title, `%${search}%`),
+        ilike(schema.contentTranslations.description, `%${search}%`)
+      )!
+    );
 
     const [result] = await db
       .select({ count: sql<number>`count(*)::int` })

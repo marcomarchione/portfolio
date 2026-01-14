@@ -6,11 +6,18 @@
 import type { Language, Material, PaginatedResponse, ApiResponse } from '@marcomarchione/shared';
 import { get, getSafe } from './client';
 
+/** Material sort options */
+export type MaterialSortOption = 'newest' | 'oldest' | 'title';
+
 /** Options for fetching materials list */
 export interface GetMaterialsOptions {
   category?: string;
   limit?: number;
   offset?: number;
+  /** Search query to filter by title or description */
+  search?: string;
+  /** Sort order option */
+  sortBy?: MaterialSortOption;
 }
 
 /**
@@ -35,6 +42,12 @@ export async function getMaterials(
   }
   if (options.offset !== undefined) {
     params.set('offset', String(options.offset));
+  }
+  if (options.search) {
+    params.set('search', options.search);
+  }
+  if (options.sortBy) {
+    params.set('sortBy', options.sortBy);
   }
 
   return get<PaginatedResponse<Material>>(`/materials?${params.toString()}`);

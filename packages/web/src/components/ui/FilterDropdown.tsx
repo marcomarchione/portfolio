@@ -91,6 +91,7 @@ export function FilterDropdown({
         <button
           ref={buttonRef}
           type="button"
+          data-testid="sort-dropdown"
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-300 bg-neutral-800/50 border border-neutral-700 hover:bg-neutral-700/50 hover:text-white transition-colors [.light_&]:bg-white [.light_&]:border-neutral-200 [.light_&]:text-neutral-700 [.light_&]:hover:bg-cream-100 [.light_&]:hover:border-neutral-300 min-w-[140px] justify-between"
           aria-label={ariaLabel || label}

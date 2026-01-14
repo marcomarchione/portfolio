@@ -2,12 +2,23 @@
 /**
  * Materials Listing Page
  *
- * Displays all published materials with translations for the current language.
+ * Displays all published materials with client-side filtering for smooth UX.
+ * Features:
+ * - Category filter (clickable pills)
+ * - Search functionality (debounced)
+ * - Sort options (newest, oldest, title)
+ * - Pagination
+ * - Featured materials appear first
+ * - Smooth transitions on filter change (no page reload)
  */
 import { LANGUAGES, type Language } from '@marcomarchione/shared';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { t } from '../../../i18n';
-import { getMaterials } from '../../../lib/api';
+import { getMaterials, type MaterialSortOption } from '../../../lib/api';
+import MaterialsFilterable from '../../../components/materials/MaterialsFilterable';
+
+// Disable prerendering for SSR - enables dynamic URL parameter filtering
+export const prerender = false;
 
 export function getStaticPaths() {
   return LANGUAGES.map((lang) => ({
@@ -17,50 +28,76 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Language };
 
-// Fetch materials from API
-const materialsResponse = await getMaterials(lang).catch(() => null);
+// Parse URL query parameters for initial server-side rendering
+const url = new URL(Astro.request.url);
+const categoryParam = url.searchParams.get('category') || '';
+const searchParam = url.searchParams.get('search') || '';
+const sortByParam = (url.searchParams.get('sortBy') || 'newest') as MaterialSortOption;
+const pageParam = parseInt(url.searchParams.get('page') || '1', 10);
+const ITEMS_PER_PAGE = 9;
+const offset = (pageParam - 1) * ITEMS_PER_PAGE;
+
+// Fetch initial materials from API (for SSR)
+const materialsResponse = await getMaterials(lang, {
+  category: categoryParam || undefined,
+  search: searchParam || undefined,
+  sortBy: sortByParam,
+  limit: ITEMS_PER_PAGE,
+  offset,
+}).catch(() => null);
+
 const materials = materialsResponse?.data ?? [];
+const pagination = materialsResponse?.pagination ?? null;
 
 const title = t(lang, 'meta.materialsTitle');
 const description = t(lang, 'meta.materialsDescription');
+
+// API base URL for client-side fetching
+// PUBLIC_BROWSER_API_URL is the URL the browser uses to reach the API
+// In dev: http://localhost:3000, in prod: the public API URL
+const apiBaseUrl = (import.meta.env.PUBLIC_BROWSER_API_URL || 'http://localhost:3000') + '/api/v1';
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
-  <section class="min-h-screen">
-    <div class="container mx-auto px-4 py-16">
-      <h1 class="font-heading text-4xl font-bold mb-8 text-white [.light_&]:text-neutral-900">{t(lang, 'nav.materials')}</h1>
+  <section class="min-h-screen py-16">
+    <div class="container mx-auto px-4">
+      <!-- Page Header -->
+      <h1 class="font-heading text-4xl md:text-5xl font-bold mb-8 text-white [.light_&]:text-neutral-900">
+        {t(lang, 'nav.materials')}
+      </h1>
 
-      {materials.length === 0 ? (
-        <p class="text-neutral-400 [.light_&]:text-neutral-600">{t(lang, 'common.noResults')}</p>
-      ) : (
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {materials.map((material) => (
-            <article class="bg-bg-secondary [.light_&]:bg-white rounded-lg p-6 border border-neutral-800 [.light_&]:border-neutral-200 hover:border-primary-500 [.light_&]:hover:border-primary-400 transition-all duration-300">
-              <span class="text-xs text-accent-500 [.light_&]:text-accent-600 font-medium uppercase tracking-wide">
-                {material.category}
-              </span>
-              <h2 class="font-heading text-xl font-semibold mt-2 mb-2 text-white [.light_&]:text-neutral-900">
-                <a
-                  href={`/${lang}/materials/${material.slug}/`}
-                  class="hover:text-primary-400 [.light_&]:hover:text-primary-600 transition-colors"
-                >
-                  {material.translation?.title ?? material.slug}
-                </a>
-              </h2>
-              {material.translation?.description && (
-                <p class="text-neutral-400 [.light_&]:text-neutral-600 text-sm line-clamp-3">
-                  {material.translation.description}
-                </p>
-              )}
-              {material.fileSize && (
-                <p class="text-neutral-500 text-xs mt-3">
-                  {(material.fileSize / 1024 / 1024).toFixed(2)} MB
-                </p>
-              )}
-            </article>
-          ))}
-        </div>
-      )}
+      <!-- Filterable Materials Section (React Island) -->
+      <MaterialsFilterable
+        client:load
+        lang={lang}
+        initialMaterials={materials}
+        initialPagination={pagination}
+        initialCategory={categoryParam}
+        initialSearch={searchParam}
+        initialSort={sortByParam}
+        initialPage={pageParam}
+        apiBaseUrl={apiBaseUrl}
+        labels={{
+          filterByCategory: t(lang, 'materials.filterByCategory'),
+          search: t(lang, 'materials.search'),
+          searchPlaceholder: t(lang, 'materials.searchPlaceholder'),
+          sortBy: t(lang, 'materials.sortBy'),
+          all: t(lang, 'materials.category.all'),
+          categoryGuide: t(lang, 'materials.category.guide'),
+          categoryTemplate: t(lang, 'materials.category.template'),
+          categoryResource: t(lang, 'materials.category.resource'),
+          categoryTool: t(lang, 'materials.category.tool'),
+          sortNewest: t(lang, 'materials.sort.newest'),
+          sortOldest: t(lang, 'materials.sort.oldest'),
+          sortTitle: t(lang, 'materials.sort.title'),
+          featured: t(lang, 'common.featured'),
+          noResults: t(lang, 'materials.noResults'),
+          previous: t(lang, 'materials.pagination.previous'),
+          next: t(lang, 'materials.pagination.next'),
+          page: t(lang, 'materials.pagination.page'),
+          of: t(lang, 'materials.pagination.of'),
+        }}
+      />
     </div>
   </section>
 </BaseLayout>

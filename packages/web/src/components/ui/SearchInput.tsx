@@ -88,6 +88,7 @@ export function SearchInput({
       {/* Input */}
       <input
         type="text"
+        data-testid="search-input"
         value={internalValue}
         onChange={handleInputChange}
         placeholder={placeholder}
@@ -99,6 +100,7 @@ export function SearchInput({
       {internalValue && (
         <button
           type="button"
+          data-testid="search-clear"
           onClick={handleClear}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 transition-colors [.light_&]:text-neutral-500 [.light_&]:hover:text-neutral-700"
           aria-label="Clear search"

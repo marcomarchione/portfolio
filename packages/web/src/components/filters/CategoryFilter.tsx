@@ -41,10 +41,11 @@ export function CategoryFilter({
   );
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div data-testid="category-filter" className="flex flex-wrap gap-2">
       {/* "All" pill */}
       <button
         type="button"
+        data-testid="category-all"
         onClick={() => handleClick('')}
         className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
           selectedCategory === ''
@@ -60,6 +61,7 @@ export function CategoryFilter({
         <button
           key={category}
           type="button"
+          data-testid={`category-${category}`}
           onClick={() => handleClick(category)}
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
             selectedCategory === category

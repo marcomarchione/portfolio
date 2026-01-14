@@ -31,6 +31,29 @@ if (!material) {
 
 const title = material.translation?.metaTitle ?? material.translation?.title ?? slug;
 const description = material.translation?.metaDescription ?? material.translation?.description ?? '';
+
+// Category badge color styling function
+function getCategoryClass(category: string): string {
+  switch (category) {
+    case 'guide':
+      return 'bg-blue-500/20 text-blue-400 [.light_&]:bg-blue-100 [.light_&]:text-blue-700';
+    case 'template':
+      return 'bg-green-500/20 text-green-400 [.light_&]:bg-green-100 [.light_&]:text-green-700';
+    case 'resource':
+      return 'bg-purple-500/20 text-purple-400 [.light_&]:bg-purple-100 [.light_&]:text-purple-700';
+    case 'tool':
+      return 'bg-orange-500/20 text-orange-400 [.light_&]:bg-orange-100 [.light_&]:text-orange-700';
+    default:
+      return 'bg-neutral-500/20 text-neutral-400 [.light_&]:bg-neutral-200 [.light_&]:text-neutral-600';
+  }
+}
+
+// Format file size
+function formatFileSize(bytes: number | null): string {
+  if (!bytes) return '';
+  const mb = bytes / 1024 / 1024;
+  return `${mb.toFixed(2)} MB`;
+}
 ---
 
 <BaseLayout lang={lang} title={title} description={description}>
@@ -39,65 +62,92 @@ const description = material.translation?.metaDescription ?? material.translatio
       <nav class="mb-8">
         <a
           href={`/${lang}/materials/`}
-          class="text-primary-500 hover:text-primary-400 transition-colors"
+          class="text-primary-500 hover:text-primary-400 [.light_&]:text-terra-600 [.light_&]:hover:text-terra-500 transition-colors"
         >
           &larr; {t(lang, 'common.backToList')}
         </a>
       </nav>
 
-      <article>
+      <article
+        data-testid="material-detail"
+        class="bg-neutral-800/30 backdrop-blur-sm rounded-xl border border-neutral-700/50 p-8 [.light_&]:bg-white/80 [.light_&]:border-neutral-200"
+      >
         <header class="mb-8">
-          <span class="text-accent-500 font-medium uppercase tracking-wide text-sm">
-            {material.category}
-          </span>
+          {/* Featured badge */}
+          {material.featured && (
+            <span
+              data-testid="featured-badge"
+              class="inline-block mb-3 text-xs text-accent-500 [.light_&]:text-terra-600 font-semibold uppercase tracking-wider"
+            >
+              {t(lang, 'common.featured')}
+            </span>
+          )}
 
-          <h1 class="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4">
+          {/* Category badge */}
+          <div class="mb-4">
+            <span
+              data-testid="material-category"
+              class={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getCategoryClass(material.category)}`}
+            >
+              {t(lang, `materials.category.${material.category}`)}
+            </span>
+          </div>
+
+          <h1
+            data-testid="material-title"
+            class="font-heading text-4xl md:text-5xl font-bold mt-2 mb-4 text-white [.light_&]:text-neutral-900"
+          >
             {material.translation?.title ?? slug}
           </h1>
 
           {material.translation?.description && (
-            <p class="text-xl text-neutral-400 mb-6">
+            <p
+              data-testid="material-description"
+              class="text-xl text-neutral-400 [.light_&]:text-neutral-600 mb-6"
+            >
               {material.translation.description}
-            </p>
-          )}
-
-          {material.fileSize && (
-            <p class="text-neutral-500 text-sm">
-              {(material.fileSize / 1024 / 1024).toFixed(2)} MB
             </p>
           )}
         </header>
 
         {material.translation?.body && (
-          <div class="prose prose-invert prose-neutral max-w-none mb-12">
+          <div class="prose prose-invert prose-neutral max-w-none mb-12 [.light_&]:prose">
             <Fragment set:html={material.translation.body} />
           </div>
         )}
 
-        <footer class="mt-12 pt-8 border-t border-neutral-800">
-          <a
-            href={material.downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+        <footer class="mt-12 pt-8 border-t border-neutral-800 [.light_&]:border-neutral-200">
+          <div class="flex items-center gap-4 flex-wrap">
+            <a
+              href={material.downloadUrl}
+              download
+              data-testid="download-button"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 [.light_&]:bg-terra-500 [.light_&]:hover:bg-terra-600 transition-colors font-medium"
             >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            {t(lang, 'common.download')}
-          </a>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {t(lang, 'materials.downloadFile')}
+            </a>
+
+            {material.fileSize && (
+              <span data-testid="file-size" class="text-sm text-neutral-500 [.light_&]:text-neutral-600">
+                {t(lang, 'materials.fileSize')}: {formatFileSize(material.fileSize)}
+              </span>
+            )}
+          </div>
         </footer>
       </article>
     </div>

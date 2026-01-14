@@ -8,23 +8,13 @@
  * 3. Selected category has active styling (primary-500)
  * 4. Clicking "All" clears filter (passes empty string)
  */
-import { describe, test, expect, mock, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, mock } from 'bun:test';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import {
   CategoryFilter,
   MATERIAL_CATEGORIES,
   type CategoryLabels,
 } from './CategoryFilter';
-
-// Setup happy-dom for DOM testing
-beforeAll(() => {
-  GlobalRegistrator.register();
-});
-
-afterAll(() => {
-  GlobalRegistrator.unregister();
-});
 
 const defaultLabels: CategoryLabels = {
   guide: 'Guides',
