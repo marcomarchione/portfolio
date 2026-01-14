@@ -51,4 +51,4 @@ ENV PORT=${PORT:-4321}
 EXPOSE 4321
 
 # Run the Astro SSR server
-CMD ["bun", "run", "dist/server/entry.mjs"]
+CMD ["bun", "dist/server/entry.mjs"]
