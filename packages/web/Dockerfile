@@ -27,18 +27,26 @@ ENV PUBLIC_API_URL=$PUBLIC_API_URL
 ENV PUBLIC_BROWSER_API_URL=$PUBLIC_BROWSER_API_URL
 RUN bun run build
 
-# Production stage with Node.js for SSR
-FROM node:22-slim AS runner
+# Production stage with Bun for SSR
+FROM oven/bun:1.3-slim AS runner
 WORKDIR /app
 
-# Copy package.json for dependency installation
-COPY --from=builder /app/packages/web/package.json ./package.json
+# Copy workspace files for bun install
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/bun.lock ./bun.lock
+COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder /app/packages/web/package.json ./packages/web/package.json
 
-# Install production dependencies only
-RUN npm install --omit=dev
+# Copy shared package (needed for workspace resolution)
+COPY --from=builder /app/packages/shared ./packages/shared
+
+# Install production dependencies only (fresh install, no cache issues)
+RUN bun install --production --ignore-scripts
 
 # Copy built output (server + client assets)
-COPY --from=builder /app/packages/web/dist ./dist
+COPY --from=builder /app/packages/web/dist ./packages/web/dist
+
+WORKDIR /app/packages/web
 
 # Set environment variables for production
 ENV HOST=0.0.0.0
@@ -52,5 +60,5 @@ EXPOSE 4321
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost:${PORT:-4321}/ || exit 1
 
-# Run the SSR server with Node.js
-CMD ["node", "dist/server/entry.mjs"]
+# Run the SSR server with Bun
+CMD ["bun", "run", "dist/server/entry.mjs"]
