@@ -11,8 +11,8 @@ COPY package.json bun.lock* ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/admin/package.json ./packages/admin/
 
-# Install dependencies
-RUN bun install --no-save
+# Install dependencies (ignore scripts to reduce memory usage)
+RUN bun install --ignore-scripts && rm -rf ~/.bun/install/cache
 
 # Copy source code
 COPY packages/shared ./packages/shared

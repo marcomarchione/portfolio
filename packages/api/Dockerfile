@@ -5,12 +5,12 @@
 FROM oven/bun:1.3 AS base
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (production only to reduce memory)
 FROM base AS deps
 COPY package.json bun.lock* ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/api/package.json ./packages/api/
-RUN bun install --no-save
+RUN bun install --production --ignore-scripts
 
 # Build stage
 FROM base AS builder
